@@ -387,15 +387,28 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           </div>
         </div>
 
-        <!-- FIFO INVENTORY -->
+        <!-- FIFO INVENTORY — Bühler stock simple input + FIFO batches -->
         <div class="sec" id="sec-inventory">
           <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
-            <div style="font-size:15px;font-weight:800;">📦 FIFO Stock Inventory</div>
-            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Edit batch dates/qty inline · Delete batches · Add new batches</div>
+            <div style="font-size:15px;font-weight:800;">📦 Bühler Stock & FIFO Inventory</div>
+            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Edit stock below · Stock reduces on confirmed loading only</div>
           </div>
           <div style="background:rgba(232,147,10,.07);border:1px solid rgba(232,147,10,.22);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:var(--orange);font-weight:600;">
-            ⚠️ FIFO Rule: Always load the OLDEST production date first. Edit or delete Bühler batches below.
+            ⚠️ FIFO Rule: Always load the OLDEST production date first. Type total bags in Bühler column to update stock.
           </div>
+          <!-- BÜHLER SIMPLE INPUT TABLE -->
+          <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:13px;font-weight:700;">🏭 Bühler Stock (Bags) — Manual Entry</div>
+              <button class="btn btn-p btn-sm" onclick="saveBuhlerStock()">💾 Save All Stock</button>
+            </div>
+            <table class="so-tbl" id="buhlerStockTable">
+              <thead><tr><th>Büh#</th><th>Product</th><th>Unit (kg)</th><th style="width:120px;">Bühler Stock (Bags)</th><th>Current FIFO Batches</th></tr></thead>
+              <tbody id="buhlerStockBody"></tbody>
+            </table>
+          </div>
+          <!-- FIFO BATCH DETAIL -->
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">📅 FIFO Batch Details (Add/Edit/Delete batches)</div>
           <div class="inv-g" id="invGrid"></div>
         </div>
 
@@ -639,16 +652,24 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </div>
 
 <div class="mo" id="importModal">
-  <div class="md" style="max-width:420px;">
-    <div class="md-t">📤 Import from ERP / Power BI</div>
-    <div style="border:2px dashed var(--border);border-radius:11px;padding:30px;text-align:center;margin-bottom:14px;">
-      <div style="font-size:28px;margin-bottom:7px;">📁</div>
-      <div style="font-size:13.5px;font-weight:700;margin-bottom:3px;">Drop Excel / CSV file here</div>
-      <div style="font-size:11.5px;color:var(--muted);">or click to browse</div>
+  <div class="md" style="max-width:500px;">
+    <div class="md-t">📤 Import SOs from ERP (CSV)</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;">Expected columns: <strong>Customer, Sales order, Item number, Ship date, Sales quantity</strong></div>
+    <div style="border:2px dashed var(--border);border-radius:11px;padding:24px;text-align:center;margin-bottom:12px;cursor:pointer;position:relative;"
+      onmouseover="this.style.borderColor='var(--cr)'" onmouseout="this.style.borderColor='var(--border)'"
+      onclick="document.getElementById('erpFileInput').click()">
+      <div style="font-size:24px;margin-bottom:6px;">📁</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Click to select ERP CSV file</div>
+      <div style="font-size:11.5px;color:var(--muted);">Columns: Customer · Sales order · Item number · Ship date · Sales quantity</div>
+      <input type="file" id="erpFileInput" accept=".csv" style="display:none;" onchange="previewERPImport(this)">
+    </div>
+    <div id="erpPreview" style="display:none;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Preview:</div>
+      <div id="erpPreviewContent" style="max-height:200px;overflow-y:auto;font-size:11.5px;"></div>
     </div>
     <div class="md-foot">
-      <button class="btn btn-s" onclick="closeM('importModal')">Cancel</button>
-      <button class="btn btn-p" onclick="closeM('importModal');toast('Import: 3 new, 1 updated, 2 skipped','success')">Process Import ✓</button>
+      <button class="btn btn-s" onclick="closeM('importModal');document.getElementById('erpPreview').style.display='none';document.getElementById('erpFileInput').value='';">Cancel</button>
+      <button class="btn btn-p" id="erpImportBtn" onclick="confirmERPImport()" style="display:none;">Import ✓</button>
     </div>
   </div>
 </div>
@@ -705,54 +726,59 @@ async function restoreFromFirebase(uid){
 }
 
 // ══════════════════════════════════════════
-// PRODUCT LIST (45 items)
+// PRODUCT LIST — bühlerCode, erpCode, name, unit
 // ══════════════════════════════════════════
 const PRODUCT_LIST=[
-  {code:'600', name:'Male feed',                     unit:50},
-  {code:'126', name:'Soyabean meal 50 kg',           unit:50},
-  {code:'603', name:'Pre-Breeder-16',                unit:50},
-  {code:'666', name:'Pigeon feed (Crumbs)',           unit:50},
-  {code:'667', name:'Pigeon feed 4mm 10kg',           unit:10},
-  {code:'702', name:'702',                            unit:30},
-  {code:'703', name:'Yellow Corn',                    unit:50},
-  {code:'704', name:'Crushed Maize',                  unit:50},
-  {code:'706', name:'Premium Barley',                 unit:26},
-  {code:'708', name:'Grain Mix',                      unit:30},
-  {code:'709', name:'Broiler Starter (10kg)',         unit:10},
-  {code:'711', name:'Broiler Finisher (10kg)',        unit:10},
-  {code:'715', name:'Broiler Starter',                unit:50},
-  {code:'716', name:'Broiler Finisher',               unit:50},
-  {code:'751', name:'W.Bran/Barley Mix',              unit:50},
-  {code:'721', name:'Watani Broiler Starter',         unit:50},
-  {code:'722', name:'Watani Broiler Finisher',        unit:50},
-  {code:'822', name:'Grower Starter',                 unit:50},
-  {code:'826', name:'Layer 17% (pellet 10kg)',        unit:10},
-  {code:'810', name:'Breeder Grower',                 unit:50},
-  {code:'843', name:'Chick Developer (Rearing Ph.3)', unit:50},
-  {code:'835', name:'Layer 16 - Pellets',             unit:50},
-  {code:'839', name:'Layer Phase 2 (Layer 16)',       unit:50},
-  {code:'883', name:'Barley Flakes',                  unit:20},
-  {code:'884', name:'Wheat Flakes',                   unit:20},
-  {code:'891', name:'Breeder Layer PH1',              unit:50},
-  {code:'892', name:'Breeder Layer PH2',              unit:50},
-  {code:'920', name:'Dairy 18',                       unit:50},
-  {code:'925', name:'Calf Grower',                    unit:50},
-  {code:'976', name:'Camel Feed (35kg)',               unit:35},
-  {code:'940', name:'RGF 4mm',                        unit:50},
-  {code:'941', name:'RGF 8mm',                        unit:50},
-  {code:'951', name:'Horse feed',                     unit:50},
-  {code:'952', name:'Sheep Feed',                     unit:50},
-  {code:'955', name:'Rat Pellet',                     unit:30},
-  {code:'932', name:'Layer 17% Omega 30kgs',          unit:30},
-  {code:'822b',name:'Layer 17% Omega 50kgs',          unit:50},
-  {code:'Close',name:'Close-Up Premix',               unit:45},
-  {code:'Zaad', name:'Zaad Al Khair Ratio Premix',   unit:45},
-  {code:'HfPr', name:'Heifer Premix',                unit:25},
-  {code:'BStPr',name:'B. Starter Premix',            unit:25},
-  {code:'LyVit',name:'Layering Vitamin',             unit:25},
-  {code:'BFnPr',name:'B. Finisher Premix',           unit:25},
-  {code:'BStVt',name:'B. Starter Vitamin',           unit:25},
+  {code:'600', erpCode:'I000478', name:'Male feed',                      unit:50},
+  {code:'126', erpCode:'I000553', name:'Soyabean meal 50 kg',            unit:50},
+  {code:'603', erpCode:'',        name:'Pre-Breeder-16',                 unit:50},
+  {code:'666', erpCode:'I000476', name:'Pigeon feed (Crumbs)',            unit:50},
+  {code:'667', erpCode:'I020428', name:'Pigeon feed 4mm 10kg',            unit:10},
+  {code:'702', erpCode:'',        name:'702',                             unit:30},
+  {code:'703', erpCode:'I000543', name:'Yellow Corn',                     unit:50},
+  {code:'704', erpCode:'I000545', name:'Crushed Maize',                   unit:50},
+  {code:'706', erpCode:'I019036', name:'Premium Barley',                  unit:26},
+  {code:'708', erpCode:'I018755', name:'Grain Mix',                       unit:30},
+  {code:'709', erpCode:'I020425', name:'Broiler Starter (10kg)',          unit:10},
+  {code:'711', erpCode:'I020426', name:'Broiler Finisher (10kg)',         unit:10},
+  {code:'715', erpCode:'I000446', name:'Broiler Starter',                 unit:50},
+  {code:'716', erpCode:'I000450', name:'Broiler Finisher',                unit:50},
+  {code:'751', erpCode:'',        name:'W.Bran/Barley Mix',               unit:50},
+  {code:'721', erpCode:'I020240', name:'Watani Broiler Starter',          unit:50},
+  {code:'722', erpCode:'I020241', name:'Watani Broiler Finisher',         unit:50},
+  {code:'822', erpCode:'I000492', name:'Grower Starter',                  unit:50},
+  {code:'826', erpCode:'I020427', name:'Layer 17% (pellet 10kg)',         unit:10},
+  {code:'810', erpCode:'I000482', name:'Breeder Grower',                  unit:50},
+  {code:'843', erpCode:'I019058', name:'Chick Developer (Rearing Ph.3)',  unit:50},
+  {code:'835', erpCode:'I000473', name:'Layer 16 - Pellets',              unit:50},
+  {code:'839', erpCode:'I019685', name:'Layer Phase 2 (Layer 16)',        unit:50},
+  {code:'883', erpCode:'I018304', name:'Barley Flakes',                   unit:20},
+  {code:'884', erpCode:'I019115', name:'Wheat Flakes',                    unit:20},
+  {code:'891', erpCode:'I000486', name:'Breeder Layer PH1',               unit:50},
+  {code:'892', erpCode:'I000490', name:'Breeder Layer PH2',               unit:50},
+  {code:'920', erpCode:'I000512', name:'Dairy 18',                        unit:50},
+  {code:'925', erpCode:'I000510', name:'Calf Grower',                     unit:50},
+  {code:'976', erpCode:'',        name:'Camel Feed (35kg)',                unit:35},
+  {code:'940', erpCode:'I000518', name:'RGF 4mm',                         unit:50},
+  {code:'941', erpCode:'I000516', name:'RGF 8mm',                         unit:50},
+  {code:'951', erpCode:'I000520', name:'Horse feed',                      unit:50},
+  {code:'952', erpCode:'',        name:'Sheep Feed',                      unit:50},
+  {code:'955', erpCode:'I000533', name:'Rat Pellet',                      unit:30},
+  {code:'',    erpCode:'I020846', name:'Zaad Al Khair - Ratio Premix',    unit:45},
+  {code:'',    erpCode:'',        name:'Close-Up Premix',                  unit:45},
+  {code:'',    erpCode:'',        name:'Pujnand Dairy',                    unit:50},
+  {code:'',    erpCode:'',        name:'Pujnand Ultra Dairy',              unit:50},
+  {code:'',    erpCode:'',        name:'Milking Cow Premix',               unit:50},
+  {code:'',    erpCode:'',        name:'Dry Cow',                          unit:50},
+  {code:'',    erpCode:'',        name:'B.Starter Premixes',               unit:25},
+  {code:'',    erpCode:'',        name:'B.Finisher Grower',                unit:50},
+  {code:'',    erpCode:'',        name:'Dofar Starter DP2',                unit:50},
+  {code:'',    erpCode:'',        name:'Dofar Starter DP1',                unit:50},
 ];
+
+// ERP code lookup: erpCode → product
+const ERP_MAP={};
+PRODUCT_LIST.forEach(p=>{if(p.erpCode)ERP_MAP[p.erpCode.trim().toUpperCase()]=p;});
 
 // ══════════════════════════════════════════
 // USERS
@@ -978,9 +1004,10 @@ function showSec(k){
   if(k==='physical')renderPhysRecord();
   if(k==='records')renderRecords();
   if(k==='security')renderSecurity();
+  if(k==='inventory'){renderInventory();renderBuhlerStockTable();}
 }
 function renderAll(){
-  renderQueue();renderLines();renderSOTable();renderInventory();
+  renderQueue();renderLines();renderSOTable();renderInventory();renderBuhlerStockTable();
   renderMgmtRolls();renderMiniLines();renderDashActivity();renderActFeed();
   renderRecords();updateDashStats();
 }
@@ -1234,7 +1261,11 @@ function renderSOTable(){
     const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done',rescheduled:'sp-pending'};
     const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done',rescheduled:'🔄 Rescheduled'};
     const src={ERP:'src-e','Power BI':'src-e',Manual:'src-m'};
-    const ph=s.products.map(p=>`<small>${p.name} × ${p.qty}</small>`).join('<br>');
+    const ph=s.products.map(p=>{
+      const pInfo=PRODUCT_LIST.find(x=>x.name===p.name);
+      const bCode=p.buhlerCode||(pInfo?pInfo.code:'');
+      return `<small>${bCode?`<span style="color:var(--cr);font-weight:700;">${bCode}</span> — `:''}${p.name} × ${p.qty}</small>`;
+    }).join('<br>');
     const reschedNote=s.rescheduledTo?`<br><small style="color:var(--orange);">→ ${s.rescheduledTo}</small>`:'';
     let daysLeftHtml='—';
     if(s.status==='done'&&s.loadedAt){
@@ -1578,7 +1609,149 @@ function manualConfirm(){
   logA(`Manually confirmed ${curWA.so}`);toast(`✅ ${curWA.so} confirmed`,'success');
   closeM('waModal');renderSOTable();renderMgmtRolls();
 }
-function openImport(){document.getElementById('importModal').classList.add('open');}
+// ══════════════════════════════════════════
+// BÜHLER STOCK — simple input table
+// ══════════════════════════════════════════
+function renderBuhlerStockTable(){
+  const tb=document.getElementById('buhlerStockBody');if(!tb)return;
+  tb.innerHTML=PRODUCT_LIST.map((p,i)=>{
+    const batches=inventory[p.name]||[];
+    const total=batches.reduce((s,b)=>s+b.qty,0);
+    const batchSummary=batches.length?batches.map(b=>`<span style="font-size:10px;background:#F0F2F7;padding:2px 6px;border-radius:4px;margin-right:4px;">${b.date}: ${b.qty}</span>`).join(''):'<span style="font-size:10.5px;color:var(--muted);">No batches</span>';
+    return `<tr>
+      <td style="font-weight:700;color:var(--cr);font-size:11px;">${p.code||'—'}</td>
+      <td style="font-size:12px;">${p.name}</td>
+      <td style="font-size:11.5px;color:var(--muted);">${p.unit}</td>
+      <td><input type="number" id="bsq-${i}" value="${total}" min="0"
+        style="width:100px;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;text-align:center;outline:none;background:#FAFBFE;"
+        onfocus="this.style.borderColor='var(--cr)'" onblur="this.style.borderColor='var(--border)'"></td>
+      <td>${batchSummary}</td>
+    </tr>`;
+  }).join('');
+}
+
+function saveBuhlerStock(){
+  let changed=0;
+  PRODUCT_LIST.forEach((p,i)=>{
+    const el=document.getElementById('bsq-'+i);if(!el)return;
+    const qty=parseInt(el.value)||0;
+    const current=inventory[p.name]||[];
+    const currentTotal=current.reduce((s,b)=>s+b.qty,0);
+    if(qty===currentTotal)return; // no change
+    // Set as single batch with today's date, preserving oldest existing date if any
+    const today=new Date().toISOString().split('T')[0];
+    const oldestDate=current.length?current.sort((a,b)=>new Date(a.date)-new Date(b.date))[0].date:today;
+    inventory[p.name]=[{date:oldestDate,qty}];
+    changed++;
+  });
+  if(changed===0){toast('No changes to save.','info');return;}
+  logA(`Updated Bühler stock for ${changed} product(s)`);
+  toast(`✅ Bühler stock saved (${changed} products updated)`,'success');
+  renderBuhlerStockTable();
+  renderInventory();
+}
+
+// ══════════════════════════════════════════
+// ERP CSV IMPORT
+// ══════════════════════════════════════════
+let erpParsedRows=[];
+
+function previewERPImport(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    erpParsedRows=parseERPCsv(text);
+    showERPPreview(erpParsedRows);
+  };
+  reader.readAsText(file);
+}
+
+function parseERPCsv(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+  if(!lines.length)return[];
+  // Detect separator: tab or comma or semicolon
+  const sep=lines[0].includes('\t')?'\t':lines[0].includes(';')?';':',';
+  const headers=lines[0].split(sep).map(h=>h.trim().toLowerCase().replace(/"/g,''));
+  const colIdx={
+    customer:   headers.findIndex(h=>h.includes('customer')),
+    soNum:      headers.findIndex(h=>h.includes('sales order')||h.includes('salesorder')),
+    itemNum:    headers.findIndex(h=>h.includes('item number')||h.includes('itemnumber')),
+    shipDate:   headers.findIndex(h=>h.includes('ship date')||h.includes('shipdate')),
+    qty:        headers.findIndex(h=>h.includes('sales quantity')||h.includes('salesquantity')),
+  };
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=lines[i].split(sep).map(c=>c.trim().replace(/"/g,''));
+    if(cols.length<3)continue;
+    const erpCode=(cols[colIdx.itemNum]||'').trim().toUpperCase();
+    const product=ERP_MAP[erpCode];
+    const soNum=(cols[colIdx.soNum]||'').trim();
+    const customer=(cols[colIdx.customer]||'').trim();
+    const rawQty=parseFloat(cols[colIdx.qty]||0);
+    const qty=Math.abs(rawQty);
+    const rawDate=(cols[colIdx.shipDate]||'').trim();
+    // Parse date dd/mm/yyyy or yyyy-mm-dd
+    let releaseDate='';
+    if(rawDate.includes('/')){
+      const p=rawDate.split('/');
+      if(p.length===3)releaseDate=`${p[2].padStart(4,'20')}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+    } else {
+      releaseDate=rawDate;
+    }
+    rows.push({soNum,customer,erpCode,product,qty,releaseDate,valid:!!(soNum&&product&&qty>0)});
+  }
+  return rows;
+}
+
+function showERPPreview(rows){
+  const preview=document.getElementById('erpPreview');
+  const content=document.getElementById('erpPreviewContent');
+  const btn=document.getElementById('erpImportBtn');
+  preview.style.display='';
+  const existing=new Set(soData.map(s=>s.so));
+  const valid=rows.filter(r=>r.valid&&!existing.has(r.soNum));
+  const dupes=rows.filter(r=>r.valid&&existing.has(r.soNum));
+  const unknown=rows.filter(r=>!r.valid);
+  let html=`<div style="margin-bottom:8px;padding:7px 10px;background:rgba(29,176,106,.07);border-radius:7px;border:1px solid rgba(29,176,106,.2);font-size:11.5px;color:var(--green);font-weight:600;">✅ ${valid.length} SOs ready to import</div>`;
+  if(valid.length){
+    html+=valid.map(r=>`<div style="padding:5px 10px;border-bottom:1px solid var(--border);font-size:11px;"><strong>${r.soNum}</strong> — ${r.customer} — ${r.product.code}: ${r.product.name} × ${r.qty} bags — ${r.releaseDate}</div>`).join('');
+  }
+  if(dupes.length){
+    html+=`<div style="margin-top:8px;padding:7px 10px;background:rgba(232,147,10,.07);border-radius:7px;border:1px solid rgba(232,147,10,.2);font-size:11.5px;color:var(--orange);font-weight:600;">⚠️ ${dupes.length} duplicate(s) — will be skipped:</div>`;
+    html+=dupes.map(r=>`<div style="padding:5px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);">${r.soNum} — already exists</div>`).join('');
+  }
+  if(unknown.length){
+    html+=`<div style="margin-top:8px;padding:7px 10px;background:rgba(192,57,43,.07);border-radius:7px;border:1px solid rgba(192,57,43,.2);font-size:11.5px;color:var(--cr);font-weight:600;">❌ ${unknown.length} row(s) skipped — unknown ERP code or missing data:</div>`;
+    html+=unknown.map(r=>`<div style="padding:5px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);">${r.soNum||'?'} — ERP code: ${r.erpCode||'?'}</div>`).join('');
+  }
+  content.innerHTML=html;
+  btn.style.display=valid.length?'':'none';
+}
+
+function confirmERPImport(){
+  const existing=new Set(soData.map(s=>s.so));
+  const toImport=erpParsedRows.filter(r=>r.valid&&!existing.has(r.soNum));
+  if(!toImport.length){toast('Nothing to import.','info');return;}
+  toImport.forEach(r=>{
+    const cat=getCategoryFromProducts([{name:r.product.name}]);
+    const newSO={
+      so:r.soNum, customer:r.customer, phone:'',
+      products:[{name:r.product.name, buhlerCode:r.product.code, qty:r.qty}],
+      releaseDate:r.releaseDate, status:'pending', source:'ERP',
+      roll:soData.length+1, confirmed:false, lastEditedBy:CU?.displayName
+    };
+    soData.push(newSO);
+    queueTrucks.push({plate:'TBD',product:r.product.name,category:cat,so:r.soNum,phone:'',roll:queueTrucks.length+1});
+  });
+  logA(`ERP Import: ${toImport.length} SOs imported`);
+  toast(`✅ Imported ${toImport.length} SOs from ERP`,'success');
+  closeM('importModal');
+  document.getElementById('erpPreview').style.display='none';
+  document.getElementById('erpFileInput').value='';
+  erpParsedRows=[];
+  renderSOTable();renderMgmtRolls();renderForecast();renderQueue();
+}
 
 // ══════════════════════════════════════════
 // CUSTOMER TRACK
