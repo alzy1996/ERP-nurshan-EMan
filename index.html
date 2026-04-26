@@ -53,7 +53,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .shell{display:flex;height:100vh;}
 .sb{width:232px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0;overflow-y:auto;}
 .sb-head{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.sb-logo-img{width:32px;height:32px;border-radius:8px;object-fit:cover;}
 .sb-mark{width:32px;height:32px;background:var(--cr);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;flex-shrink:0;}
 .sb-brand{font-size:14px;font-weight:800;color:var(--text);}
 .sb-ver{font-size:10px;color:var(--muted);}
@@ -91,6 +90,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .ct{font-size:13px;font-weight:700;color:var(--text);}
 .q-layout{display:grid;grid-template-columns:290px 1fr;gap:14px;}
 .q-list{display:flex;flex-direction:column;gap:7px;max-height:calc(100vh - 210px);overflow-y:auto;padding-right:4px;}
+.q-list::-webkit-scrollbar{width:4px;}
+.q-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 .tc{background:var(--white);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;cursor:pointer;transition:all .18s;}
 .tc:hover{border-color:var(--cr);box-shadow:0 2px 12px rgba(192,57,43,0.08);}
 .tc.sel{border-color:var(--cr);background:rgba(192,57,43,0.025);}
@@ -136,9 +137,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .inv-pn{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;}
 .inv-tot{font-size:20px;font-weight:800;color:var(--cr);}
 .inv-tl{font-size:10.5px;color:var(--muted);margin-bottom:10px;}
-.inv-dr{display:flex;gap:7px;align-items:center;padding:7px;background:#FAFBFE;border-radius:7px;border:1px solid var(--border);margin-bottom:5px;}
-.inv-dl{font-size:10.5px;color:var(--muted);font-weight:600;min-width:76px;}
-.inv-dq{font-size:12px;font-weight:700;color:var(--text);}
+.inv-dr{display:flex;gap:7px;align-items:center;padding:7px;background:#FAFBFE;border-radius:7px;border:1px solid var(--border);margin-bottom:5px;flex-wrap:wrap;}
+.inv-dl{font-size:10.5px;color:var(--muted);font-weight:600;}
 .inv-db{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(29,176,106,0.09);color:var(--green);}
 .inv-db.ff{background:rgba(192,57,43,0.09);color:var(--cr);}
 .inv-add{display:flex;gap:6px;align-items:center;margin-top:7px;flex-wrap:wrap;}
@@ -196,33 +196,32 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .toast.success{background:var(--green);}
 .toast.error{background:var(--cr);}
 .toast.info{background:var(--blue);}
-/* PHYSICAL INVENTORY TABLE */
 .phys-tbl{width:100%;border-collapse:collapse;font-size:12px;}
 .phys-tbl th{background:#F4F5F9;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:9px 10px;border:1px solid var(--border);text-align:center;}
 .phys-tbl td{padding:7px 10px;border:1px solid var(--border);text-align:center;vertical-align:middle;}
 .phys-tbl td:first-child{text-align:left;font-weight:600;}
 .phys-tbl tr:hover td{background:#FAFBFE;}
-.phys-tbl input[type=number]{width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;text-align:center;outline:none;}
-.phys-tbl input[type=number]:focus{border-color:var(--cr);}
+.phys-tbl input[type=number],.phys-tbl input[type=text]{width:100%;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;text-align:center;outline:none;background:#fff;}
+.phys-tbl input[type=number]:focus,.phys-tbl input[type=text]:focus{border-color:var(--cr);}
 .diff-pos{color:var(--green);font-weight:700;}
 .diff-neg{color:var(--cr);font-weight:700;}
-/* SETTINGS */
 .set-card{background:var(--white);border-radius:12px;padding:20px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px;}
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
 .set-row:last-child{border-bottom:none;}
 .set-lbl{font-size:13px;font-weight:600;color:var(--text);}
 .set-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-/* RECORDS */
-.rec-card{background:var(--white);border-radius:11px;padding:14px 16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
-.rec-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
-.day-badge{background:rgba(192,57,43,.07);border:1.5px solid var(--cr);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--cr);}
-/* PRINT */
 @media print{
-  .sb,.topbar,.btn,.btn-p,.btn-s,.btn-g,.btn-danger,.nav-i,.sb-foot,#toastEl,.mo{display:none!important;}
-  .main{margin:0;padding:0;}
-  body{overflow:visible;}
+  .sb,.topbar,.btn,.btn-p,.btn-s,.btn-g,.btn-danger,.nav-i,.sb-foot,#toastEl,.mo,.inv-add,.ap{display:none!important;}
+  #app{display:block!important;height:auto;overflow:visible;}
+  .shell{display:block;}
+  .main{margin:0;padding:0;overflow:visible;}
+  body{overflow:visible;background:#fff;}
   .content{padding:10px;}
-  .phys-tbl input[type=number]{border:none;background:transparent;}
+  .sec{display:none!important;}
+  #sec-physical{display:block!important;}
+  .phys-tbl input[type=number],.phys-tbl input[type=text]{border:none;background:transparent;width:100%;}
+  #printSignature{display:block!important;}
+  .card{box-shadow:none;border:1px solid #ddd;}
 }
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -237,7 +236,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <div class="lp-form">
       <div class="lp-logo-wrap">
         <div id="lpLogoWrap"><div class="lp-mark" id="lpMark">OFM</div></div>
-        <div><div class="lp-brand" id="lpBrand">OFM Smart Fleet</div><div class="lp-tagline">Oman Flour Mills · Fleet Management</div></div>
+        <div><div class="lp-brand">OFM Smart Fleet</div><div class="lp-tagline">Oman Flour Mills · Fleet Management</div></div>
       </div>
       <div class="lp-title">Welcome back</div>
       <div class="lp-sub">Sign in with your credentials to continue</div>
@@ -269,7 +268,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div class="sb-foot">
         <div class="u-card">
           <div class="u-av" id="uAv">S</div>
-          <div><div class="u-name" id="uName">Samih Ahmed</div><div class="u-role" id="uRole">Admin</div></div>
+          <div><div class="u-name" id="uName">—</div><div class="u-role" id="uRole">—</div></div>
           <button class="btn-out" onclick="logout()" title="Logout">⏻</button>
         </div>
       </div>
@@ -360,7 +359,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             </div>
             <button class="btn btn-p" onclick="openNewSO()">+ New SO</button>
             <button class="btn btn-s" onclick="openImport()">📤 Import ERP</button>
-            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Sorted: Oldest Release Date → FIFO · SOs archive after 3 days post-loading</div>
+            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Sorted: Oldest Release Date → FIFO · Auto-archives 3 days after loading</div>
           </div>
           <div id="soView-list">
             <div class="card" style="padding:0;overflow:hidden;">
@@ -372,7 +371,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           </div>
           <div id="soView-forecast" style="display:none;">
             <div class="card">
-              <div class="ch"><div class="ct">📅 30-Day SO Forecast</div><span style="font-size:11px;color:var(--muted);">Click a day to view & manage SOs</span></div>
+              <div class="ch"><div class="ct">📅 30-Day SO Forecast</div><span style="font-size:11px;color:var(--muted);">Click any day to view & manage SOs</span></div>
               <div id="forecastGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;"></div>
             </div>
             <div id="forecastDetail" style="display:none;" class="card">
@@ -388,19 +387,19 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           </div>
         </div>
 
-        <!-- INVENTORY (FIFO live stock) -->
+        <!-- FIFO INVENTORY -->
         <div class="sec" id="sec-inventory">
           <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
             <div style="font-size:15px;font-weight:800;">📦 FIFO Stock Inventory</div>
-            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Stock reduces on confirmed loading only</div>
+            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Edit batch dates/qty inline · Delete batches · Add new batches</div>
           </div>
           <div style="background:rgba(232,147,10,.07);border:1px solid rgba(232,147,10,.22);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:var(--orange);font-weight:600;">
-            ⚠️ FIFO Rule: Always load the OLDEST production date first.
+            ⚠️ FIFO Rule: Always load the OLDEST production date first. Edit or delete Bühler batches below.
           </div>
           <div class="inv-g" id="invGrid"></div>
         </div>
 
-        <!-- PHYSICAL INVENTORY (daily record) -->
+        <!-- PHYSICAL INVENTORY -->
         <div class="sec" id="sec-physical">
           <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
             <div style="font-size:15px;font-weight:800;">📋 Physical Inventory — Daily Record</div>
@@ -411,18 +410,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
               <button class="btn btn-s btn-sm" onclick="printPhysRecord()">🖨️ Print PDF</button>
             </div>
           </div>
-          <div class="card" style="padding:0;overflow:hidden;" id="physRecordWrap">
+          <div class="card" style="padding:0;overflow:hidden;">
             <table class="phys-tbl" id="physRecTable">
               <thead>
                 <tr>
                   <th style="text-align:left;min-width:180px;">Product</th>
                   <th>Code</th>
                   <th>Unit (kg)</th>
-                  <th>Bühler Stock<br>(Bags)</th>
-                  <th>Physical Count<br>(Bags)</th>
-                  <th>Truck Loaded<br>(Bags)</th>
-                  <th>Difference<br>(Bags)</th>
+                  <th>Bühler Stock (Bags)</th>
+                  <th>Physical Count (Bags)</th>
+                  <th>Difference (Bags)</th>
                   <th>MT</th>
+                  <th style="min-width:140px;">Remark</th>
                 </tr>
               </thead>
               <tbody id="physRecBody"></tbody>
@@ -431,18 +430,32 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
                   <td colspan="3" style="text-align:right;padding:9px 10px;font-size:11.5px;">TOTAL</td>
                   <td id="totBuhler" style="text-align:center;font-weight:800;">0</td>
                   <td id="totPhysical" style="text-align:center;font-weight:800;">0</td>
-                  <td id="totLoaded" style="text-align:center;font-weight:800;">0</td>
                   <td id="totDiff" style="text-align:center;font-weight:800;">0</td>
                   <td id="totMT" style="text-align:center;font-weight:800;">0.000</td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
           </div>
+          <!-- Print signature — hidden on screen, visible on print only -->
+          <div id="printSignature" style="display:none;margin-top:40px;display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;">
+              <div>
+                <div style="font-size:13px;font-weight:700;">Prepared by:</div>
+                <div style="font-size:13px;margin-top:4px;" id="printUserName">—</div>
+                <div style="margin-top:40px;border-top:1.5px solid #000;width:220px;padding-top:5px;font-size:11px;color:#555;">Signature</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:12px;color:#555;">OFM Smart Fleet System v5.0</div>
+                <div style="font-size:12px;color:#555;" id="printDateLabel">—</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- RECORDS (archived SOs) -->
+        <!-- RECORDS -->
         <div class="sec" id="sec-records">
-          <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
             <div style="font-size:15px;font-weight:800;">🗄️ SO Records — Archived</div>
             <div style="margin-left:auto;font-size:11px;color:var(--muted);">SOs auto-archive 3 days after loading</div>
           </div>
@@ -518,14 +531,14 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           <div class="set-card">
             <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">🎨 Branding</div>
             <div class="set-row">
-              <div><div class="set-lbl">Logo URL</div><div class="set-sub">Paste any image URL to replace the OFM logo</div></div>
+              <div><div class="set-lbl">Logo URL</div><div class="set-sub">Paste any image URL to replace the OFM logo (login + sidebar)</div></div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <input type="text" id="setLogoUrl" placeholder="https://..." style="width:260px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
                 <button class="btn btn-p btn-sm" onclick="applyLogo()">Apply</button>
               </div>
             </div>
             <div class="set-row">
-              <div><div class="set-lbl">Login Background Photo URL</div><div class="set-sub">Paste any image URL for the login right panel</div></div>
+              <div><div class="set-lbl">Login Background Photo URL</div><div class="set-sub">Paste any image URL for the login right panel photo</div></div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <input type="text" id="setBgUrl" placeholder="https://..." style="width:260px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
                 <button class="btn btn-p btn-sm" onclick="applyBg()">Apply</button>
@@ -541,14 +554,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           </div>
           <div class="set-card">
             <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">ℹ️ System Info</div>
-            <div class="set-row">
-              <div><div class="set-lbl">Version</div></div>
-              <div style="font-size:12px;color:var(--muted);">OFM Smart Fleet v5.0</div>
-            </div>
-            <div class="set-row">
-              <div><div class="set-lbl">Firebase Project</div></div>
-              <div style="font-size:12px;color:var(--muted);">ofm-trucks-movemments-harees</div>
-            </div>
+            <div class="set-row"><div><div class="set-lbl">Version</div></div><div style="font-size:12px;color:var(--muted);">OFM Smart Fleet v5.0</div></div>
+            <div class="set-row"><div><div class="set-lbl">Firebase Project</div></div><div style="font-size:12px;color:var(--muted);">ofm-trucks-movemments-harees</div></div>
           </div>
         </div>
 
@@ -650,7 +657,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   <div class="md">
     <div class="md-t" id="ldTitle">📦 Loading — FIFO Production Dates</div>
     <div style="padding:9px;background:rgba(45,125,210,.07);border-radius:7px;border:1px solid rgba(45,125,210,.18);font-size:11.5px;color:var(--blue);margin-bottom:14px;">
-      ℹ️ Enter production date per batch. Oldest date MUST be loaded first (FIFO).
+      ℹ️ Oldest date MUST be loaded first (FIFO). System blocks violations.
     </div>
     <div id="ldSections"></div>
     <div id="ldFifoSt" style="margin-top:8px;"></div>
@@ -664,7 +671,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 <div class="toast" id="toastEl"></div>
 
 <script>
-// ══ FIREBASE ══
+// ══════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════
 const firebaseConfig={
   apiKey:"AIzaSyBRtMJLwkKRy1twdtezq6GN45GxrGxJx7c",
   authDomain:"ofm-trucks-movemments-harees.firebaseapp.com",
@@ -695,56 +704,59 @@ async function restoreFromFirebase(uid){
   }
 }
 
-// ══ FULL PRODUCT LIST (45 items) ══
+// ══════════════════════════════════════════
+// PRODUCT LIST (45 items)
+// ══════════════════════════════════════════
 const PRODUCT_LIST=[
-  {code:'600', name:'Male feed',                    unit:50},
-  {code:'126', name:'Soyabean meal 50 kg',          unit:50},
-  {code:'603', name:'Pre-Breeder-16',               unit:50},
-  {code:'666', name:'Pigeon feed (Crumbs)',          unit:50},
-  {code:'667', name:'Pigeon feed 4mm 10kg',          unit:10},
-  {code:'702', name:'702',                           unit:30},
-  {code:'703', name:'Yellow Corn',                   unit:50},
-  {code:'704', name:'Crushed Maize',                 unit:50},
-  {code:'706', name:'Premium Barley',                unit:26},
-  {code:'708', name:'Grain Mix',                     unit:30},
-  {code:'709', name:'Broiler Starter (10kg)',        unit:10},
-  {code:'711', name:'Broiler Finisher (10kg)',       unit:10},
-  {code:'715', name:'Broiler Starter',               unit:50},
-  {code:'716', name:'Broiler Finisher',              unit:50},
-  {code:'751', name:'W.Bran/Barley Mix',             unit:50},
-  {code:'721', name:'Watani Broiler Starter',        unit:50},
-  {code:'722', name:'Watani Broiler Finisher',       unit:50},
-  {code:'822', name:'Grower Starter',                unit:50},
-  {code:'826', name:'Layer 17% (pellet 10kg)',       unit:10},
-  {code:'810', name:'Breeder Grower',                unit:50},
-  {code:'843', name:'Chick Developer (Rearing Ph.3)',unit:50},
-  {code:'835', name:'Layer 16 - Pellets',            unit:50},
-  {code:'839', name:'Layer Phase 2 (Layer 16)',      unit:50},
-  {code:'883', name:'Barley Flakes',                 unit:20},
-  {code:'884', name:'Wheat Flakes',                  unit:20},
-  {code:'891', name:'Breeder Layer PH1',             unit:50},
-  {code:'892', name:'Breeder Layer PH2',             unit:50},
-  {code:'920', name:'Dairy 18',                      unit:50},
-  {code:'925', name:'Calf Grower',                   unit:50},
-  {code:'976', name:'Camel Feed (35kg)',              unit:35},
-  {code:'940', name:'RGF 4mm',                       unit:50},
-  {code:'941', name:'RGF 8mm',                       unit:50},
-  {code:'951', name:'Horse feed',                    unit:50},
-  {code:'952', name:'Sheep Feed',                    unit:50},
-  {code:'955', name:'Rat Pellet',                    unit:30},
-  {code:'932', name:'Layer 17% Omega 30kgs',         unit:30},
-  {code:'822b',name:'Layer 17% Omega 50kgs',         unit:50},
-  {code:'891b',name:'Breeder Layer PH1 (alt)',       unit:50},
-  {code:'Close',name:'Close-Up Premix',              unit:45},
-  {code:'Zaad', name:'Zaad Al Khair Ratio Premix',  unit:45},
-  {code:'HfPr', name:'Heifer Premix',               unit:25},
-  {code:'BStPr',name:'B. Starter Premix',           unit:25},
-  {code:'LyVit',name:'Layering Vitamin',            unit:25},
-  {code:'BFnPr',name:'B. Finisher Premix',          unit:25},
-  {code:'BStVt',name:'B. Starter Vitamin',          unit:25},
+  {code:'600', name:'Male feed',                     unit:50},
+  {code:'126', name:'Soyabean meal 50 kg',           unit:50},
+  {code:'603', name:'Pre-Breeder-16',                unit:50},
+  {code:'666', name:'Pigeon feed (Crumbs)',           unit:50},
+  {code:'667', name:'Pigeon feed 4mm 10kg',           unit:10},
+  {code:'702', name:'702',                            unit:30},
+  {code:'703', name:'Yellow Corn',                    unit:50},
+  {code:'704', name:'Crushed Maize',                  unit:50},
+  {code:'706', name:'Premium Barley',                 unit:26},
+  {code:'708', name:'Grain Mix',                      unit:30},
+  {code:'709', name:'Broiler Starter (10kg)',         unit:10},
+  {code:'711', name:'Broiler Finisher (10kg)',        unit:10},
+  {code:'715', name:'Broiler Starter',                unit:50},
+  {code:'716', name:'Broiler Finisher',               unit:50},
+  {code:'751', name:'W.Bran/Barley Mix',              unit:50},
+  {code:'721', name:'Watani Broiler Starter',         unit:50},
+  {code:'722', name:'Watani Broiler Finisher',        unit:50},
+  {code:'822', name:'Grower Starter',                 unit:50},
+  {code:'826', name:'Layer 17% (pellet 10kg)',        unit:10},
+  {code:'810', name:'Breeder Grower',                 unit:50},
+  {code:'843', name:'Chick Developer (Rearing Ph.3)', unit:50},
+  {code:'835', name:'Layer 16 - Pellets',             unit:50},
+  {code:'839', name:'Layer Phase 2 (Layer 16)',       unit:50},
+  {code:'883', name:'Barley Flakes',                  unit:20},
+  {code:'884', name:'Wheat Flakes',                   unit:20},
+  {code:'891', name:'Breeder Layer PH1',              unit:50},
+  {code:'892', name:'Breeder Layer PH2',              unit:50},
+  {code:'920', name:'Dairy 18',                       unit:50},
+  {code:'925', name:'Calf Grower',                    unit:50},
+  {code:'976', name:'Camel Feed (35kg)',               unit:35},
+  {code:'940', name:'RGF 4mm',                        unit:50},
+  {code:'941', name:'RGF 8mm',                        unit:50},
+  {code:'951', name:'Horse feed',                     unit:50},
+  {code:'952', name:'Sheep Feed',                     unit:50},
+  {code:'955', name:'Rat Pellet',                     unit:30},
+  {code:'932', name:'Layer 17% Omega 30kgs',          unit:30},
+  {code:'822b',name:'Layer 17% Omega 50kgs',          unit:50},
+  {code:'Close',name:'Close-Up Premix',               unit:45},
+  {code:'Zaad', name:'Zaad Al Khair Ratio Premix',   unit:45},
+  {code:'HfPr', name:'Heifer Premix',                unit:25},
+  {code:'BStPr',name:'B. Starter Premix',            unit:25},
+  {code:'LyVit',name:'Layering Vitamin',             unit:25},
+  {code:'BFnPr',name:'B. Finisher Premix',           unit:25},
+  {code:'BStVt',name:'B. Starter Vitamin',           unit:25},
 ];
 
-// ══ USERS ══
+// ══════════════════════════════════════════
+// USERS
+// ══════════════════════════════════════════
 const USERS={
   'samih ahmed':{password:'1996',displayName:'Samih Ahmed',role:'admin',avatar:'S'},
   'mahmoud':    {password:'1997',displayName:'Mahmoud',    role:'admin',avatar:'M'},
@@ -761,46 +773,46 @@ const ROLE_NAV={
   customer:['customer']
 };
 const NAV_CFG={
-  dashboard: {icon:'🏠',label:'Dashboard',         title:'Dashboard'},
-  queue:     {icon:'🚛',label:'Queue & Lines',      title:'Queue & Loading Lines'},
-  so:        {icon:'📋',label:'SO Management',     title:'Sales Order Management'},
-  inventory: {icon:'📦',label:'FIFO Inventory',    title:'FIFO Stock Inventory'},
-  physical:  {icon:'📋',label:'Physical Inventory',title:'Physical Inventory — Daily Record'},
-  records:   {icon:'🗄️',label:'Records',           title:'SO Records — Archived'},
-  management:{icon:'📊',label:'Management',        title:'Management Dashboard'},
-  settings:  {icon:'⚙️',label:'Settings',          title:'Settings'},
-  security:  {icon:'🛡️',label:'Security Gate',     title:'Security Gate — View Only'},
-  customer:  {icon:'🔍',label:'Track Order',       title:'Track Your Order'}
+  dashboard: {icon:'🏠',label:'Dashboard',          title:'Dashboard'},
+  queue:     {icon:'🚛',label:'Queue & Lines',       title:'Queue & Loading Lines'},
+  so:        {icon:'📋',label:'SO Management',      title:'Sales Order Management'},
+  inventory: {icon:'📦',label:'FIFO Inventory',     title:'FIFO Stock Inventory'},
+  physical:  {icon:'📋',label:'Physical Inventory', title:'Physical Inventory — Daily Record'},
+  records:   {icon:'🗄️',label:'Records',            title:'SO Records — Archived'},
+  management:{icon:'📊',label:'Management',         title:'Management Dashboard'},
+  settings:  {icon:'⚙️',label:'Settings',           title:'Settings'},
+  security:  {icon:'🛡️',label:'Security Gate',      title:'Security Gate — View Only'},
+  customer:  {icon:'🔍',label:'Track Order',        title:'Track Your Order'}
 };
 
-// ══ STATE ══
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
 let CU=null,selTruck=null,curWA={},curEditSO=null,curLoadSO=null,forecastActiveDate=null;
-let auditLog=[];
+let auditLog=JSON.parse(localStorage.getItem('ofm_audit')||'[]');
 let recordsData=JSON.parse(localStorage.getItem('ofm_records')||'[]');
 let physRecords=JSON.parse(localStorage.getItem('ofm_phys')||'{}');
 let appSettings=JSON.parse(localStorage.getItem('ofm_settings')||'{}');
 
-// ══ INVENTORY ══
 let inventory=JSON.parse(localStorage.getItem('ofm_inv')||'null')||{
-  '715 - Broiler Starter':     [{date:'2026-02-01',qty:300},{date:'2026-02-10',qty:500}],
-  '716 - Broiler Finisher':    [{date:'2026-02-05',qty:200},{date:'2026-02-15',qty:400}],
-  '941 - RGF 8mm':             [{date:'2026-02-01',qty:250},{date:'2026-02-02',qty:250}],
-  '940 - RGF 4mm':             [{date:'2026-02-08',qty:350}],
-  '706 - Premium Barley':      [{date:'2026-01-20',qty:600}],
-  '883 - Barley Flakes':       [{date:'2026-02-12',qty:200}],
-  '920 - Dairy 18':            [{date:'2026-02-03',qty:150}],
-  '703 - Yellow Corn':         [{date:'2026-02-07',qty:180}],
-  '951 - Horse feed':          [{date:'2026-01-28',qty:100}],
-  '976 - Camel Feed (35kg)':   [{date:'2026-02-14',qty:80}],
-  '884 - Wheat Flakes':        [{date:'2026-02-09',qty:220}],
+  '715 - Broiler Starter':      [{date:'2026-02-01',qty:300},{date:'2026-02-10',qty:500}],
+  '716 - Broiler Finisher':     [{date:'2026-02-05',qty:200},{date:'2026-02-15',qty:400}],
+  '941 - RGF 8mm':              [{date:'2026-02-01',qty:250},{date:'2026-02-02',qty:250}],
+  '940 - RGF 4mm':              [{date:'2026-02-08',qty:350}],
+  '706 - Premium Barley':       [{date:'2026-01-20',qty:600}],
+  '883 - Barley Flakes':        [{date:'2026-02-12',qty:200}],
+  '920 - Dairy 18':             [{date:'2026-02-03',qty:150}],
+  '703 - Yellow Corn':          [{date:'2026-02-07',qty:180}],
+  '951 - Horse feed':           [{date:'2026-01-28',qty:100}],
+  '976 - Camel Feed (35kg)':    [{date:'2026-02-14',qty:80}],
+  '884 - Wheat Flakes':         [{date:'2026-02-09',qty:220}],
   '709 - Broiler Starter (10kg)':[{date:'2026-02-11',qty:50}],
   '721 - Watani Broiler Starter':[{date:'2026-02-06',qty:300}],
   '722 - Watani Broiler Finisher':[{date:'2026-02-13',qty:280}],
-  '600 - Male feed':           [{date:'2026-02-04',qty:400}],
-  '892 - Breeder Layer PH2':   [{date:'2026-02-16',qty:120}]
+  '600 - Male feed':            [{date:'2026-02-04',qty:400}],
+  '892 - Breeder Layer PH2':    [{date:'2026-02-16',qty:120}]
 };
 
-// ══ SO DATA ══
 let soData=JSON.parse(localStorage.getItem('ofm_so')||'null')||[
   {so:'SO-19998',customer:'Al Rawabi Farms',phone:'+96871189735',products:[{name:'715 - Broiler Starter',qty:600},{name:'716 - Broiler Finisher',qty:200}],releaseDate:'2026-04-20',status:'pending',source:'ERP',roll:1,confirmed:false},
   {so:'SO-20001',customer:'Gulf Poultry Co.',phone:'+96892345678',products:[{name:'715 - Broiler Starter',qty:800}],releaseDate:'2026-04-22',status:'assigned',source:'Power BI',roll:2,confirmed:true},
@@ -808,7 +820,6 @@ let soData=JSON.parse(localStorage.getItem('ofm_so')||'null')||[
   {so:'SO-20003',customer:'Oman Livestock',phone:'+96899887766',products:[{name:'706 - Premium Barley',qty:650}],releaseDate:'2026-04-24',status:'done',source:'ERP',roll:4,confirmed:true}
 ];
 
-// ══ QUEUE ══
 let queueTrucks=JSON.parse(localStorage.getItem('ofm_queue')||'null')||[
   {plate:'A 12345',product:'715 - Broiler Starter',category:'Poultry',so:'SO-19998',phone:'+96871189735',roll:1},
   {plate:'B 67890',product:'941 - RGF 8mm',category:'Ruminant',so:'SO-20001',phone:'+96892345678',roll:2},
@@ -817,7 +828,6 @@ let queueTrucks=JSON.parse(localStorage.getItem('ofm_queue')||'null')||[
   {plate:'E 33333',product:'920 - Dairy 18',category:'Mix',so:'SO-20004',phone:'+96877665544',roll:5}
 ];
 
-// ══ LINES ══
 const MAIN_LINES=['D1','D2','R1','R2','P4','Red','D5','FL1','FL2','FL3','FL4'];
 const CM_LINES=['C1','C2'];
 let lineState=JSON.parse(localStorage.getItem('ofm_lines')||'null')||{
@@ -827,7 +837,9 @@ let lineState=JSON.parse(localStorage.getItem('ofm_lines')||'null')||{
 };
 let timerIvs={};
 
-// ══ SAVE ALL ══
+// ══════════════════════════════════════════
+// SAVE ALL
+// ══════════════════════════════════════════
 function saveAll(){
   localStorage.setItem('ofm_so',JSON.stringify(soData));
   localStorage.setItem('ofm_inv',JSON.stringify(inventory));
@@ -855,31 +867,31 @@ function logA(a){
   renderActFeed();saveAll();
 }
 
-// ══ 3-DAY AUTO ARCHIVE ══
+// ══════════════════════════════════════════
+// AUTO ARCHIVE (3 days after loading)
+// ══════════════════════════════════════════
 function checkAutoArchive(){
   const now=new Date();
   soData.forEach(s=>{
     if(s.status==='done'&&s.loadedAt){
-      const loaded=new Date(s.loadedAt);
-      const diff=(now-loaded)/(1000*60*60*24);
+      const diff=(now-new Date(s.loadedAt))/(1000*60*60*24);
       if(diff>=3){
         s.status='archived';
         s.archivedAt=now.toISOString();
         recordsData.unshift({...s,archivedDate:now.toISOString().split('T')[0]});
-        logA(`Auto-archived SO ${s.so} (3 days after loading)`);
       }
     }
   });
   soData=soData.filter(s=>s.status!=='archived');
 }
 
-// ══ SETTINGS APPLY ══
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
 function applyLogo(){
   const url=document.getElementById('setLogoUrl').value.trim();
   if(!url){toast('Enter a URL!','error');return;}
-  appSettings.logoUrl=url;
-  updateLogoUI(url);
-  saveAll();toast('✅ Logo updated!','success');
+  appSettings.logoUrl=url;updateLogoUI(url);saveAll();toast('✅ Logo updated!','success');
 }
 function applyBg(){
   const url=document.getElementById('setBgUrl').value.trim();
@@ -890,10 +902,8 @@ function applyBg(){
 }
 function updateLogoUI(url){
   if(!url)return;
-  const lpw=document.getElementById('lpLogoWrap');
-  const sbw=document.getElementById('sbLogoWrap');
-  lpw.innerHTML=`<img src="${url}" style="width:44px;height:44px;border-radius:12px;object-fit:cover;">`;
-  sbw.innerHTML=`<img src="${url}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">`;
+  document.getElementById('lpLogoWrap').innerHTML=`<img src="${url}" style="width:44px;height:44px;border-radius:12px;object-fit:cover;">`;
+  document.getElementById('sbLogoWrap').innerHTML=`<img src="${url}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">`;
 }
 function applyStoredSettings(){
   if(appSettings.logoUrl)updateLogoUI(appSettings.logoUrl);
@@ -901,19 +911,17 @@ function applyStoredSettings(){
   if(appSettings.logoUrl)document.getElementById('setLogoUrl').value=appSettings.logoUrl;
   if(appSettings.bgUrl)document.getElementById('setBgUrl').value=appSettings.bgUrl;
 }
-
-// ══ RESET ALL DATA ══
 function resetAllData(){
   if(!confirm('⚠️ RESET ALL DATA?\n\nThis will permanently delete:\n• All Sales Orders\n• All Inventory\n• Queue & Lines\n• Records & Archive\n• Audit Log\n\nThis CANNOT be undone!'))return;
   if(!confirm('🔴 FINAL CONFIRM: Delete everything?'))return;
-  soData=[];inventory={};queueTrucks=[];
-  lineState={};auditLog=[];recordsData=[];physRecords={};
+  soData=[];inventory={};queueTrucks=[];lineState={};auditLog=[];recordsData=[];physRecords={};
   ['ofm_so','ofm_inv','ofm_queue','ofm_lines','ofm_audit','ofm_records','ofm_phys','ofm_lastSave'].forEach(k=>localStorage.removeItem(k));
-  saveAll();renderAll();
-  toast('✅ All data reset.','info');
+  saveAll();renderAll();toast('✅ All data reset.','info');
 }
 
-// ══ LOGIN ══
+// ══════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════
 function doLogin(){
   const u=document.getElementById('lu').value.trim().toLowerCase();
   const p=document.getElementById('lp').value.trim();
@@ -929,15 +937,10 @@ function doLogin(){
     buildNav(ROLE_NAV[CU.role]);
     showSec(ROLE_NAV[CU.role][0]);
     document.getElementById('pgDate').textContent=new Date().toLocaleDateString('en-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-    // Set today's date for physical record
     document.getElementById('physRecDate').value=new Date().toISOString().split('T')[0];
     applyStoredSettings();
     logA('Logged in');
-    restoreFromFirebase(CU.username).then(()=>{
-      checkAutoArchive();
-      renderAll();
-      startTimers();
-    });
+    restoreFromFirebase(CU.username).then(()=>{checkAutoArchive();renderAll();startTimers();});
   } else {
     err.style.display='block';
   }
@@ -946,11 +949,12 @@ function logout(){
   logA('Logged out');CU=null;
   document.getElementById('loginPage').style.display='flex';
   document.getElementById('app').style.display='none';
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
+  document.getElementById('lu').value='';document.getElementById('lp').value='';
 }
 
-// ══ NAV ══
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
 function buildNav(items){
   const c=document.getElementById('sbNav');
   c.innerHTML='<div class="sb-section">Navigation</div>';
@@ -975,22 +979,24 @@ function showSec(k){
   if(k==='records')renderRecords();
   if(k==='security')renderSecurity();
 }
-
 function renderAll(){
   renderQueue();renderLines();renderSOTable();renderInventory();
   renderMgmtRolls();renderMiniLines();renderDashActivity();renderActFeed();
   renderRecords();updateDashStats();
 }
 
-// ══ DASHBOARD ══
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
 function updateDashStats(){
-  const dl=document.getElementById('d-lines');if(dl)dl.textContent=Object.values(lineState).filter(v=>v.occupied).length;
-  const dq=document.getElementById('d-queue');if(dq)dq.textContent=queueTrucks.length;
-  const ds=document.getElementById('d-sos');if(ds)ds.textContent=soData.filter(s=>s.status==='pending').length;
-  const dr=document.getElementById('d-rec');if(dr)dr.textContent=recordsData.length;
-  const mt=document.getElementById('mgmt-total');if(mt)mt.textContent=soData.length;
-  const md=document.getElementById('mgmt-done');if(md)md.textContent=soData.filter(s=>s.status==='done').length;
-  const mp=document.getElementById('mgmt-pending');if(mp)mp.textContent=soData.filter(s=>s.status==='pending').length;
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('d-lines',Object.values(lineState).filter(v=>v.occupied).length);
+  s('d-queue',queueTrucks.length);
+  s('d-sos',soData.filter(s=>s.status==='pending').length);
+  s('d-rec',recordsData.length);
+  s('mgmt-total',soData.length);
+  s('mgmt-done',soData.filter(s=>s.status==='done').length);
+  s('mgmt-pending',soData.filter(s=>s.status==='pending').length);
   const nb=document.getElementById('navQBadge');if(nb)nb.textContent=queueTrucks.length;
   const rb=document.getElementById('navRecBadge');if(rb)rb.textContent=recordsData.length;
 }
@@ -1014,17 +1020,17 @@ function renderMiniLines(){
     d.innerHTML=`<div style="font-weight:800;font-size:12px;">${l}</div><div style="font-size:9px;color:${busy?'var(--green)':'var(--muted)'};font-weight:700;">${busy?'BUSY':'FREE'}</div>`;
     c.appendChild(d);
   });
-  // Line utilization in management
   const lu=document.getElementById('lineUtil');
   if(lu){
     const occ=Object.entries(lineState).filter(([,v])=>v.occupied);
-    if(!occ.length){lu.innerHTML='<div style="font-size:12px;color:var(--muted);">No lines active.</div>';return;}
-    lu.innerHTML=occ.map(([l,v])=>`<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;"><span>${l} — ${v.plate}</span><span style="font-weight:700;color:var(--green)">BUSY</span></div><div class="pb"><div class="pf" style="width:70%;background:var(--green)"></div></div></div>`).join('');
+    lu.innerHTML=occ.length?occ.map(([l,v])=>`<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;"><span>${l} — ${v.plate}</span><span style="font-weight:700;color:var(--green)">BUSY</span></div><div class="pb"><div class="pf" style="width:70%;background:var(--green)"></div></div></div>`).join(''):'<div style="font-size:12px;color:var(--muted);">No lines active.</div>';
   }
   updateDashStats();
 }
 
-// ══ QUEUE ══
+// ══════════════════════════════════════════
+// QUEUE
+// ══════════════════════════════════════════
 function renderQueue(){
   const c=document.getElementById('truckQ');if(!c)return;c.innerHTML='';
   queueTrucks.forEach((t,i)=>{
@@ -1045,7 +1051,9 @@ function selectTruck(i){
   document.getElementById('selC').value=selTruck.category;
 }
 
-// ══ LINES ══
+// ══════════════════════════════════════════
+// LINES
+// ══════════════════════════════════════════
 function renderLines(){renderLG('mainLines',MAIN_LINES,false);renderLG('cmLines',CM_LINES,true);renderMiniLines();}
 function renderLG(cid,lines,isCmill){
   const c=document.getElementById(cid);if(!c)return;c.innerHTML='';
@@ -1063,21 +1071,22 @@ function renderLG(cid,lines,isCmill){
   });
 }
 
-// ══ ASSIGN LINE ══
+// ══════════════════════════════════════════
+// ASSIGN LINE
+// ══════════════════════════════════════════
 function assignLine(){
   if(!selTruck){toast('Select a truck first!','error');return;}
   const line=document.getElementById('lineSel').value;
   if(!line){toast('Select a line!','error');return;}
   if((line==='C1'||line==='C2')&&selTruck.category!=='Poultry'){toast('❌ C-Mill is POULTRY ONLY!','error');return;}
   if(lineState[line]?.occupied){toast('❌ Line '+line+' is occupied!','error');return;}
-  // BLOCK: same SO already on any line
   const alreadyOnLine=Object.entries(lineState).find(([,st])=>st.occupied&&st.so===selTruck.so);
   if(alreadyOnLine){toast(`❌ ${selTruck.so} is already on Line ${alreadyOnLine[0]}!`,'error');return;}
-  // BLOCK: same product already loading on any line
   const sameProduct=Object.entries(lineState).find(([,st])=>st.occupied&&st.product===selTruck.product);
   if(sameProduct){toast(`❌ "${selTruck.product}" already loading on Line ${sameProduct[0]}!`,'error');return;}
   lineState[line]={occupied:true,plate:selTruck.plate,product:selTruck.product,so:selTruck.so,startTime:Date.now()};
   const soE=soData.find(s=>s.so===selTruck.so);if(soE)soE.status='assigned';
+  // Remove from queue
   queueTrucks.splice(selTruck.idx,1);
   queueTrucks.forEach((t,i)=>t.roll=i+1);
   logA(`Assigned ${selTruck.plate} → Line ${line} (${selTruck.so})`);
@@ -1091,7 +1100,9 @@ function clearSel(){
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('sel'));
 }
 
-// ══ LOADING DATES (FIFO) ══
+// ══════════════════════════════════════════
+// LOADING DATES (FIFO)
+// ══════════════════════════════════════════
 function openLD(line,st){
   curLoadSO={line,st};
   document.getElementById('ldTitle').textContent=`📦 Loading — Line ${line} · ${st.plate}`;
@@ -1131,7 +1142,7 @@ function confirmLoad(){
   const {line,st}=curLoadSO;
   const soE=soData.find(s=>s.so===(st.so||''));
   const prods=soE?soE.products:[{name:st.product,qty:0}];
-  let fifoViolation=false;let noInvProducts=[];let reds=[];
+  let fifoViolation=false,noInvProducts=[],reds=[];
   prods.forEach((p,pi)=>{
     const batches=inventory[p.name]||[];
     if(batches.length===0){noInvProducts.push(p.name);reds.push({product:p.name,batches,vals:[]});return;}
@@ -1155,18 +1166,15 @@ function confirmLoad(){
   });
   delete lineState[line];
   if(timerIvs[line]){clearInterval(timerIvs[line]);delete timerIvs[line];}
-  if(soE){
-    soE.status='done';
-    soE.loadedAt=new Date().toISOString();
-    soE.loadedBy=CU?.displayName;
-    soE.loadedDate=new Date().toISOString().split('T')[0];
-  }
-  logA(`Confirmed loading Line ${line} — stock reduced (FIFO) — ${soE?.so}`);
-  toast('✅ Loading confirmed! Stock reduced. SO will archive in 3 days.','success');
+  if(soE){soE.status='done';soE.loadedAt=new Date().toISOString();soE.loadedBy=CU?.displayName;soE.loadedDate=new Date().toISOString().split('T')[0];}
+  logA(`Confirmed loading Line ${line} — FIFO stock reduced — ${soE?.so}`);
+  toast('✅ Loading confirmed! Stock reduced. SO archives in 3 days.','success');
   closeM('ldModal');renderLines();renderInventory();renderSOTable();renderMgmtRolls();
 }
 
-// ══ SO TAB ══
+// ══════════════════════════════════════════
+// SO TAB / FORECAST
+// ══════════════════════════════════════════
 function showSOTab(t){
   document.getElementById('soView-list').style.display=t==='list'?'':'none';
   document.getElementById('soView-forecast').style.display=t==='forecast'?'':'none';
@@ -1175,8 +1183,6 @@ function showSOTab(t){
   else{tf.style.background='var(--cr)';tf.style.color='#fff';tl.style.background='';tl.style.color='var(--muted)';}
   if(t==='forecast')renderForecast();
 }
-
-// ══ FORECAST ══
 function renderForecast(){
   const grid=document.getElementById('forecastGrid');if(!grid)return;grid.innerHTML='';
   const today=new Date();
@@ -1195,18 +1201,15 @@ function renderForecast(){
 }
 function showForecastDetail(ds){
   forecastActiveDate=ds;
-  const detail=document.getElementById('forecastDetail');
   document.getElementById('forecastDetailTitle').textContent='SOs for '+ds;
-  detail.style.display='';
+  document.getElementById('forecastDetail').style.display='';
   const daySOs=soData.filter(s=>s.releaseDate===ds);
-  const tbody=document.getElementById('forecastDetailBody');
-  tbody.innerHTML=daySOs.length===0?`<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted);">No SOs for this date. Click "+ Add SO" above to add one.</td></tr>`:
-  daySOs.map(s=>{
-    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done',rescheduled:'sp-pending'};
-    const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done',rescheduled:'🔄 Rescheduled'};
-    return `<tr>
-      <td><strong>${s.so}</strong></td>
-      <td>${s.customer}</td>
+  const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done',rescheduled:'sp-pending'};
+  const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done',rescheduled:'🔄 Rescheduled'};
+  document.getElementById('forecastDetailBody').innerHTML=daySOs.length===0?
+    `<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted);">No SOs for this date. Click "+ Add SO" to add one.</td></tr>`:
+    daySOs.map(s=>`<tr>
+      <td><strong>${s.so}</strong></td><td>${s.customer}</td>
       <td>${s.products.map(p=>`<small>${p.name}×${p.qty}</small>`).join('<br>')}</td>
       <td><span class="sb-pill ${sm[s.status]||'sp-pending'}">${sl[s.status]||s.status}</span></td>
       <td>${s.confirmed?'<span style="color:var(--green);font-size:10.5px;">✅ Yes</span>':'<span style="color:var(--orange);font-size:10.5px;">❌ No</span>'}</td>
@@ -1216,15 +1219,13 @@ function showForecastDetail(ds){
         <button class="btn btn-wa btn-xs" onclick="sendWA('${s.phone}','${s.so}','#${s.roll}','${s.customer}')">💬</button>
         ${s.status==='pending'?`<button class="btn btn-p btn-xs" onclick="forceAssign('${s.so}')">⚡</button>`:''}
       </td>
-    </tr>`;
-  }).join('');
+    </tr>`).join('');
 }
-function openNewSOForDate(){
-  openNewSO();
-  if(forecastActiveDate)setTimeout(()=>{document.getElementById('soDate').value=forecastActiveDate;},50);
-}
+function openNewSOForDate(){openNewSO();if(forecastActiveDate)setTimeout(()=>{document.getElementById('soDate').value=forecastActiveDate;},50);}
 
-// ══ SO TABLE ══
+// ══════════════════════════════════════════
+// SO TABLE
+// ══════════════════════════════════════════
 function renderSOTable(){
   const tb=document.getElementById('soTbody');if(!tb)return;tb.innerHTML='';
   const sorted=[...soData].sort((a,b)=>new Date(a.releaseDate)-new Date(b.releaseDate));
@@ -1233,28 +1234,28 @@ function renderSOTable(){
     const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done',rescheduled:'sp-pending'};
     const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done',rescheduled:'🔄 Rescheduled'};
     const src={ERP:'src-e','Power BI':'src-e',Manual:'src-m'};
-    const tr=document.createElement('tr');
     const ph=s.products.map(p=>`<small>${p.name} × ${p.qty}</small>`).join('<br>');
     const reschedNote=s.rescheduledTo?`<br><small style="color:var(--orange);">→ ${s.rescheduledTo}</small>`:'';
-    // Days left (for done SOs — days until archive)
     let daysLeftHtml='—';
     if(s.status==='done'&&s.loadedAt){
-      const loaded=new Date(s.loadedAt);
-      const daysLeft=3-Math.floor((now-loaded)/(1000*60*60*24));
-      daysLeftHtml=`<span style="color:${daysLeft<=1?'var(--cr)':'var(--orange)'};font-weight:700;">${daysLeft}d left</span>`;
+      const dl=3-Math.floor((now-new Date(s.loadedAt))/(1000*60*60*24));
+      daysLeftHtml=`<span style="color:${dl<=1?'var(--cr)':'var(--orange)'};font-weight:700;">${dl}d left</span>`;
     }
+    const tr=document.createElement('tr');
     tr.innerHTML=`<td><strong>${s.so}</strong></td><td>${s.customer}<br><small style="color:var(--muted)">${s.phone}</small></td><td>${ph}</td><td><small>${s.releaseDate}${reschedNote}</small></td><td><span class="sb-pill ${sm[s.status]||'sp-pending'}">${sl[s.status]||s.status}</span></td><td>${daysLeftHtml}</td><td><span class="src-b ${src[s.source]||'src-m'}">${s.source}</span></td>
     <td style="white-space:nowrap;">${s.status==='done'?`<span style="font-size:10.5px;color:var(--muted)">Loaded ✓</span>`:`
       ${s.status==='pending'?`<button class="btn btn-p btn-xs" onclick="forceAssign('${s.so}')">⚡</button> `:''}
       <button class="btn btn-s btn-xs" onclick="openEditSO('${s.so}')">✏️</button>
-      <button class="btn btn-s btn-xs" onclick="openReschedule('${s.so}')" title="Reschedule">🔄</button>
+      <button class="btn btn-s btn-xs" onclick="openReschedule('${s.so}')">🔄</button>
       <button class="btn btn-wa btn-xs" onclick="sendWA('${s.phone}','${s.so}','#${s.roll}','${s.customer}')">💬</button>`}
     </td>`;
     tb.appendChild(tr);
   });
 }
 
-// ══ RESCHEDULE ══
+// ══════════════════════════════════════════
+// RESCHEDULE / FORCE ASSIGN / EDIT
+// ══════════════════════════════════════════
 function openReschedule(soNum){
   const s=soData.find(x=>x.so===soNum);if(!s)return;
   document.getElementById('reschedSOIdx').value=soNum;
@@ -1272,8 +1273,7 @@ function confirmReschedule(){
   const s=soData.find(x=>x.so===soNum);if(!s)return;
   const oldDate=s.releaseDate;
   s.releaseDate=newDate;s.rescheduledTo=newDate;s.status='rescheduled';
-  s.rescheduledFrom=oldDate;s.rescheduledReason=reason;s.lastEditedBy=CU?.displayName;
-  s.confirmed=false;
+  s.rescheduledFrom=oldDate;s.rescheduledReason=reason;s.lastEditedBy=CU?.displayName;s.confirmed=false;
   logA(`Rescheduled ${soNum}: ${oldDate} → ${newDate} (${reason})`);
   toast(`🔄 ${soNum} rescheduled to ${newDate}`,'info');
   closeM('reschedModal');renderSOTable();renderMgmtRolls();renderForecast();
@@ -1298,7 +1298,7 @@ function openEditSO(soNum){
 function addEPL(name='',qty=''){
   const c=document.getElementById('eProdLines');
   const d=document.createElement('div');d.className='pl';
-  const opts=PRODUCT_LIST.map(p=>`<option value="${p.name}" ${p.name===name?'selected':''}>${p.code} — ${p.name}</option>`).join('');
+  const opts=PRODUCT_LIST.map(p=>`<option value="${p.name}"${p.name===name?' selected':''}>${p.code} — ${p.name}</option>`).join('');
   d.innerHTML=`<select style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'Inter',sans-serif;background:#FAFBFE;">${opts}</select><input type="number" value="${qty}" placeholder="Qty" style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;"><button class="btn-rl" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(d);
 }
@@ -1315,10 +1315,23 @@ function saveEditSO(){
   if(forecastActiveDate)showForecastDetail(forecastActiveDate);
 }
 
-// ══ NEW SO ══
+// ══════════════════════════════════════════
+// NEW SO
+// ══════════════════════════════════════════
+function getCategoryFromProducts(prods){
+  const names=prods.map(p=>p.name.toLowerCase()).join(' ');
+  const isP=['broiler','watani','layer','breeder','chick','pigeon','grower'].some(k=>names.includes(k));
+  const isR=['rgf','dairy','calf','sheep','horse','camel'].some(k=>names.includes(k));
+  const isB=['barley','wheat','corn','maize','grain','bran'].some(k=>names.includes(k));
+  if(isP&&!isR&&!isB)return'Poultry';
+  if(isR&&!isP&&!isB)return'Ruminant';
+  if(isB&&!isP&&!isR)return'Barley';
+  return'Mix';
+}
 function openNewSO(){
   document.getElementById('prodLines').innerHTML='';addPL();
-  document.getElementById('soNum').value='';document.getElementById('soDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('soNum').value='';
+  document.getElementById('soDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('soCust').value='';document.getElementById('soPhone').value='';
   document.getElementById('newSOModal').classList.add('open');
 }
@@ -1339,24 +1352,68 @@ function saveSO(){
   const lines=document.querySelectorAll('#prodLines .pl');
   const prods=Array.from(lines).map(l=>({name:l.querySelector('select').value,qty:parseInt(l.querySelector('input').value)||0})).filter(p=>p.name);
   if(!prods.length){toast('Add at least one product!','error');return;}
-  soData.push({so:num,customer:cust,phone,products:prods,releaseDate:date,status:'pending',source:'Manual',roll:soData.length+1,confirmed:false,lastEditedBy:CU?.displayName});
-  logA(`Registered new SO ${num}`);toast(`✅ ${num} registered`,'success');
-  closeM('newSOModal');renderSOTable();renderMgmtRolls();renderForecast();
+  const cat=getCategoryFromProducts(prods);
+  const newSO={so:num,customer:cust,phone,products:prods,releaseDate:date,status:'pending',source:'Manual',roll:soData.length+1,confirmed:false,lastEditedBy:CU?.displayName};
+  soData.push(newSO);
+  queueTrucks.push({plate:'TBD',product:prods[0].name,category:cat,so:num,phone,roll:queueTrucks.length+1});
+  logA(`Registered new SO ${num} — added to queue`);
+  toast(`✅ ${num} registered & added to queue`,'success');
+  closeM('newSOModal');renderSOTable();renderMgmtRolls();renderForecast();renderQueue();
   if(forecastActiveDate&&date===forecastActiveDate)showForecastDetail(forecastActiveDate);
 }
 
-// ══ FIFO INVENTORY ══
+// ══════════════════════════════════════════
+// FIFO INVENTORY — Bühler editable
+// ══════════════════════════════════════════
 function renderInventory(){
   const c=document.getElementById('invGrid');if(!c)return;c.innerHTML='';
   Object.entries(inventory).forEach(([prod,batches])=>{
     const total=batches.reduce((s,b)=>s+b.qty,0);
     const card=document.createElement('div');card.className='inv-pc';
     const sorted=[...batches].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const bh=sorted.map((b,i)=>`<div class="inv-dr"><div class="inv-dl">📅 ${b.date}</div><div class="inv-dq">${b.qty} bags</div><div class="inv-db ${i===0?'ff':''}">${i===0?'LOAD FIRST':'Next'}</div></div>`).join('');
     const ky=prod.replace(/[^a-zA-Z0-9]/g,'_');
-    card.innerHTML=`<div class="inv-pn">${prod}</div><div class="inv-tot">${total}</div><div class="inv-tl">Total bags in stock</div>${bh}<div class="inv-add"><input type="date" id="nd-d-${ky}" style="flex:1;min-width:100px;"><input type="number" id="nd-q-${ky}" placeholder="Qty" style="width:70px;"><button class="btn btn-g btn-sm" onclick="addInvBatch('${prod}')">+ Add</button></div>`;
+    const batchRows=sorted.map((b,i)=>`
+      <div class="inv-dr">
+        <div class="inv-dl">📅
+          <input type="date" value="${b.date}"
+            style="border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:10.5px;font-family:'Inter',sans-serif;outline:none;background:#fff;width:120px;"
+            onchange="editBatch('${prod}',${i},'date',this.value)">
+        </div>
+        <input type="number" value="${b.qty}" min="0"
+          style="width:72px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:11.5px;font-family:'Inter',sans-serif;font-weight:700;text-align:center;outline:none;"
+          onchange="editBatch('${prod}',${i},'qty',this.value)">
+        <span style="font-size:10px;color:var(--muted);">bags</span>
+        <div class="inv-db ${i===0?'ff':''}" style="margin-left:auto;">${i===0?'LOAD FIRST':'Next'}</div>
+        <button onclick="deleteBatch('${prod}',${i})" title="Delete batch"
+          style="background:none;border:none;cursor:pointer;color:var(--cr);font-size:14px;padding:1px 4px;">🗑️</button>
+      </div>`).join('');
+    card.innerHTML=`
+      <div class="inv-pn">${prod}</div>
+      <div class="inv-tot">${total}</div>
+      <div class="inv-tl">Total bags in stock</div>
+      ${batchRows||'<div style="font-size:11px;color:var(--muted);padding:4px 0;">No batches yet.</div>'}
+      <div class="inv-add">
+        <input type="date" id="nd-d-${ky}" style="flex:1;min-width:100px;">
+        <input type="number" id="nd-q-${ky}" placeholder="Qty" style="width:70px;">
+        <button class="btn btn-g btn-sm" onclick="addInvBatch('${prod}')">+ Add</button>
+      </div>`;
     c.appendChild(card);
   });
+}
+function editBatch(prod,idx,field,val){
+  if(!inventory[prod]||!inventory[prod][idx])return;
+  if(field==='qty'){const q=parseInt(val)||0;if(q<0)return;inventory[prod][idx].qty=q;}
+  if(field==='date'){if(!val)return;inventory[prod][idx].date=val;inventory[prod].sort((a,b)=>new Date(a.date)-new Date(b.date));}
+  logA(`Edited batch: ${prod} → ${field}=${val}`);
+  renderInventory();
+}
+function deleteBatch(prod,idx){
+  if(!inventory[prod])return;
+  const b=inventory[prod][idx];
+  if(!confirm(`Delete batch: ${b.date} / ${b.qty} bags of\n${prod}?`))return;
+  inventory[prod].splice(idx,1);
+  logA(`Deleted batch: ${prod} ${b.date} ${b.qty} bags`);
+  renderInventory();
 }
 function addInvBatch(prod){
   const ky=prod.replace(/[^a-zA-Z0-9]/g,'_');
@@ -1370,26 +1427,28 @@ function addInvBatch(prod){
   toast(`✅ Added ${qty} bags of ${prod}`,'success');renderInventory();
 }
 
-// ══ PHYSICAL INVENTORY (DAILY RECORD) ══
+// ══════════════════════════════════════════
+// PHYSICAL INVENTORY — no truck loaded, remark col, signature on print
+// ══════════════════════════════════════════
 function renderPhysRecord(){
   const date=document.getElementById('physRecDate').value||new Date().toISOString().split('T')[0];
   const saved=physRecords[date]||{};
   const tbody=document.getElementById('physRecBody');if(!tbody)return;
   tbody.innerHTML=PRODUCT_LIST.map((p,i)=>{
     const buhler=(inventory[p.name]||[]).reduce((s,b)=>s+b.qty,0);
-    const savedPhys=saved[p.code]||{physical:'',loaded:''};
+    const sv=saved[p.code]||{physical:'',remark:''};
     return `<tr>
       <td style="text-align:left;">${p.name}</td>
       <td>${p.code}</td>
       <td>${p.unit}</td>
       <td id="phys-buhler-${i}">${buhler}</td>
-      <td><input type="number" id="phys-phys-${i}" value="${savedPhys.physical}" placeholder="0" min="0" oninput="calcPhysRow(${i},${buhler},${p.unit})" style="width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;text-align:center;outline:none;"></td>
-      <td><input type="number" id="phys-loaded-${i}" value="${savedPhys.loaded}" placeholder="0" min="0" oninput="calcPhysRow(${i},${buhler},${p.unit})" style="width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;text-align:center;outline:none;"></td>
+      <td><input type="number" id="phys-phys-${i}" value="${sv.physical}" placeholder="0" min="0"
+        oninput="calcPhysRow(${i},${buhler},${p.unit})"></td>
       <td id="phys-diff-${i}">—</td>
       <td id="phys-mt-${i}">—</td>
+      <td><input type="text" id="phys-remark-${i}" value="${sv.remark||''}" placeholder="Remark..."></td>
     </tr>`;
   }).join('');
-  // recalc all rows
   PRODUCT_LIST.forEach((p,i)=>{
     const buhler=(inventory[p.name]||[]).reduce((s,b)=>s+b.qty,0);
     calcPhysRow(i,buhler,p.unit);
@@ -1398,7 +1457,6 @@ function renderPhysRecord(){
 }
 function calcPhysRow(i,buhler,unit){
   const phys=parseFloat(document.getElementById(`phys-phys-${i}`)?.value)||0;
-  const loaded=parseFloat(document.getElementById(`phys-loaded-${i}`)?.value)||0;
   const diff=phys-buhler;
   const mt=(phys*unit)/1000;
   const diffEl=document.getElementById(`phys-diff-${i}`);
@@ -1408,24 +1466,23 @@ function calcPhysRow(i,buhler,unit){
   calcPhysTotals();
 }
 function calcPhysTotals(){
-  let tB=0,tP=0,tL=0,tD=0,tMT=0;
+  let tB=0,tP=0,tD=0,tMT=0;
   PRODUCT_LIST.forEach((p,i)=>{
     const b=parseInt(document.getElementById(`phys-buhler-${i}`)?.textContent)||0;
     const ph=parseFloat(document.getElementById(`phys-phys-${i}`)?.value)||0;
-    const ld=parseFloat(document.getElementById(`phys-loaded-${i}`)?.value)||0;
-    tB+=b;tP+=ph;tL+=ld;tD+=(ph-b);tMT+=(ph*p.unit/1000);
+    tB+=b;tP+=ph;tD+=(ph-b);tMT+=(ph*p.unit/1000);
   });
-  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  s('totBuhler',tB);s('totPhysical',tP);s('totLoaded',tL);
-  s('totDiff',tD===0?'0':tD>0?'+'+tD:tD);s('totMT',tMT.toFixed(3));
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('totBuhler',tB);sv('totPhysical',tP);
+  sv('totDiff',tD===0?'0':tD>0?'+'+tD:tD);sv('totMT',tMT.toFixed(3));
 }
 function savePhysRecord(){
   const date=document.getElementById('physRecDate').value||new Date().toISOString().split('T')[0];
   const record={};
   PRODUCT_LIST.forEach((p,i)=>{
     const phys=document.getElementById(`phys-phys-${i}`)?.value||'';
-    const loaded=document.getElementById(`phys-loaded-${i}`)?.value||'';
-    if(phys||loaded)record[p.code]={physical:phys,loaded};
+    const remark=document.getElementById(`phys-remark-${i}`)?.value||'';
+    if(phys||remark)record[p.code]={physical:phys,remark};
   });
   physRecords[date]=record;
   logA(`Saved physical inventory record for ${date}`);
@@ -1434,16 +1491,28 @@ function savePhysRecord(){
 function loadPhysRecord(){renderPhysRecord();}
 function printPhysRecord(){
   const date=document.getElementById('physRecDate').value||new Date().toISOString().split('T')[0];
+  const sig=document.getElementById('printSignature');
+  const un=document.getElementById('printUserName');
+  const dl=document.getElementById('printDateLabel');
+  if(sig)sig.style.display='block';
+  if(un&&CU)un.textContent=CU.displayName+' ('+CU.role+')';
+  if(dl)dl.textContent='Date: '+date;
   const title=document.title;
   document.title=`OFM Physical Inventory — ${date}`;
   window.print();
   document.title=title;
+  setTimeout(()=>{if(sig)sig.style.display='none';},800);
 }
 
-// ══ RECORDS ══
+// ══════════════════════════════════════════
+// RECORDS
+// ══════════════════════════════════════════
 function renderRecords(){
   const tb=document.getElementById('recordsTbody');if(!tb)return;
-  if(!recordsData.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">No archived records yet. SOs appear here 3 days after loading.</td></tr>';return;}
+  if(!recordsData.length){
+    tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">No archived records yet. SOs appear here 3 days after loading.</td></tr>';
+    return;
+  }
   tb.innerHTML=recordsData.map(s=>`<tr>
     <td><strong>${s.so}</strong></td>
     <td>${s.customer}<br><small style="color:var(--muted)">${s.phone}</small></td>
@@ -1457,7 +1526,9 @@ function renderRecords(){
   const dr=document.getElementById('d-rec');if(dr)dr.textContent=recordsData.length;
 }
 
-// ══ MGMT ROLLS ══
+// ══════════════════════════════════════════
+// MANAGEMENT ROLLS
+// ══════════════════════════════════════════
 function renderMgmtRolls(){
   const tb=document.getElementById('mgmtRolls');if(!tb)return;tb.innerHTML='';
   soData.filter(s=>s.status!=='done'&&s.status!=='archived').forEach(s=>{
@@ -1470,22 +1541,26 @@ function renderMgmtRolls(){
   updateDashStats();
 }
 
-// ══ SECURITY ══
+// ══════════════════════════════════════════
+// SECURITY
+// ══════════════════════════════════════════
 function renderSecurity(){
   const next=queueTrucks[0];
   document.getElementById('secNextRoll').textContent=next?`#${next.roll}`:'#—';
-  document.getElementById('secNextInfo').textContent=next?`${next.so}`:'No trucks in queue';
+  document.getElementById('secNextInfo').textContent=next?next.so:'No trucks in queue';
   document.getElementById('secNextPlate').textContent=next?next.plate:'—';
   const tb=document.getElementById('secQueueBody');if(!tb)return;
   tb.innerHTML=queueTrucks.slice(0,10).map(t=>{
-    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading'};
     const soE=soData.find(s=>s.so===t.so);
     const status=soE?soE.status:'pending';
+    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading'};
     return `<tr><td><strong style="color:var(--cr)">#${t.roll}</strong></td><td><span class="plate" style="font-size:9.5px;padding:1px 5px;">${t.plate}</span></td><td>${t.so}</td><td><span class="sb-pill ${sm[status]||'sp-pending'}">${status}</span></td></tr>`;
   }).join('');
 }
 
-// ══ WHATSAPP ══
+// ══════════════════════════════════════════
+// WHATSAPP
+// ══════════════════════════════════════════
 function sendWA(phone,so,roll,name){
   curWA={phone,so,roll,name,cleanPhone:phone.replace(/\D/g,'')};
   const msg=`🚛 *OFM Fleet System*\n\nDear ${name},\n\nYour truck has been assigned *Roll Number ${roll}* for loading.\n\n📋 SO: *${so}*\n\n✅ Reply *CONFIRM* to confirm arrival.\nIf unable, reply *RESCHEDULE*.\n\n— Oman Flour Mills`;
@@ -1505,7 +1580,9 @@ function manualConfirm(){
 }
 function openImport(){document.getElementById('importModal').classList.add('open');}
 
-// ══ CUSTOMER TRACK ══
+// ══════════════════════════════════════════
+// CUSTOMER TRACK
+// ══════════════════════════════════════════
 function trackSO(){
   const v=document.getElementById('trkIn').value.trim();
   if(!v){toast('Enter SO number','error');return;}
@@ -1517,16 +1594,17 @@ function trackSO(){
   c.innerHTML=`<div style="padding:14px;background:rgba(192,57,43,.04);border-radius:10px;border:1px solid rgba(192,57,43,.13);margin-bottom:14px;">
     <div style="font-size:12.5px;font-weight:700;">${s.so} — ${s.customer}</div>
     <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">${(s.products||[]).map(p=>`${p.name} × ${p.qty} bags`).join(', ')}</div>
-    <div style="margin-top:7px;"><span class="sb-pill sp-${s.status==='done'?'done':s.status==='archived'?'archived':'assigned'}">${sl[s.status]||s.status}</span></div>
+    <div style="margin-top:7px;"><span class="sb-pill sp-${s.status==='done'||s.status==='archived'?'done':'assigned'}">${sl[s.status]||s.status}</span></div>
     ${s.loadedDate?`<div style="font-size:11px;color:var(--muted);margin-top:5px;">Loaded: ${s.loadedDate} by ${s.loadedBy||'—'}</div>`:''}
   </div>`;
 }
 
-// ══ MODALS ══
+// ══════════════════════════════════════════
+// MODALS / TIMERS / TOAST
+// ══════════════════════════════════════════
 function closeM(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-// ══ TIMERS ══
 function startTimers(){Object.keys(lineState).forEach(l=>{if(lineState[l]?.occupied)startSlotTimer(l);});}
 function startSlotTimer(line){
   if(timerIvs[line])clearInterval(timerIvs[line]);
@@ -1539,15 +1617,15 @@ function startSlotTimer(line){
     el.textContent=`⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   },1000);
 }
-
-// ══ TOAST ══
 function toast(msg,type='success'){
   const t=document.getElementById('toastEl');
   t.textContent=msg;t.className='toast '+type+' show';
   setTimeout(()=>t.className='toast',3200);
 }
 
-// ══ PWA SERVICE WORKER ══
+// ══════════════════════════════════════════
+// PWA SERVICE WORKER
+// ══════════════════════════════════════════
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/service-worker.js')
@@ -1556,7 +1634,7 @@ if('serviceWorker' in navigator){
   });
 }
 
-// ══ AUTO ARCHIVE CHECK every 60s ══
+// Auto-archive check every 60s
 setInterval(()=>{if(CU){checkAutoArchive();renderSOTable();renderRecords();}},60000);
 </script>
 </body>
