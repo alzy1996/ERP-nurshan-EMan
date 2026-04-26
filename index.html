@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OFM Smart Fleet</title>
-
-<!-- ══ PWA META ══ -->
 <meta name="theme-color" content="#C0392B"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -13,28 +11,23 @@
 <meta name="apple-mobile-web-app-title" content="OFM Fleet"/>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="apple-touch-icon" href="https://placehold.co/192x192/C0392B/ffffff?text=OFM"/>
-
-<!-- ══ FIREBASE SDKs ══ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --cr:#C0392B;--cr-d:#96281B;--cr-l:#E74C3C;
-  --bg:#F4F5F9;--white:#fff;--text:#0F1117;--muted:#7B8299;--border:#E4E7F0;
+  --cr:#C0392B;--cr-d:#96281B;--bg:#F4F5F9;--white:#fff;--text:#0F1117;--muted:#7B8299;--border:#E4E7F0;
   --green:#1DB06A;--orange:#E8930A;--blue:#2D7DD2;--purple:#7C3AED;
   --sh:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
-  --sh-lg:0 8px 40px rgba(0,0,0,0.12);
 }
 html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
 #loginPage{position:fixed;inset:0;z-index:1000;display:flex;background:#0a0a0f;}
 .lp-left{width:52%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 72px;position:relative;}
 .lp-left::after{content:'';position:absolute;top:0;right:0;bottom:0;width:1px;background:linear-gradient(to bottom,transparent,#E4E7F0 20%,#E4E7F0 80%,transparent);}
 .lp-logo-wrap{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
-.lp-mark{width:44px;height:44px;background:var(--cr);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;letter-spacing:0.5px;flex-shrink:0;}
+.lp-mark{width:44px;height:44px;background:var(--cr);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;flex-shrink:0;}
 .lp-brand{font-size:20px;font-weight:800;color:var(--text);}
 .lp-tagline{font-size:12px;color:var(--muted);line-height:1.5;margin-top:1px;}
 .lp-form{width:100%;max-width:320px;}
@@ -44,22 +37,23 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .fg label{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;}
 .fg input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;color:var(--text);background:#FAFBFE;outline:none;transition:border-color .18s,box-shadow .18s;}
 .fg input:focus{border-color:var(--cr);background:#fff;box-shadow:0 0 0 3px rgba(192,57,43,0.09);}
-.btn-login{width:100%;padding:13px;background:var(--cr);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;letter-spacing:0.2px;}
-.btn-login:hover{background:var(--cr-d);transform:translateY(-1px);box-shadow:0 6px 20px rgba(192,57,43,0.3);}
+.btn-login{width:100%;padding:13px;background:var(--cr);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;}
+.btn-login:hover{background:var(--cr-d);transform:translateY(-1px);}
 .login-err{color:var(--cr);font-size:12px;font-weight:600;margin-top:10px;text-align:center;display:none;}
 .lp-right{flex:1;position:relative;overflow:hidden;}
-.lp-right img{width:100%;height:100%;object-fit:cover;opacity:0.45;filter:saturate(1.3) brightness(0.9);}
+.lp-right-img{width:100%;height:100%;object-fit:cover;opacity:0.45;filter:saturate(1.3) brightness(0.9);}
 .lp-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(192,57,43,0.15),rgba(8,8,16,0.7));display:flex;flex-direction:column;justify-content:flex-end;padding:52px;}
 .lp-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;margin-bottom:20px;width:fit-content;backdrop-filter:blur(8px);}
 .lp-dot{width:6px;height:6px;background:#1DB06A;border-radius:50%;animation:pulse 1.5s infinite;}
-.lp-badge span{font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;letter-spacing:0.4px;}
+.lp-badge span{font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;}
 .lp-h{font-size:30px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:10px;}
 .lp-p{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;max-width:340px;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.5);}}
 #app{display:none;height:100vh;overflow:hidden;}
 .shell{display:flex;height:100vh;}
-.sb{width:232px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0;}
+.sb{width:232px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0;overflow-y:auto;}
 .sb-head{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sb-logo-img{width:32px;height:32px;border-radius:8px;object-fit:cover;}
 .sb-mark{width:32px;height:32px;background:var(--cr);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;flex-shrink:0;}
 .sb-brand{font-size:14px;font-weight:800;color:var(--text);}
 .sb-ver{font-size:10px;color:var(--muted);}
@@ -97,8 +91,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .ct{font-size:13px;font-weight:700;color:var(--text);}
 .q-layout{display:grid;grid-template-columns:290px 1fr;gap:14px;}
 .q-list{display:flex;flex-direction:column;gap:7px;max-height:calc(100vh - 210px);overflow-y:auto;padding-right:4px;}
-.q-list::-webkit-scrollbar{width:4px;}
-.q-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 .tc{background:var(--white);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;cursor:pointer;transition:all .18s;}
 .tc:hover{border-color:var(--cr);box-shadow:0 2px 12px rgba(192,57,43,0.08);}
 .tc.sel{border-color:var(--cr);background:rgba(192,57,43,0.025);}
@@ -135,6 +127,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .sp-assigned{background:rgba(45,125,210,0.1);color:var(--blue);}
 .sp-loading{background:rgba(124,58,237,0.1);color:var(--purple);}
 .sp-done{background:rgba(29,176,106,0.1);color:var(--green);}
+.sp-archived{background:rgba(123,130,153,0.1);color:var(--muted);}
 .src-b{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px;}
 .src-m{background:#F0F2F7;color:var(--muted);}
 .src-e{background:rgba(45,125,210,0.09);color:var(--blue);}
@@ -162,6 +155,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .btn-wa:hover{background:#1eb859;}
 .btn-sm{padding:4px 9px;font-size:10.5px;}
 .btn-xs{padding:3px 7px;font-size:10px;}
+.btn-danger{background:#e74c3c;color:#fff;}
+.btn-danger:hover{background:#c0392b;}
 .mgmt-g{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .pb{height:6px;background:#EEF0F7;border-radius:3px;overflow:hidden;margin-top:5px;}
 .pf{height:100%;border-radius:3px;transition:width .5s;}
@@ -182,11 +177,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .md-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
 .pl{display:grid;grid-template-columns:2fr 1fr auto;gap:7px;align-items:center;padding:7px;background:#FAFBFE;border-radius:7px;margin-bottom:5px;border:1px solid var(--border);}
 .btn-rl{background:none;border:none;color:var(--cr);cursor:pointer;font-size:15px;padding:1px 5px;}
-.fipo{background:rgba(45,125,210,0.04);border:1.5px solid rgba(45,125,210,0.18);border-radius:9px;padding:10px;margin-top:7px;}
-.fipo-t{font-size:10.5px;font-weight:700;color:var(--blue);margin-bottom:7px;}
 .fipo-r{display:flex;gap:5px;align-items:center;margin-bottom:5px;flex-wrap:wrap;}
 .fipo-r input{padding:5px 7px;border:1px solid var(--border);border-radius:6px;font-size:10.5px;font-family:'Inter',sans-serif;background:#fff;outline:none;}
-.fipo-r input:focus{border-color:var(--blue);}
 .fipo-warn{font-size:10px;color:var(--cr);font-weight:700;margin-top:3px;}
 .fipo-ok{font-size:10px;color:var(--green);font-weight:700;margin-top:3px;}
 .trk-card{background:var(--white);border-radius:14px;padding:26px;box-shadow:var(--sh);border:1px solid var(--border);max-width:580px;margin:0 auto;}
@@ -199,12 +191,39 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .tl-ti{font-size:12.5px;font-weight:700;color:var(--text);}
 .tl-tm{font-size:10.5px;color:var(--muted);margin-top:1px;}
 .tl-det{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
-.au-tag{display:inline-block;font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:4px;background:rgba(124,58,237,0.09);color:var(--purple);margin-left:5px;}
 .toast{position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:9px;font-size:12.5px;font-weight:600;color:#fff;transform:translateY(70px);opacity:0;transition:all .28s;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.18);}
 .toast.show{transform:translateY(0);opacity:1;}
 .toast.success{background:var(--green);}
 .toast.error{background:var(--cr);}
 .toast.info{background:var(--blue);}
+/* PHYSICAL INVENTORY TABLE */
+.phys-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.phys-tbl th{background:#F4F5F9;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:9px 10px;border:1px solid var(--border);text-align:center;}
+.phys-tbl td{padding:7px 10px;border:1px solid var(--border);text-align:center;vertical-align:middle;}
+.phys-tbl td:first-child{text-align:left;font-weight:600;}
+.phys-tbl tr:hover td{background:#FAFBFE;}
+.phys-tbl input[type=number]{width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;text-align:center;outline:none;}
+.phys-tbl input[type=number]:focus{border-color:var(--cr);}
+.diff-pos{color:var(--green);font-weight:700;}
+.diff-neg{color:var(--cr);font-weight:700;}
+/* SETTINGS */
+.set-card{background:var(--white);border-radius:12px;padding:20px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px;}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+.set-row:last-child{border-bottom:none;}
+.set-lbl{font-size:13px;font-weight:600;color:var(--text);}
+.set-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+/* RECORDS */
+.rec-card{background:var(--white);border-radius:11px;padding:14px 16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+.rec-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.day-badge{background:rgba(192,57,43,.07);border:1.5px solid var(--cr);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--cr);}
+/* PRINT */
+@media print{
+  .sb,.topbar,.btn,.btn-p,.btn-s,.btn-g,.btn-danger,.nav-i,.sb-foot,#toastEl,.mo{display:none!important;}
+  .main{margin:0;padding:0;}
+  body{overflow:visible;}
+  .content{padding:10px;}
+  .phys-tbl input[type=number]{border:none;background:transparent;}
+}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
@@ -212,13 +231,13 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div id="loginPage">
   <div class="lp-left">
     <div class="lp-form">
       <div class="lp-logo-wrap">
-        <div class="lp-mark">OFM</div>
-        <div><div class="lp-brand">OFM Smart Fleet</div><div class="lp-tagline">Oman Flour Mills · Fleet Management</div></div>
+        <div id="lpLogoWrap"><div class="lp-mark" id="lpMark">OFM</div></div>
+        <div><div class="lp-brand" id="lpBrand">OFM Smart Fleet</div><div class="lp-tagline">Oman Flour Mills · Fleet Management</div></div>
       </div>
       <div class="lp-title">Welcome back</div>
       <div class="lp-sub">Sign in with your credentials to continue</div>
@@ -229,7 +248,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     </div>
   </div>
   <div class="lp-right">
-    <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=80" alt="">
+    <img id="loginBgImg" class="lp-right-img" src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=80" alt="">
     <div class="lp-overlay">
       <div class="lp-badge"><div class="lp-dot"></div><span>LIVE SYSTEM · OMAN FLOUR MILLS</span></div>
       <div class="lp-h">Smart Fleet Management<br>for Oman Flour Mills</div>
@@ -238,13 +257,13 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 </div>
 
-<!-- ══ APP ══ -->
+<!-- APP -->
 <div id="app">
   <div class="shell">
     <div class="sb">
       <div class="sb-head">
-        <div class="sb-mark">OFM</div>
-        <div><div class="sb-brand">Fleet System</div><div class="sb-ver">v4.0 · Live</div></div>
+        <div id="sbLogoWrap"><div class="sb-mark" id="sbMark">OFM</div></div>
+        <div><div class="sb-brand">Fleet System</div><div class="sb-ver">v5.0 · Live</div></div>
       </div>
       <div id="sbNav"></div>
       <div class="sb-foot">
@@ -267,10 +286,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <!-- DASHBOARD -->
         <div class="sec active" id="sec-dashboard">
           <div class="stats">
-            <div class="sc"><div class="sc-ico" style="background:rgba(192,57,43,.09);">🚛</div><div class="sc-lbl">Queue Waiting</div><div class="sc-val" id="d-queue">5</div><div class="sc-ch up">↑ 2 since morning</div></div>
-            <div class="sc"><div class="sc-ico" style="background:rgba(29,176,106,.09);">📦</div><div class="sc-lbl">Lines Active</div><div class="sc-val" id="d-lines">3</div><div class="sc-ch up">of 13 total</div></div>
-            <div class="sc"><div class="sc-ico" style="background:rgba(45,125,210,.09);">📋</div><div class="sc-lbl">Pending SOs</div><div class="sc-val" id="d-sos">8</div><div class="sc-ch dn">↓ 3 loaded today</div></div>
-            <div class="sc"><div class="sc-ico" style="background:rgba(232,147,10,.09);">✅</div><div class="sc-lbl">Dispatched Today</div><div class="sc-val">12</div><div class="sc-ch up">↑ 4 vs yesterday</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(192,57,43,.09);">🚛</div><div class="sc-lbl">Queue Waiting</div><div class="sc-val" id="d-queue">0</div><div class="sc-ch up">Live count</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(29,176,106,.09);">📦</div><div class="sc-lbl">Lines Active</div><div class="sc-val" id="d-lines">0</div><div class="sc-ch up">of 13 total</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(45,125,210,.09);">📋</div><div class="sc-lbl">Pending SOs</div><div class="sc-val" id="d-sos">0</div><div class="sc-ch dn">Active orders</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(232,147,10,.09);">🗄️</div><div class="sc-lbl">Records</div><div class="sc-val" id="d-rec">0</div><div class="sc-ch up">Archived SOs</div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
             <div class="card">
@@ -282,7 +301,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;" id="miniLines"></div>
             </div>
           </div>
-          <div class="card" style="margin-top:0;">
+          <div class="card">
             <div class="ch"><div class="ct">📋 Recent Activity</div></div>
             <div id="actFeed" style="display:flex;flex-direction:column;gap:6px;"></div>
           </div>
@@ -315,7 +334,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           <div class="q-layout">
             <div>
               <div class="card" style="padding:13px;">
-                <div class="ch" style="margin-bottom:9px;"><div class="ct">🚛 Truck Queue</div><span class="nav-badge" id="qBadge">5</span></div>
+                <div class="ch" style="margin-bottom:9px;"><div class="ct">🚛 Truck Queue</div><span class="nav-badge" id="qBadge">0</span></div>
                 <div class="q-list" id="truckQ"></div>
               </div>
             </div>
@@ -341,46 +360,106 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             </div>
             <button class="btn btn-p" onclick="openNewSO()">+ New SO</button>
             <button class="btn btn-s" onclick="openImport()">📤 Import ERP</button>
-            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Sorted: Oldest Release Date → FIFO</div>
+            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Sorted: Oldest Release Date → FIFO · SOs archive after 3 days post-loading</div>
           </div>
           <div id="soView-list">
             <div class="card" style="padding:0;overflow:hidden;">
               <table class="so-tbl">
-                <thead><tr><th>SO #</th><th>Customer</th><th>Products</th><th>Release Date</th><th>Status</th><th>Source</th><th>Actions</th></tr></thead>
+                <thead><tr><th>SO #</th><th>Customer</th><th>Products</th><th>Release Date</th><th>Status</th><th>Days Left</th><th>Source</th><th>Actions</th></tr></thead>
                 <tbody id="soTbody"></tbody>
               </table>
             </div>
           </div>
           <div id="soView-forecast" style="display:none;">
             <div class="card">
-              <div class="ch"><div class="ct">📅 30-Day SO Forecast</div><span style="font-size:11px;color:var(--muted);">Click a day to view SOs</span></div>
+              <div class="ch"><div class="ct">📅 30-Day SO Forecast</div><span style="font-size:11px;color:var(--muted);">Click a day to view & manage SOs</span></div>
               <div id="forecastGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;"></div>
             </div>
             <div id="forecastDetail" style="display:none;" class="card">
-              <div class="ch"><div class="ct" id="forecastDetailTitle">SOs for date</div></div>
-              <table class="so-tbl"><thead><tr><th>SO #</th><th>Customer</th><th>Products</th><th>Status</th><th>Confirmed</th></tr></thead><tbody id="forecastDetailBody"></tbody></table>
+              <div class="ch">
+                <div class="ct" id="forecastDetailTitle">SOs for date</div>
+                <button class="btn btn-p btn-sm" onclick="openNewSOForDate()">+ Add SO for this date</button>
+              </div>
+              <table class="so-tbl">
+                <thead><tr><th>SO #</th><th>Customer</th><th>Products</th><th>Status</th><th>Confirmed</th><th>Actions</th></tr></thead>
+                <tbody id="forecastDetailBody"></tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <!-- INVENTORY -->
+        <!-- INVENTORY (FIFO live stock) -->
         <div class="sec" id="sec-inventory">
           <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
-            <div style="font-size:15px;font-weight:800;">📦 Physical Stock Inventory</div>
+            <div style="font-size:15px;font-weight:800;">📦 FIFO Stock Inventory</div>
             <div style="margin-left:auto;font-size:11px;color:var(--muted);">Stock reduces on confirmed loading only</div>
           </div>
           <div style="background:rgba(232,147,10,.07);border:1px solid rgba(232,147,10,.22);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:var(--orange);font-weight:600;">
-            ⚠️ FIFO Rule: Always load the OLDEST production date first. System warns on violation.
+            ⚠️ FIFO Rule: Always load the OLDEST production date first.
           </div>
           <div class="inv-g" id="invGrid"></div>
+        </div>
+
+        <!-- PHYSICAL INVENTORY (daily record) -->
+        <div class="sec" id="sec-physical">
+          <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+            <div style="font-size:15px;font-weight:800;">📋 Physical Inventory — Daily Record</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+              <label style="font-size:11.5px;color:var(--muted);font-weight:600;">Date:</label>
+              <input type="date" id="physRecDate" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;" oninput="loadPhysRecord()">
+              <button class="btn btn-p btn-sm" onclick="savePhysRecord()">💾 Save Record</button>
+              <button class="btn btn-s btn-sm" onclick="printPhysRecord()">🖨️ Print PDF</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;" id="physRecordWrap">
+            <table class="phys-tbl" id="physRecTable">
+              <thead>
+                <tr>
+                  <th style="text-align:left;min-width:180px;">Product</th>
+                  <th>Code</th>
+                  <th>Unit (kg)</th>
+                  <th>Bühler Stock<br>(Bags)</th>
+                  <th>Physical Count<br>(Bags)</th>
+                  <th>Truck Loaded<br>(Bags)</th>
+                  <th>Difference<br>(Bags)</th>
+                  <th>MT</th>
+                </tr>
+              </thead>
+              <tbody id="physRecBody"></tbody>
+              <tfoot>
+                <tr style="background:#F4F5F9;font-weight:700;">
+                  <td colspan="3" style="text-align:right;padding:9px 10px;font-size:11.5px;">TOTAL</td>
+                  <td id="totBuhler" style="text-align:center;font-weight:800;">0</td>
+                  <td id="totPhysical" style="text-align:center;font-weight:800;">0</td>
+                  <td id="totLoaded" style="text-align:center;font-weight:800;">0</td>
+                  <td id="totDiff" style="text-align:center;font-weight:800;">0</td>
+                  <td id="totMT" style="text-align:center;font-weight:800;">0.000</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- RECORDS (archived SOs) -->
+        <div class="sec" id="sec-records">
+          <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+            <div style="font-size:15px;font-weight:800;">🗄️ SO Records — Archived</div>
+            <div style="margin-left:auto;font-size:11px;color:var(--muted);">SOs auto-archive 3 days after loading</div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <table class="so-tbl">
+              <thead><tr><th>SO #</th><th>Customer</th><th>Products</th><th>Release Date</th><th>Loaded Date</th><th>Archived Date</th><th>Loaded By</th></tr></thead>
+              <tbody id="recordsTbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- MANAGEMENT -->
         <div class="sec" id="sec-management">
           <div class="stats">
-            <div class="sc"><div class="sc-ico" style="background:rgba(192,57,43,.09);">📋</div><div class="sc-lbl">Total SOs Today</div><div class="sc-val">15</div><div class="sc-ch up">↑ 3 vs yesterday</div></div>
-            <div class="sc"><div class="sc-ico" style="background:rgba(29,176,106,.09);">✅</div><div class="sc-lbl">Completed</div><div class="sc-val">12</div><div class="sc-ch up">80% rate</div></div>
-            <div class="sc"><div class="sc-ico" style="background:rgba(232,147,10,.09);">⏳</div><div class="sc-lbl">Pending</div><div class="sc-val">3</div><div class="sc-ch dn">2 overdue</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(192,57,43,.09);">📋</div><div class="sc-lbl">Total SOs</div><div class="sc-val" id="mgmt-total">0</div><div class="sc-ch up">All active</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(29,176,106,.09);">✅</div><div class="sc-lbl">Completed</div><div class="sc-val" id="mgmt-done">0</div><div class="sc-ch up">Loaded</div></div>
+            <div class="sc"><div class="sc-ico" style="background:rgba(232,147,10,.09);">⏳</div><div class="sc-lbl">Pending</div><div class="sc-val" id="mgmt-pending">0</div><div class="sc-ch dn">Waiting</div></div>
             <div class="sc"><div class="sc-ico" style="background:rgba(45,125,210,.09);">⏱️</div><div class="sc-lbl">Avg Load Time</div><div class="sc-val">47m</div><div class="sc-ch up">↓ 8m faster</div></div>
           </div>
           <div class="mgmt-g">
@@ -390,19 +469,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             </div>
             <div class="card">
               <div class="ch"><div class="ct">🏭 Line Utilization</div></div>
-              <div style="display:flex;flex-direction:column;gap:9px;">
-                <div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;"><span>D1</span><span style="font-weight:700;color:var(--green)">BUSY</span></div><div class="pb"><div class="pf" style="width:75%;background:var(--green)"></div></div></div>
-                <div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;"><span>R1</span><span style="font-weight:700;color:var(--green)">BUSY</span></div><div class="pb"><div class="pf" style="width:40%;background:var(--green)"></div></div></div>
-                <div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;"><span>D5</span><span style="font-weight:700;color:var(--orange)">LONG</span></div><div class="pb"><div class="pf" style="width:90%;background:var(--orange)"></div></div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="ch"><div class="ct">📅 Daily Archive</div></div>
-            <div style="display:flex;gap:7px;flex-wrap:wrap;">
-              <div style="padding:9px 14px;background:rgba(192,57,43,.07);border:1.5px solid var(--cr);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--cr);cursor:pointer;">Today — Apr 26</div>
-              <div style="padding:9px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;">Apr 25 · 18 trucks</div>
-              <div style="padding:9px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;">Apr 24 · 22 trucks</div>
+              <div id="lineUtil" style="display:flex;flex-direction:column;gap:9px;"></div>
             </div>
           </div>
         </div>
@@ -417,24 +484,17 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             </div>
             <div class="role-disp">
               <div style="text-align:center;font-size:11px;color:var(--muted);font-weight:600;">NEXT TO ENTER — ROLL NUMBER</div>
-              <div class="role-nb">#1</div>
-              <div style="text-align:center;font-size:12px;color:var(--muted);">Al Rawabi Farms · SO-19998</div>
+              <div class="role-nb" id="secNextRoll">#—</div>
+              <div style="text-align:center;font-size:12px;color:var(--muted);" id="secNextInfo">—</div>
               <div style="margin-top:14px;padding:10px;background:#FAFBFE;border-radius:9px;border:1px solid var(--border);text-align:center;">
                 <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">TRUCK PLATE</div>
-                <div class="plate" style="font-size:16px;padding:5px 14px;">A 12345</div>
-              </div>
-              <div style="margin-top:10px;padding:10px;background:rgba(29,176,106,.06);border-radius:9px;border:1px solid rgba(29,176,106,.2);text-align:center;">
-                <div style="font-size:13px;font-weight:700;color:var(--green);">✅ Confirmed — Authorized to Enter</div>
+                <div class="plate" style="font-size:16px;padding:5px 14px;" id="secNextPlate">—</div>
               </div>
             </div>
             <div class="card">
               <div class="ct" style="margin-bottom:10px;">📋 Queue Overview (View Only)</div>
               <table class="so-tbl"><thead><tr><th>Roll #</th><th>Plate</th><th>SO</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td><strong style="color:var(--cr)">#1</strong></td><td><span class="plate" style="font-size:9.5px;padding:1px 5px;">A 12345</span></td><td>SO-19998</td><td><span class="sb-pill sp-pending">⏳ Waiting</span></td></tr>
-                <tr><td><strong>#2</strong></td><td><span class="plate" style="font-size:9.5px;padding:1px 5px;">B 67890</span></td><td>SO-20001</td><td><span class="sb-pill sp-assigned">🚛 Assigned</span></td></tr>
-                <tr><td><strong>#3</strong></td><td><span class="plate" style="font-size:9.5px;padding:1px 5px;">C 11111</span></td><td>SO-20002</td><td><span class="sb-pill sp-loading">📦 Loading</span></td></tr>
-              </tbody></table>
+              <tbody id="secQueueBody"></tbody></table>
             </div>
           </div>
         </div>
@@ -445,21 +505,49 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             <div style="font-size:17px;font-weight:800;margin-bottom:5px;">🚛 Track Your Order</div>
             <div style="font-size:12.5px;color:var(--muted);margin-bottom:18px;">Enter your SO number to see real-time status</div>
             <div style="display:flex;gap:9px;margin-bottom:22px;">
-              <input id="trkIn" type="text" placeholder="e.g. SO-20001" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='var(--cr)'" onblur="this.style.borderColor='var(--border)'">
+              <input id="trkIn" type="text" placeholder="e.g. SO-20001" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;" onfocus="this.style.borderColor='var(--cr)'" onblur="this.style.borderColor='var(--border)'">
               <button class="btn btn-p" onclick="trackSO()">Track →</button>
             </div>
-            <div id="trkResult" style="display:none;">
-              <div style="padding:14px;background:rgba(192,57,43,.04);border-radius:10px;border:1px solid rgba(192,57,43,.13);margin-bottom:14px;">
-                <div style="font-size:12.5px;font-weight:700;">SO-20001 — Gulf Poultry Co.</div>
-                <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">715 - Broiler Starter × 800 bags</div>
-                <div style="margin-top:7px;"><span class="sb-pill sp-assigned">🚛 Assigned to Line D1</span></div>
+            <div id="trkResult" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="sec" id="sec-settings">
+          <div style="font-size:15px;font-weight:800;margin-bottom:16px;">⚙️ Settings</div>
+          <div class="set-card">
+            <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">🎨 Branding</div>
+            <div class="set-row">
+              <div><div class="set-lbl">Logo URL</div><div class="set-sub">Paste any image URL to replace the OFM logo</div></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="text" id="setLogoUrl" placeholder="https://..." style="width:260px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
+                <button class="btn btn-p btn-sm" onclick="applyLogo()">Apply</button>
               </div>
-              <div class="tl">
-                <div class="tl-item"><div class="tl-dot td-done">✓</div><div><div class="tl-ti">SO Registered</div><div class="tl-tm">Apr 22, 2026 · 07:30</div><div class="tl-det">Order received. 800 bags Broiler Starter.</div></div></div>
-                <div class="tl-item"><div class="tl-dot td-done">✓</div><div><div class="tl-ti">Queue Confirmed</div><div class="tl-tm">Apr 26, 2026 · 08:32</div><div class="tl-det">Roll #2 assigned. Confirmed via WhatsApp.</div></div></div>
-                <div class="tl-item"><div class="tl-dot td-act">→</div><div><div class="tl-ti">Loading in Progress</div><div class="tl-tm">Now — Line D1</div><div class="tl-det">Estimated completion: 10:00</div></div></div>
-                <div class="tl-item"><div class="tl-dot td-pend">○</div><div><div class="tl-ti">Dispatch</div><div class="tl-tm">Pending</div></div></div>
+            </div>
+            <div class="set-row">
+              <div><div class="set-lbl">Login Background Photo URL</div><div class="set-sub">Paste any image URL for the login right panel</div></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="text" id="setBgUrl" placeholder="https://..." style="width:260px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;outline:none;">
+                <button class="btn btn-p btn-sm" onclick="applyBg()">Apply</button>
               </div>
+            </div>
+          </div>
+          <div class="set-card">
+            <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">⚠️ Data Management</div>
+            <div class="set-row">
+              <div><div class="set-lbl" style="color:#e74c3c;">🗑️ Reset All Data</div><div class="set-sub">Permanently deletes all SOs, inventory, queue, lines, records and audit log</div></div>
+              <button class="btn btn-danger" onclick="resetAllData()">🗑️ Reset Everything</button>
+            </div>
+          </div>
+          <div class="set-card">
+            <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">ℹ️ System Info</div>
+            <div class="set-row">
+              <div><div class="set-lbl">Version</div></div>
+              <div style="font-size:12px;color:var(--muted);">OFM Smart Fleet v5.0</div>
+            </div>
+            <div class="set-row">
+              <div><div class="set-lbl">Firebase Project</div></div>
+              <div style="font-size:12px;color:var(--muted);">ofm-trucks-movemments-harees</div>
             </div>
           </div>
         </div>
@@ -469,7 +557,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 </div>
 
-<!-- ══ MODALS ══ -->
+<!-- MODALS -->
 <div class="mo" id="newSOModal">
   <div class="md">
     <div class="md-t">📋 Register New Sales Order</div>
@@ -516,7 +604,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </div>
 
 <div class="mo" id="reschedModal">
-  <div class="md" style="max-width:360px;">
+  <div class="md" style="max-width:380px;">
     <div class="md-t">🔄 Reschedule SO</div>
     <input type="hidden" id="reschedSOIdx">
     <div class="mfg"><label>SO Number</label><input type="text" id="reschedSONum" readonly style="background:#F0F2F7;"></div>
@@ -537,7 +625,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <div style="display:flex;gap:7px;flex-wrap:wrap;">
       <button class="btn btn-wa" onclick="openWA()">📱 Open WhatsApp</button>
       <button class="btn btn-g" onclick="manualConfirm()">✅ Manual Confirm</button>
-      <button class="btn btn-s" onclick="reschedule()">🔄 Reschedule</button>
+      <button class="btn btn-s" onclick="closeM('waModal');openReschedule(curWA.so)">🔄 Reschedule</button>
       <button class="btn btn-s" onclick="closeM('waModal')">Cancel</button>
     </div>
   </div>
@@ -546,7 +634,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 <div class="mo" id="importModal">
   <div class="md" style="max-width:420px;">
     <div class="md-t">📤 Import from ERP / Power BI</div>
-    <div style="border:2px dashed var(--border);border-radius:11px;padding:30px;text-align:center;margin-bottom:14px;cursor:pointer;" onmouseover="this.style.borderColor='var(--cr)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="border:2px dashed var(--border);border-radius:11px;padding:30px;text-align:center;margin-bottom:14px;">
       <div style="font-size:28px;margin-bottom:7px;">📁</div>
       <div style="font-size:13.5px;font-weight:700;margin-bottom:3px;">Drop Excel / CSV file here</div>
       <div style="font-size:11.5px;color:var(--muted);">or click to browse</div>
@@ -562,7 +650,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   <div class="md">
     <div class="md-t" id="ldTitle">📦 Loading — FIFO Production Dates</div>
     <div style="padding:9px;background:rgba(45,125,210,.07);border-radius:7px;border:1px solid rgba(45,125,210,.18);font-size:11.5px;color:var(--blue);margin-bottom:14px;">
-      ℹ️ Enter production date per batch. Oldest date MUST be loaded first (FIFO). System warns on violation.
+      ℹ️ Enter production date per batch. Oldest date MUST be loaded first (FIFO).
     </div>
     <div id="ldSections"></div>
     <div id="ldFifoSt" style="margin-top:8px;"></div>
@@ -576,41 +664,85 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 <div class="toast" id="toastEl"></div>
 
 <script>
-// ══ FIREBASE INIT ══
-const firebaseConfig = {
-  apiKey: "AIzaSyBRtMJLwkKRy1twdtezq6GN45GxrGxJx7c",
-  authDomain: "ofm-trucks-movemments-harees.firebaseapp.com",
-  databaseURL: "https://ofm-trucks-movemments-harees-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ofm-trucks-movemments-harees",
-  storageBucket: "ofm-trucks-movemments-harees.firebasestorage.app",
-  messagingSenderId: "887529330000",
-  appId: "1:887529330000:web:0aee5473176e88df8b0855",
-  measurementId: "G-NEYKGX4XWZ"
+// ══ FIREBASE ══
+const firebaseConfig={
+  apiKey:"AIzaSyBRtMJLwkKRy1twdtezq6GN45GxrGxJx7c",
+  authDomain:"ofm-trucks-movemments-harees.firebaseapp.com",
+  databaseURL:"https://ofm-trucks-movemments-harees-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"ofm-trucks-movemments-harees",
+  storageBucket:"ofm-trucks-movemments-harees.firebasestorage.app",
+  messagingSenderId:"887529330000",
+  appId:"1:887529330000:web:0aee5473176e88df8b0855",
+  measurementId:"G-NEYKGX4XWZ"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-async function fbSave(col, docId, data) {
-  try { await db.collection(col).doc(docId).set(data); } catch(e) { console.warn('FB save failed:', e); }
-}
-async function fbLoad(col, docId) {
-  try { const d = await db.collection(col).doc(docId).get(); return d.exists ? d.data() : null; }
-  catch(e) { console.warn('FB load failed:', e); return null; }
-}
-async function restoreFromFirebase(uid) {
-  const remote = await fbLoad('ofm_data', uid);
-  if (!remote) return;
-  const remoteTime = remote.updatedAt ? new Date(remote.updatedAt) : new Date(0);
-  const localTime = new Date(localStorage.getItem('ofm_lastSave') || 0);
-  if (remoteTime > localTime) {
-    if (remote.soData)     { soData = remote.soData; }
-    if (remote.inventory)  { inventory = remote.inventory; }
-    if (remote.queueTrucks){ queueTrucks = remote.queueTrucks; }
-    if (remote.lineState)  { lineState = remote.lineState; }
-    if (remote.auditLog)   { auditLog = remote.auditLog; }
-    localStorage.setItem('ofm_lastSave', remote.updatedAt);
+const db=firebase.firestore();
+async function fbSave(col,docId,data){try{await db.collection(col).doc(docId).set(data);}catch(e){console.warn('FB save:',e);}}
+async function fbLoad(col,docId){try{const d=await db.collection(col).doc(docId).get();return d.exists?d.data():null;}catch(e){return null;}}
+async function restoreFromFirebase(uid){
+  const r=await fbLoad('ofm_data',uid);if(!r)return;
+  const rt=r.updatedAt?new Date(r.updatedAt):new Date(0);
+  const lt=new Date(localStorage.getItem('ofm_lastSave')||0);
+  if(rt>lt){
+    if(r.soData)soData=r.soData;
+    if(r.inventory)inventory=r.inventory;
+    if(r.queueTrucks)queueTrucks=r.queueTrucks;
+    if(r.lineState)lineState=r.lineState;
+    if(r.auditLog)auditLog=r.auditLog;
+    if(r.recordsData)recordsData=r.recordsData;
+    if(r.physRecords)physRecords=r.physRecords;
+    if(r.appSettings)appSettings=r.appSettings;
   }
 }
+
+// ══ FULL PRODUCT LIST (45 items) ══
+const PRODUCT_LIST=[
+  {code:'600', name:'Male feed',                    unit:50},
+  {code:'126', name:'Soyabean meal 50 kg',          unit:50},
+  {code:'603', name:'Pre-Breeder-16',               unit:50},
+  {code:'666', name:'Pigeon feed (Crumbs)',          unit:50},
+  {code:'667', name:'Pigeon feed 4mm 10kg',          unit:10},
+  {code:'702', name:'702',                           unit:30},
+  {code:'703', name:'Yellow Corn',                   unit:50},
+  {code:'704', name:'Crushed Maize',                 unit:50},
+  {code:'706', name:'Premium Barley',                unit:26},
+  {code:'708', name:'Grain Mix',                     unit:30},
+  {code:'709', name:'Broiler Starter (10kg)',        unit:10},
+  {code:'711', name:'Broiler Finisher (10kg)',       unit:10},
+  {code:'715', name:'Broiler Starter',               unit:50},
+  {code:'716', name:'Broiler Finisher',              unit:50},
+  {code:'751', name:'W.Bran/Barley Mix',             unit:50},
+  {code:'721', name:'Watani Broiler Starter',        unit:50},
+  {code:'722', name:'Watani Broiler Finisher',       unit:50},
+  {code:'822', name:'Grower Starter',                unit:50},
+  {code:'826', name:'Layer 17% (pellet 10kg)',       unit:10},
+  {code:'810', name:'Breeder Grower',                unit:50},
+  {code:'843', name:'Chick Developer (Rearing Ph.3)',unit:50},
+  {code:'835', name:'Layer 16 - Pellets',            unit:50},
+  {code:'839', name:'Layer Phase 2 (Layer 16)',      unit:50},
+  {code:'883', name:'Barley Flakes',                 unit:20},
+  {code:'884', name:'Wheat Flakes',                  unit:20},
+  {code:'891', name:'Breeder Layer PH1',             unit:50},
+  {code:'892', name:'Breeder Layer PH2',             unit:50},
+  {code:'920', name:'Dairy 18',                      unit:50},
+  {code:'925', name:'Calf Grower',                   unit:50},
+  {code:'976', name:'Camel Feed (35kg)',              unit:35},
+  {code:'940', name:'RGF 4mm',                       unit:50},
+  {code:'941', name:'RGF 8mm',                       unit:50},
+  {code:'951', name:'Horse feed',                    unit:50},
+  {code:'952', name:'Sheep Feed',                    unit:50},
+  {code:'955', name:'Rat Pellet',                    unit:30},
+  {code:'932', name:'Layer 17% Omega 30kgs',         unit:30},
+  {code:'822b',name:'Layer 17% Omega 50kgs',         unit:50},
+  {code:'891b',name:'Breeder Layer PH1 (alt)',       unit:50},
+  {code:'Close',name:'Close-Up Premix',              unit:45},
+  {code:'Zaad', name:'Zaad Al Khair Ratio Premix',  unit:45},
+  {code:'HfPr', name:'Heifer Premix',               unit:25},
+  {code:'BStPr',name:'B. Starter Premix',           unit:25},
+  {code:'LyVit',name:'Layering Vitamin',            unit:25},
+  {code:'BFnPr',name:'B. Finisher Premix',          unit:25},
+  {code:'BStVt',name:'B. Starter Vitamin',          unit:25},
+];
 
 // ══ USERS ══
 const USERS={
@@ -622,85 +754,163 @@ const USERS={
   'customer':   {password:'0000',displayName:'Customer',  role:'customer',avatar:'C'},
   'manager':    {password:'9999',displayName:'Manager',   role:'management',avatar:'MG'}
 };
-const ROLE_NAV={admin:['dashboard','queue','so','inventory','management'],management:['dashboard','management'],security:['security'],customer:['customer']};
+const ROLE_NAV={
+  admin:['dashboard','queue','so','inventory','physical','records','management','settings'],
+  management:['dashboard','management','records'],
+  security:['security'],
+  customer:['customer']
+};
 const NAV_CFG={
-  dashboard: {icon:'🏠',label:'Dashboard',    title:'Dashboard'},
-  queue:     {icon:'🚛',label:'Queue & Lines', title:'Queue & Loading Lines'},
-  so:        {icon:'📋',label:'SO Management',title:'Sales Order Management'},
-  inventory: {icon:'📦',label:'Inventory',     title:'Physical Stock Inventory'},
-  management:{icon:'📊',label:'Management',   title:'Management Dashboard'},
-  security:  {icon:'🛡️',label:'Security Gate', title:'Security Gate — View Only'},
-  customer:  {icon:'🔍',label:'Track Order',  title:'Track Your Order'}
+  dashboard: {icon:'🏠',label:'Dashboard',         title:'Dashboard'},
+  queue:     {icon:'🚛',label:'Queue & Lines',      title:'Queue & Loading Lines'},
+  so:        {icon:'📋',label:'SO Management',     title:'Sales Order Management'},
+  inventory: {icon:'📦',label:'FIFO Inventory',    title:'FIFO Stock Inventory'},
+  physical:  {icon:'📋',label:'Physical Inventory',title:'Physical Inventory — Daily Record'},
+  records:   {icon:'🗄️',label:'Records',           title:'SO Records — Archived'},
+  management:{icon:'📊',label:'Management',        title:'Management Dashboard'},
+  settings:  {icon:'⚙️',label:'Settings',          title:'Settings'},
+  security:  {icon:'🛡️',label:'Security Gate',     title:'Security Gate — View Only'},
+  customer:  {icon:'🔍',label:'Track Order',       title:'Track Your Order'}
 };
 
 // ══ STATE ══
-let CU=null,selTruck=null,curWA={},curEditSO=null,curLoadSO=null;
+let CU=null,selTruck=null,curWA={},curEditSO=null,curLoadSO=null,forecastActiveDate=null;
 let auditLog=[];
-function logA(a){if(!CU)return;auditLog.unshift({user:CU.displayName,action:a,time:new Date().toLocaleTimeString()});renderActFeed();saveAll();}
+let recordsData=JSON.parse(localStorage.getItem('ofm_records')||'[]');
+let physRecords=JSON.parse(localStorage.getItem('ofm_phys')||'{}');
+let appSettings=JSON.parse(localStorage.getItem('ofm_settings')||'{}');
 
 // ══ INVENTORY ══
-let inventory={
+let inventory=JSON.parse(localStorage.getItem('ofm_inv')||'null')||{
   '715 - Broiler Starter':     [{date:'2026-02-01',qty:300},{date:'2026-02-10',qty:500}],
   '716 - Broiler Finisher':    [{date:'2026-02-05',qty:200},{date:'2026-02-15',qty:400}],
   '941 - RGF 8mm':             [{date:'2026-02-01',qty:250},{date:'2026-02-02',qty:250}],
   '940 - RGF 4mm':             [{date:'2026-02-08',qty:350}],
   '706 - Premium Barley':      [{date:'2026-01-20',qty:600}],
   '883 - Barley Flakes':       [{date:'2026-02-12',qty:200}],
-  '920 - Dairy 18%':           [{date:'2026-02-03',qty:150}],
+  '920 - Dairy 18':            [{date:'2026-02-03',qty:150}],
   '703 - Yellow Corn':         [{date:'2026-02-07',qty:180}],
-  '951 - Horse Feed':          [{date:'2026-01-28',qty:100}],
+  '951 - Horse feed':          [{date:'2026-01-28',qty:100}],
   '976 - Camel Feed (35kg)':   [{date:'2026-02-14',qty:80}],
   '884 - Wheat Flakes':        [{date:'2026-02-09',qty:220}],
-  '709 - Broiler Starter 10kg':[{date:'2026-02-11',qty:50}],
+  '709 - Broiler Starter (10kg)':[{date:'2026-02-11',qty:50}],
   '721 - Watani Broiler Starter':[{date:'2026-02-06',qty:300}],
   '722 - Watani Broiler Finisher':[{date:'2026-02-13',qty:280}],
-  '600 - Male Feed':           [{date:'2026-02-04',qty:400}],
+  '600 - Male feed':           [{date:'2026-02-04',qty:400}],
   '892 - Breeder Layer PH2':   [{date:'2026-02-16',qty:120}]
 };
 
 // ══ SO DATA ══
-let soData=[
+let soData=JSON.parse(localStorage.getItem('ofm_so')||'null')||[
   {so:'SO-19998',customer:'Al Rawabi Farms',phone:'+96871189735',products:[{name:'715 - Broiler Starter',qty:600},{name:'716 - Broiler Finisher',qty:200}],releaseDate:'2026-04-20',status:'pending',source:'ERP',roll:1,confirmed:false},
   {so:'SO-20001',customer:'Gulf Poultry Co.',phone:'+96892345678',products:[{name:'715 - Broiler Starter',qty:800}],releaseDate:'2026-04-22',status:'assigned',source:'Power BI',roll:2,confirmed:true},
-  {so:'SO-20002',customer:'Muscat Dairy LLC',phone:'+96895551234',products:[{name:'941 - RGF 8mm',qty:600},{name:'920 - Dairy 18%',qty:100}],releaseDate:'2026-04-23',status:'loading',source:'Manual',roll:3,confirmed:true},
+  {so:'SO-20002',customer:'Muscat Dairy LLC',phone:'+96895551234',products:[{name:'941 - RGF 8mm',qty:600},{name:'920 - Dairy 18',qty:100}],releaseDate:'2026-04-23',status:'loading',source:'Manual',roll:3,confirmed:true},
   {so:'SO-20003',customer:'Oman Livestock',phone:'+96899887766',products:[{name:'706 - Premium Barley',qty:650}],releaseDate:'2026-04-24',status:'done',source:'ERP',roll:4,confirmed:true}
 ];
 
 // ══ QUEUE ══
-let queueTrucks=[
+let queueTrucks=JSON.parse(localStorage.getItem('ofm_queue')||'null')||[
   {plate:'A 12345',product:'715 - Broiler Starter',category:'Poultry',so:'SO-19998',phone:'+96871189735',roll:1},
   {plate:'B 67890',product:'941 - RGF 8mm',category:'Ruminant',so:'SO-20001',phone:'+96892345678',roll:2},
   {plate:'C 11111',product:'706 - Premium Barley',category:'Barley',so:'SO-20002',phone:'+96895551234',roll:3},
   {plate:'D 22222',product:'716 - Broiler Finisher',category:'Poultry',so:'SO-20003',phone:'+96899887766',roll:4},
-  {plate:'E 33333',product:'920 - Dairy 18%',category:'Mix',so:'SO-20004',phone:'+96877665544',roll:5}
+  {plate:'E 33333',product:'920 - Dairy 18',category:'Mix',so:'SO-20004',phone:'+96877665544',roll:5}
 ];
 
 // ══ LINES ══
 const MAIN_LINES=['D1','D2','R1','R2','P4','Red','D5','FL1','FL2','FL3','FL4'];
 const CM_LINES=['C1','C2'];
-let lineState={
+let lineState=JSON.parse(localStorage.getItem('ofm_lines')||'null')||{
   D1:{occupied:true,plate:'A 12345',product:'715 - Broiler Starter',so:'SO-19998',startTime:Date.now()-83000},
   R1:{occupied:true,plate:'B 67890',product:'941 - RGF 8mm',so:'SO-20001',startTime:Date.now()-45000},
   D5:{occupied:true,plate:'C 11111',product:'706 - Premium Barley',so:'SO-20002',startTime:Date.now()-130000}
 };
 let timerIvs={};
 
-// ══ SAVE ALL (localStorage + Firebase) ══
+// ══ SAVE ALL ══
 function saveAll(){
-  localStorage.setItem('ofm_so', JSON.stringify(soData));
-  localStorage.setItem('ofm_inv', JSON.stringify(inventory));
-  localStorage.setItem('ofm_queue', JSON.stringify(queueTrucks));
-  localStorage.setItem('ofm_lines', JSON.stringify(lineState));
-  localStorage.setItem('ofm_audit', JSON.stringify(auditLog));
-  const now = new Date().toISOString();
-  localStorage.setItem('ofm_lastSave', now);
+  localStorage.setItem('ofm_so',JSON.stringify(soData));
+  localStorage.setItem('ofm_inv',JSON.stringify(inventory));
+  localStorage.setItem('ofm_queue',JSON.stringify(queueTrucks));
+  localStorage.setItem('ofm_lines',JSON.stringify(lineState));
+  localStorage.setItem('ofm_audit',JSON.stringify(auditLog));
+  localStorage.setItem('ofm_records',JSON.stringify(recordsData));
+  localStorage.setItem('ofm_phys',JSON.stringify(physRecords));
+  localStorage.setItem('ofm_settings',JSON.stringify(appSettings));
+  const now=new Date().toISOString();
+  localStorage.setItem('ofm_lastSave',now);
   if(CU){
-    fbSave('ofm_data', CU.username, {
-      soData, inventory, queueTrucks, lineState,
-      auditLog: auditLog.slice(0,200),
-      updatedAt: now
+    fbSave('ofm_data',CU.username,{
+      soData,inventory,queueTrucks,lineState,
+      auditLog:auditLog.slice(0,200),
+      recordsData,physRecords,appSettings,
+      updatedAt:now
     });
   }
+}
+
+function logA(a){
+  if(!CU)return;
+  auditLog.unshift({user:CU.displayName,action:a,time:new Date().toLocaleTimeString()});
+  renderActFeed();saveAll();
+}
+
+// ══ 3-DAY AUTO ARCHIVE ══
+function checkAutoArchive(){
+  const now=new Date();
+  soData.forEach(s=>{
+    if(s.status==='done'&&s.loadedAt){
+      const loaded=new Date(s.loadedAt);
+      const diff=(now-loaded)/(1000*60*60*24);
+      if(diff>=3){
+        s.status='archived';
+        s.archivedAt=now.toISOString();
+        recordsData.unshift({...s,archivedDate:now.toISOString().split('T')[0]});
+        logA(`Auto-archived SO ${s.so} (3 days after loading)`);
+      }
+    }
+  });
+  soData=soData.filter(s=>s.status!=='archived');
+}
+
+// ══ SETTINGS APPLY ══
+function applyLogo(){
+  const url=document.getElementById('setLogoUrl').value.trim();
+  if(!url){toast('Enter a URL!','error');return;}
+  appSettings.logoUrl=url;
+  updateLogoUI(url);
+  saveAll();toast('✅ Logo updated!','success');
+}
+function applyBg(){
+  const url=document.getElementById('setBgUrl').value.trim();
+  if(!url){toast('Enter a URL!','error');return;}
+  appSettings.bgUrl=url;
+  document.getElementById('loginBgImg').src=url;
+  saveAll();toast('✅ Background updated!','success');
+}
+function updateLogoUI(url){
+  if(!url)return;
+  const lpw=document.getElementById('lpLogoWrap');
+  const sbw=document.getElementById('sbLogoWrap');
+  lpw.innerHTML=`<img src="${url}" style="width:44px;height:44px;border-radius:12px;object-fit:cover;">`;
+  sbw.innerHTML=`<img src="${url}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">`;
+}
+function applyStoredSettings(){
+  if(appSettings.logoUrl)updateLogoUI(appSettings.logoUrl);
+  if(appSettings.bgUrl)document.getElementById('loginBgImg').src=appSettings.bgUrl;
+  if(appSettings.logoUrl)document.getElementById('setLogoUrl').value=appSettings.logoUrl;
+  if(appSettings.bgUrl)document.getElementById('setBgUrl').value=appSettings.bgUrl;
+}
+
+// ══ RESET ALL DATA ══
+function resetAllData(){
+  if(!confirm('⚠️ RESET ALL DATA?\n\nThis will permanently delete:\n• All Sales Orders\n• All Inventory\n• Queue & Lines\n• Records & Archive\n• Audit Log\n\nThis CANNOT be undone!'))return;
+  if(!confirm('🔴 FINAL CONFIRM: Delete everything?'))return;
+  soData=[];inventory={};queueTrucks=[];
+  lineState={};auditLog=[];recordsData=[];physRecords={};
+  ['ofm_so','ofm_inv','ofm_queue','ofm_lines','ofm_audit','ofm_records','ofm_phys','ofm_lastSave'].forEach(k=>localStorage.removeItem(k));
+  saveAll();renderAll();
+  toast('✅ All data reset.','info');
 }
 
 // ══ LOGIN ══
@@ -717,17 +927,28 @@ function doLogin(){
     document.getElementById('uRole').textContent=CU.role.charAt(0).toUpperCase()+CU.role.slice(1);
     document.getElementById('uAv').textContent=CU.avatar;
     buildNav(ROLE_NAV[CU.role]);
-    const first=ROLE_NAV[CU.role][0];
-    showSec(first);
+    showSec(ROLE_NAV[CU.role][0]);
     document.getElementById('pgDate').textContent=new Date().toLocaleDateString('en-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    // Set today's date for physical record
+    document.getElementById('physRecDate').value=new Date().toISOString().split('T')[0];
+    applyStoredSettings();
     logA('Logged in');
-    // Restore from Firebase then render
-    restoreFromFirebase(CU.username).then(()=>{ renderAll(); startTimers(); });
+    restoreFromFirebase(CU.username).then(()=>{
+      checkAutoArchive();
+      renderAll();
+      startTimers();
+    });
   } else {
     err.style.display='block';
   }
 }
-function logout(){logA('Logged out');CU=null;document.getElementById('loginPage').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('lu').value='';document.getElementById('lp').value='';}
+function logout(){
+  logA('Logged out');CU=null;
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+}
 
 // ══ NAV ══
 function buildNav(items){
@@ -739,6 +960,7 @@ function buildNav(items){
     d.className='nav-i';d.id='nav-'+k;
     d.innerHTML=`<span class="nav-ico">${cfg.icon}</span>${cfg.label}`;
     if(k==='queue'){const b=document.createElement('span');b.className='nav-badge';b.id='navQBadge';b.textContent=queueTrucks.length;d.appendChild(b);}
+    if(k==='records'){const b=document.createElement('span');b.className='nav-badge';b.id='navRecBadge';b.textContent=recordsData.length;d.appendChild(b);}
     d.onclick=()=>showSec(k);
     c.appendChild(d);
   });
@@ -749,11 +971,29 @@ function showSec(k){
   const s=document.getElementById('sec-'+k);if(s)s.classList.add('active');
   const n=document.getElementById('nav-'+k);if(n)n.classList.add('active');
   document.getElementById('pgTitle').textContent=NAV_CFG[k]?.title||k;
+  if(k==='physical')renderPhysRecord();
+  if(k==='records')renderRecords();
+  if(k==='security')renderSecurity();
 }
 
-function renderAll(){renderQueue();renderLines();renderSOTable();renderInventory();renderMgmtRolls();renderMiniLines();renderDashActivity();renderActFeed();}
+function renderAll(){
+  renderQueue();renderLines();renderSOTable();renderInventory();
+  renderMgmtRolls();renderMiniLines();renderDashActivity();renderActFeed();
+  renderRecords();updateDashStats();
+}
 
 // ══ DASHBOARD ══
+function updateDashStats(){
+  const dl=document.getElementById('d-lines');if(dl)dl.textContent=Object.values(lineState).filter(v=>v.occupied).length;
+  const dq=document.getElementById('d-queue');if(dq)dq.textContent=queueTrucks.length;
+  const ds=document.getElementById('d-sos');if(ds)ds.textContent=soData.filter(s=>s.status==='pending').length;
+  const dr=document.getElementById('d-rec');if(dr)dr.textContent=recordsData.length;
+  const mt=document.getElementById('mgmt-total');if(mt)mt.textContent=soData.length;
+  const md=document.getElementById('mgmt-done');if(md)md.textContent=soData.filter(s=>s.status==='done').length;
+  const mp=document.getElementById('mgmt-pending');if(mp)mp.textContent=soData.filter(s=>s.status==='pending').length;
+  const nb=document.getElementById('navQBadge');if(nb)nb.textContent=queueTrucks.length;
+  const rb=document.getElementById('navRecBadge');if(rb)rb.textContent=recordsData.length;
+}
 function renderDashActivity(){
   const c=document.getElementById('dashActivity');if(!c)return;
   const items=[['Poultry','45%','#2D7DD2'],['Ruminant','30%','var(--green)'],['Barley','15%','#d4a800'],['Mix','10%','var(--cr)']];
@@ -761,13 +1001,12 @@ function renderDashActivity(){
 }
 function renderActFeed(){
   const c=document.getElementById('actFeed');if(!c)return;
-  const feed=auditLog.slice(0,5);
+  const feed=auditLog.slice(0,6);
   if(!feed.length){c.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0;">No activity yet.</div>';return;}
   c.innerHTML=feed.map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#FAFBFE;border-radius:8px;border:1px solid var(--border);font-size:11.5px;"><span style="color:var(--cr);font-weight:700;">${a.user}</span><span style="color:var(--muted);">${a.action}</span><span style="margin-left:auto;color:var(--muted);font-size:10.5px;">${a.time}</span></div>`).join('');
 }
 function renderMiniLines(){
-  const c=document.getElementById('miniLines');if(!c)return;
-  c.innerHTML='';
+  const c=document.getElementById('miniLines');if(!c)return;c.innerHTML='';
   [...MAIN_LINES,...CM_LINES].slice(0,8).forEach(l=>{
     const busy=lineState[l]?.occupied;
     const d=document.createElement('div');
@@ -775,19 +1014,22 @@ function renderMiniLines(){
     d.innerHTML=`<div style="font-weight:800;font-size:12px;">${l}</div><div style="font-size:9px;color:${busy?'var(--green)':'var(--muted)'};font-weight:700;">${busy?'BUSY':'FREE'}</div>`;
     c.appendChild(d);
   });
-  const dl=document.getElementById('d-lines');if(dl)dl.textContent=Object.values(lineState).filter(v=>v.occupied).length;
-  const dq=document.getElementById('d-queue');if(dq)dq.textContent=queueTrucks.length;
-  const ds=document.getElementById('d-sos');if(ds)ds.textContent=soData.filter(s=>s.status==='pending').length;
+  // Line utilization in management
+  const lu=document.getElementById('lineUtil');
+  if(lu){
+    const occ=Object.entries(lineState).filter(([,v])=>v.occupied);
+    if(!occ.length){lu.innerHTML='<div style="font-size:12px;color:var(--muted);">No lines active.</div>';return;}
+    lu.innerHTML=occ.map(([l,v])=>`<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;"><span>${l} — ${v.plate}</span><span style="font-weight:700;color:var(--green)">BUSY</span></div><div class="pb"><div class="pf" style="width:70%;background:var(--green)"></div></div></div>`).join('');
+  }
+  updateDashStats();
 }
 
-// ══ QUEUE RENDER ══
+// ══ QUEUE ══
 function renderQueue(){
-  const c=document.getElementById('truckQ');if(!c)return;
-  c.innerHTML='';
+  const c=document.getElementById('truckQ');if(!c)return;c.innerHTML='';
   queueTrucks.forEach((t,i)=>{
     const cc={Poultry:'c-poultry',Ruminant:'c-ruminant',Barley:'c-barley',Mix:'c-mix'}[t.category]||'c-mix';
-    const d=document.createElement('div');
-    d.className='tc';d.id='tc-'+i;
+    const d=document.createElement('div');d.className='tc';d.id='tc-'+i;
     d.innerHTML=`<span class="roll-n">#${t.roll}</span><div class="plate">${t.plate}</div><div style="font-size:11px;color:var(--text);font-weight:600;">${t.product}</div><div style="font-size:10.5px;color:var(--muted);">${t.so}</div><div style="display:flex;gap:5px;margin-top:7px;align-items:center;"><span class="cat-b ${cc}">${t.category.toUpperCase()}</span><button class="btn btn-wa btn-xs" onclick="event.stopPropagation();sendWA('${t.phone}','${t.so}','#${t.roll}','${t.plate}')" style="margin-left:auto;">💬</button></div>`;
     d.onclick=()=>selectTruck(i);
     c.appendChild(d);
@@ -803,15 +1045,10 @@ function selectTruck(i){
   document.getElementById('selC').value=selTruck.category;
 }
 
-// ══ LINES RENDER ══
-function renderLines(){
-  renderLG('mainLines',MAIN_LINES,false);
-  renderLG('cmLines',CM_LINES,true);
-  renderMiniLines();
-}
+// ══ LINES ══
+function renderLines(){renderLG('mainLines',MAIN_LINES,false);renderLG('cmLines',CM_LINES,true);renderMiniLines();}
 function renderLG(cid,lines,isCmill){
-  const c=document.getElementById(cid);if(!c)return;
-  c.innerHTML='';
+  const c=document.getElementById(cid);if(!c)return;c.innerHTML='';
   lines.forEach(line=>{
     const st=lineState[line];
     const d=document.createElement('div');
@@ -833,18 +1070,21 @@ function assignLine(){
   if(!line){toast('Select a line!','error');return;}
   if((line==='C1'||line==='C2')&&selTruck.category!=='Poultry'){toast('❌ C-Mill is POULTRY ONLY!','error');return;}
   if(lineState[line]?.occupied){toast('❌ Line '+line+' is occupied!','error');return;}
+  // BLOCK: same SO already on any line
+  const alreadyOnLine=Object.entries(lineState).find(([,st])=>st.occupied&&st.so===selTruck.so);
+  if(alreadyOnLine){toast(`❌ ${selTruck.so} is already on Line ${alreadyOnLine[0]}!`,'error');return;}
+  // BLOCK: same product already loading on any line
+  const sameProduct=Object.entries(lineState).find(([,st])=>st.occupied&&st.product===selTruck.product);
+  if(sameProduct){toast(`❌ "${selTruck.product}" already loading on Line ${sameProduct[0]}!`,'error');return;}
   lineState[line]={occupied:true,plate:selTruck.plate,product:selTruck.product,so:selTruck.so,startTime:Date.now()};
   const soE=soData.find(s=>s.so===selTruck.so);if(soE)soE.status='assigned';
   queueTrucks.splice(selTruck.idx,1);
   queueTrucks.forEach((t,i)=>t.roll=i+1);
   logA(`Assigned ${selTruck.plate} → Line ${line} (${selTruck.so})`);
   toast(`✅ ${selTruck.plate} → Line ${line}`,'success');
-  clearSel();renderQueue();renderLines();renderSOTable();renderMgmtRolls();
+  clearSel();renderQueue();renderLines();renderSOTable();renderMgmtRolls();startSlotTimer(line);
 }
-function clickLine(line){
-  const st=lineState[line];if(!st?.occupied)return;
-  openLD(line,st);
-}
+function clickLine(line){const st=lineState[line];if(!st?.occupied)return;openLD(line,st);}
 function clearSel(){
   selTruck=null;
   document.getElementById('selT').value='';document.getElementById('selC').value='';document.getElementById('lineSel').value='';
@@ -865,7 +1105,7 @@ function openLD(line,st){
     const bc=document.createElement('div');bc.id=`ldb-${pi}`;
     batches.forEach((b,bi)=>{
       const row=document.createElement('div');row.className='fipo-r';
-      row.innerHTML=`<span style="font-size:10.5px;color:var(--muted);min-width:120px;">Batch ${bi+1} · Prod: <strong>${b.date}</strong></span><input type="number" id="ldq-${pi}-${bi}" placeholder="Bags to load" min="0" max="${b.qty}" style="width:100px;" oninput="chkFifo(${pi})"><span style="font-size:10.5px;color:var(--muted);">/ ${b.qty} avail</span>`;
+      row.innerHTML=`<span style="font-size:10.5px;color:var(--muted);min-width:120px;">Batch ${bi+1} · Prod: <strong>${b.date}</strong></span><input type="number" id="ldq-${pi}-${bi}" placeholder="Bags" min="0" max="${b.qty}" style="width:100px;" oninput="chkFifo(${pi})"><span style="font-size:10.5px;color:var(--muted);">/ ${b.qty} avail</span>`;
       bc.appendChild(row);
     });
     if(!batches.length)bc.innerHTML='<div style="font-size:11.5px;color:var(--cr);">⚠️ No stock for this product</div>';
@@ -896,21 +1136,14 @@ function confirmLoad(){
     const batches=inventory[p.name]||[];
     if(batches.length===0){noInvProducts.push(p.name);reds.push({product:p.name,batches,vals:[]});return;}
     const vals=Array.from(document.querySelectorAll(`[id^="ldq-${pi}-"]`)).map(i=>parseFloat(i.value)||0);
-    for(let i=0;i<vals.length-1;i++){
-      if(vals[i]===0&&batches[i]&&batches[i].qty>0&&vals[i+1]>0){fifoViolation=true;}
-    }
-    vals.forEach((v,bi)=>{
-      if(v>0&&batches[bi]&&v>batches[bi].qty){
-        toast(`❌ Batch ${batches[bi].date}: only ${batches[bi].qty} bags available!`,'error');
-        fifoViolation=true;
-      }
-    });
+    for(let i=0;i<vals.length-1;i++){if(vals[i]===0&&batches[i]&&batches[i].qty>0&&vals[i+1]>0)fifoViolation=true;}
+    vals.forEach((v,bi)=>{if(v>0&&batches[bi]&&v>batches[bi].qty){toast(`❌ Batch ${batches[bi].date}: only ${batches[bi].qty} bags available!`,'error');fifoViolation=true;}});
     reds.push({product:p.name,batches,vals});
   });
   if(noInvProducts.length>0){toast('❌ No inventory for: '+noInvProducts.join(', '),'error');return;}
   if(fifoViolation){toast('❌ FIFO violation — load older batches first!','error');return;}
   const hasQty=reds.some(r=>r.vals.some(v=>v>0));
-  if(!hasQty){toast('❌ Enter at least one quantity to confirm loading!','error');return;}
+  if(!hasQty){toast('❌ Enter at least one quantity!','error');return;}
   reds.forEach(r=>{
     r.vals.forEach((v,bi)=>{
       if(v>0&&inventory[r.product]&&inventory[r.product][bi]){
@@ -921,13 +1154,19 @@ function confirmLoad(){
     if(inventory[r.product])inventory[r.product]=inventory[r.product].filter(b=>b.qty>0);
   });
   delete lineState[line];
-  if(soE)soE.status='done';
-  logA(`Confirmed loading Line ${line} — stock reduced (FIFO)`);
-  toast('✅ Loading confirmed! Stock reduced.','success');
+  if(timerIvs[line]){clearInterval(timerIvs[line]);delete timerIvs[line];}
+  if(soE){
+    soE.status='done';
+    soE.loadedAt=new Date().toISOString();
+    soE.loadedBy=CU?.displayName;
+    soE.loadedDate=new Date().toISOString().split('T')[0];
+  }
+  logA(`Confirmed loading Line ${line} — stock reduced (FIFO) — ${soE?.so}`);
+  toast('✅ Loading confirmed! Stock reduced. SO will archive in 3 days.','success');
   closeM('ldModal');renderLines();renderInventory();renderSOTable();renderMgmtRolls();
 }
 
-// ══ SO TAB TOGGLE ══
+// ══ SO TAB ══
 function showSOTab(t){
   document.getElementById('soView-list').style.display=t==='list'?'':'none';
   document.getElementById('soView-forecast').style.display=t==='forecast'?'':'none';
@@ -939,36 +1178,57 @@ function showSOTab(t){
 
 // ══ FORECAST ══
 function renderForecast(){
-  const grid=document.getElementById('forecastGrid');if(!grid)return;
-  grid.innerHTML='';
+  const grid=document.getElementById('forecastGrid');if(!grid)return;grid.innerHTML='';
   const today=new Date();
   for(let i=0;i<30;i++){
     const d=new Date(today);d.setDate(today.getDate()+i);
     const ds=d.toISOString().split('T')[0];
-    const count=soData.filter(s=>s.releaseDate===ds).length;
-    const confirmed=soData.filter(s=>s.releaseDate===ds&&s.confirmed).length;
+    const daySOs=soData.filter(s=>s.releaseDate===ds);
+    const count=daySOs.length;
+    const confirmed=daySOs.filter(s=>s.confirmed).length;
     const cell=document.createElement('div');
-    cell.style.cssText=`text-align:center;padding:9px 6px;border-radius:8px;background:${count>0?'rgba(192,57,43,.07)':'#FAFBFE'};border:1px solid ${count>0?'rgba(192,57,43,.2)':'var(--border)'};cursor:${count>0?'pointer':'default'};transition:all .15s;`;
-    cell.innerHTML=`<div style="font-size:10px;color:var(--muted);margin-bottom:3px;">${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div><div style="font-size:18px;font-weight:900;color:${count>0?'var(--cr)':'var(--muted)'};">${count}</div><div style="font-size:9px;color:var(--muted);">SOs</div>${count>0?`<div style="font-size:9px;color:var(--green);margin-top:2px;">${confirmed}✓</div>`:''}`;
-    if(count>0)cell.onclick=()=>showForecastDetail(ds);
+    cell.style.cssText=`text-align:center;padding:9px 6px;border-radius:8px;background:${count>0?'rgba(192,57,43,.07)':'#FAFBFE'};border:1px solid ${count>0?'rgba(192,57,43,.2)':'var(--border)'};cursor:pointer;transition:all .15s;`;
+    cell.innerHTML=`<div style="font-size:10px;color:var(--muted);margin-bottom:3px;">${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div><div style="font-size:18px;font-weight:900;color:${count>0?'var(--cr)':'var(--muted)'};">${count||'+'}</div><div style="font-size:9px;color:var(--muted);">SOs</div>${count>0?`<div style="font-size:9px;color:var(--green);margin-top:2px;">${confirmed}✓</div>`:''}`;
+    cell.onclick=()=>showForecastDetail(ds);
     grid.appendChild(cell);
   }
 }
 function showForecastDetail(ds){
+  forecastActiveDate=ds;
   const detail=document.getElementById('forecastDetail');
-  const title=document.getElementById('forecastDetailTitle');
-  const tbody=document.getElementById('forecastDetailBody');
+  document.getElementById('forecastDetailTitle').textContent='SOs for '+ds;
   detail.style.display='';
-  title.textContent='SOs for '+ds;
   const daySOs=soData.filter(s=>s.releaseDate===ds);
-  tbody.innerHTML=daySOs.map(s=>`<tr><td><strong>${s.so}</strong></td><td>${s.customer}</td><td>${s.products.map(p=>`<small>${p.name}×${p.qty}</small>`).join('<br>')}</td><td><span class="sb-pill ${{pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done'}[s.status]}">${{pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done'}[s.status]}</span></td><td>${s.confirmed?'<span style="color:var(--green);font-size:10.5px;">✅ Yes</span>':'<span style="color:var(--orange);font-size:10.5px;">❌ No</span>'}</td></tr>`).join('');
+  const tbody=document.getElementById('forecastDetailBody');
+  tbody.innerHTML=daySOs.length===0?`<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted);">No SOs for this date. Click "+ Add SO" above to add one.</td></tr>`:
+  daySOs.map(s=>{
+    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done',rescheduled:'sp-pending'};
+    const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done',rescheduled:'🔄 Rescheduled'};
+    return `<tr>
+      <td><strong>${s.so}</strong></td>
+      <td>${s.customer}</td>
+      <td>${s.products.map(p=>`<small>${p.name}×${p.qty}</small>`).join('<br>')}</td>
+      <td><span class="sb-pill ${sm[s.status]||'sp-pending'}">${sl[s.status]||s.status}</span></td>
+      <td>${s.confirmed?'<span style="color:var(--green);font-size:10.5px;">✅ Yes</span>':'<span style="color:var(--orange);font-size:10.5px;">❌ No</span>'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-s btn-xs" onclick="openEditSO('${s.so}')">✏️</button>
+        <button class="btn btn-s btn-xs" onclick="openReschedule('${s.so}')">🔄</button>
+        <button class="btn btn-wa btn-xs" onclick="sendWA('${s.phone}','${s.so}','#${s.roll}','${s.customer}')">💬</button>
+        ${s.status==='pending'?`<button class="btn btn-p btn-xs" onclick="forceAssign('${s.so}')">⚡</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+function openNewSOForDate(){
+  openNewSO();
+  if(forecastActiveDate)setTimeout(()=>{document.getElementById('soDate').value=forecastActiveDate;},50);
 }
 
 // ══ SO TABLE ══
 function renderSOTable(){
-  const tb=document.getElementById('soTbody');if(!tb)return;
-  tb.innerHTML='';
+  const tb=document.getElementById('soTbody');if(!tb)return;tb.innerHTML='';
   const sorted=[...soData].sort((a,b)=>new Date(a.releaseDate)-new Date(b.releaseDate));
+  const now=new Date();
   sorted.forEach(s=>{
     const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',done:'sp-done',rescheduled:'sp-pending'};
     const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Done',rescheduled:'🔄 Rescheduled'};
@@ -976,9 +1236,16 @@ function renderSOTable(){
     const tr=document.createElement('tr');
     const ph=s.products.map(p=>`<small>${p.name} × ${p.qty}</small>`).join('<br>');
     const reschedNote=s.rescheduledTo?`<br><small style="color:var(--orange);">→ ${s.rescheduledTo}</small>`:'';
-    tr.innerHTML=`<td><strong>${s.so}</strong></td><td>${s.customer}<br><small style="color:var(--muted)">${s.phone}</small></td><td>${ph}</td><td><small>${s.releaseDate}${reschedNote}</small></td><td><span class="sb-pill ${sm[s.status]||'sp-pending'}">${sl[s.status]||s.status}</span></td><td><span class="src-b ${src[s.source]||'src-m'}">${s.source}</span></td>
-    <td style="white-space:nowrap;">${s.status==='done'?'<span style="font-size:10.5px;color:var(--muted)">Completed</span>':`
-      ${s.status==='pending'?`<button class="btn btn-p btn-xs" onclick="forceAssign('${s.so}')">⚡ Assign</button> `:''}
+    // Days left (for done SOs — days until archive)
+    let daysLeftHtml='—';
+    if(s.status==='done'&&s.loadedAt){
+      const loaded=new Date(s.loadedAt);
+      const daysLeft=3-Math.floor((now-loaded)/(1000*60*60*24));
+      daysLeftHtml=`<span style="color:${daysLeft<=1?'var(--cr)':'var(--orange)'};font-weight:700;">${daysLeft}d left</span>`;
+    }
+    tr.innerHTML=`<td><strong>${s.so}</strong></td><td>${s.customer}<br><small style="color:var(--muted)">${s.phone}</small></td><td>${ph}</td><td><small>${s.releaseDate}${reschedNote}</small></td><td><span class="sb-pill ${sm[s.status]||'sp-pending'}">${sl[s.status]||s.status}</span></td><td>${daysLeftHtml}</td><td><span class="src-b ${src[s.source]||'src-m'}">${s.source}</span></td>
+    <td style="white-space:nowrap;">${s.status==='done'?`<span style="font-size:10.5px;color:var(--muted)">Loaded ✓</span>`:`
+      ${s.status==='pending'?`<button class="btn btn-p btn-xs" onclick="forceAssign('${s.so}')">⚡</button> `:''}
       <button class="btn btn-s btn-xs" onclick="openEditSO('${s.so}')">✏️</button>
       <button class="btn btn-s btn-xs" onclick="openReschedule('${s.so}')" title="Reschedule">🔄</button>
       <button class="btn btn-wa btn-xs" onclick="sendWA('${s.phone}','${s.so}','#${s.roll}','${s.customer}')">💬</button>`}
@@ -1004,21 +1271,20 @@ function confirmReschedule(){
   if(!newDate){toast('Select a new date!','error');return;}
   const s=soData.find(x=>x.so===soNum);if(!s)return;
   const oldDate=s.releaseDate;
-  s.releaseDate=newDate;
-  s.rescheduledTo=newDate;
-  s.status='rescheduled';
-  s.rescheduledFrom=oldDate;
-  s.rescheduledReason=reason;
-  s.lastEditedBy=CU?.displayName;
-  logA(`Rescheduled ${soNum} from ${oldDate} → ${newDate} (${reason})`);
+  s.releaseDate=newDate;s.rescheduledTo=newDate;s.status='rescheduled';
+  s.rescheduledFrom=oldDate;s.rescheduledReason=reason;s.lastEditedBy=CU?.displayName;
+  s.confirmed=false;
+  logA(`Rescheduled ${soNum}: ${oldDate} → ${newDate} (${reason})`);
   toast(`🔄 ${soNum} rescheduled to ${newDate}`,'info');
-  closeM('reschedModal');renderSOTable();renderMgmtRolls();
+  closeM('reschedModal');renderSOTable();renderMgmtRolls();renderForecast();
+  if(forecastActiveDate)showForecastDetail(forecastActiveDate);
 }
 function forceAssign(soNum){
   const s=soData.find(x=>x.so===soNum);if(!s)return;
   s.status='assigned';s.confirmed=true;s.lastEditedBy=CU?.displayName||'System';
   logA(`Force assigned ${soNum}`);toast(`✅ ${soNum} force assigned`,'success');
   renderSOTable();renderMgmtRolls();
+  if(forecastActiveDate)showForecastDetail(forecastActiveDate);
 }
 function openEditSO(soNum){
   const s=soData.find(x=>x.so===soNum);if(!s)return;
@@ -1032,7 +1298,8 @@ function openEditSO(soNum){
 function addEPL(name='',qty=''){
   const c=document.getElementById('eProdLines');
   const d=document.createElement('div');d.className='pl';
-  d.innerHTML=`<select style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;background:#FAFBFE;">${Object.keys(inventory).map(k=>`<option ${k===name?'selected':''}>${k}</option>`).join('')}</select><input type="number" value="${qty}" placeholder="Qty" style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;"><button class="btn-rl" onclick="this.parentElement.remove()">✕</button>`;
+  const opts=PRODUCT_LIST.map(p=>`<option value="${p.name}" ${p.name===name?'selected':''}>${p.code} — ${p.name}</option>`).join('');
+  d.innerHTML=`<select style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'Inter',sans-serif;background:#FAFBFE;">${opts}</select><input type="number" value="${qty}" placeholder="Qty" style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;"><button class="btn-rl" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(d);
 }
 function saveEditSO(){
@@ -1045,14 +1312,21 @@ function saveEditSO(){
   s.lastEditedBy=CU?.displayName||'System';
   logA(`Edited SO ${curEditSO}`);toast(`✅ ${curEditSO} updated`,'success');
   closeM('editSOModal');renderSOTable();
+  if(forecastActiveDate)showForecastDetail(forecastActiveDate);
 }
 
 // ══ NEW SO ══
-function openNewSO(){document.getElementById('prodLines').innerHTML='';addPL();document.getElementById('newSOModal').classList.add('open');}
+function openNewSO(){
+  document.getElementById('prodLines').innerHTML='';addPL();
+  document.getElementById('soNum').value='';document.getElementById('soDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('soCust').value='';document.getElementById('soPhone').value='';
+  document.getElementById('newSOModal').classList.add('open');
+}
 function addPL(){
   const c=document.getElementById('prodLines');
   const d=document.createElement('div');d.className='pl';
-  d.innerHTML=`<select style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;background:#FAFBFE;"><option value="">Select Product...</option>${Object.keys(inventory).map(k=>`<option>${k}</option>`).join('')}</select><input type="number" placeholder="Qty (bags)" style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;"><button class="btn-rl" onclick="this.parentElement.remove()">✕</button>`;
+  const opts=PRODUCT_LIST.map(p=>`<option value="${p.name}">${p.code} — ${p.name}</option>`).join('');
+  d.innerHTML=`<select style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'Inter',sans-serif;background:#FAFBFE;"><option value="">Select Product...</option>${opts}</select><input type="number" placeholder="Qty (bags)" style="padding:7px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:'Inter',sans-serif;"><button class="btn-rl" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(d);
 }
 function saveSO(){
@@ -1067,10 +1341,11 @@ function saveSO(){
   if(!prods.length){toast('Add at least one product!','error');return;}
   soData.push({so:num,customer:cust,phone,products:prods,releaseDate:date,status:'pending',source:'Manual',roll:soData.length+1,confirmed:false,lastEditedBy:CU?.displayName});
   logA(`Registered new SO ${num}`);toast(`✅ ${num} registered`,'success');
-  closeM('newSOModal');renderSOTable();renderMgmtRolls();
+  closeM('newSOModal');renderSOTable();renderMgmtRolls();renderForecast();
+  if(forecastActiveDate&&date===forecastActiveDate)showForecastDetail(forecastActiveDate);
 }
 
-// ══ INVENTORY ══
+// ══ FIFO INVENTORY ══
 function renderInventory(){
   const c=document.getElementById('invGrid');if(!c)return;c.innerHTML='';
   Object.entries(inventory).forEach(([prod,batches])=>{
@@ -1078,13 +1353,13 @@ function renderInventory(){
     const card=document.createElement('div');card.className='inv-pc';
     const sorted=[...batches].sort((a,b)=>new Date(a.date)-new Date(b.date));
     const bh=sorted.map((b,i)=>`<div class="inv-dr"><div class="inv-dl">📅 ${b.date}</div><div class="inv-dq">${b.qty} bags</div><div class="inv-db ${i===0?'ff':''}">${i===0?'LOAD FIRST':'Next'}</div></div>`).join('');
-    const ky=prod.replace(/\s/g,'_');
+    const ky=prod.replace(/[^a-zA-Z0-9]/g,'_');
     card.innerHTML=`<div class="inv-pn">${prod}</div><div class="inv-tot">${total}</div><div class="inv-tl">Total bags in stock</div>${bh}<div class="inv-add"><input type="date" id="nd-d-${ky}" style="flex:1;min-width:100px;"><input type="number" id="nd-q-${ky}" placeholder="Qty" style="width:70px;"><button class="btn btn-g btn-sm" onclick="addInvBatch('${prod}')">+ Add</button></div>`;
     c.appendChild(card);
   });
 }
 function addInvBatch(prod){
-  const ky=prod.replace(/\s/g,'_');
+  const ky=prod.replace(/[^a-zA-Z0-9]/g,'_');
   const date=document.getElementById('nd-d-'+ky)?.value;
   const qty=parseInt(document.getElementById('nd-q-'+ky)?.value)||0;
   if(!date||qty<=0){toast('Enter valid date and quantity!','error');return;}
@@ -1095,16 +1370,119 @@ function addInvBatch(prod){
   toast(`✅ Added ${qty} bags of ${prod}`,'success');renderInventory();
 }
 
+// ══ PHYSICAL INVENTORY (DAILY RECORD) ══
+function renderPhysRecord(){
+  const date=document.getElementById('physRecDate').value||new Date().toISOString().split('T')[0];
+  const saved=physRecords[date]||{};
+  const tbody=document.getElementById('physRecBody');if(!tbody)return;
+  tbody.innerHTML=PRODUCT_LIST.map((p,i)=>{
+    const buhler=(inventory[p.name]||[]).reduce((s,b)=>s+b.qty,0);
+    const savedPhys=saved[p.code]||{physical:'',loaded:''};
+    return `<tr>
+      <td style="text-align:left;">${p.name}</td>
+      <td>${p.code}</td>
+      <td>${p.unit}</td>
+      <td id="phys-buhler-${i}">${buhler}</td>
+      <td><input type="number" id="phys-phys-${i}" value="${savedPhys.physical}" placeholder="0" min="0" oninput="calcPhysRow(${i},${buhler},${p.unit})" style="width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;text-align:center;outline:none;"></td>
+      <td><input type="number" id="phys-loaded-${i}" value="${savedPhys.loaded}" placeholder="0" min="0" oninput="calcPhysRow(${i},${buhler},${p.unit})" style="width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11.5px;text-align:center;outline:none;"></td>
+      <td id="phys-diff-${i}">—</td>
+      <td id="phys-mt-${i}">—</td>
+    </tr>`;
+  }).join('');
+  // recalc all rows
+  PRODUCT_LIST.forEach((p,i)=>{
+    const buhler=(inventory[p.name]||[]).reduce((s,b)=>s+b.qty,0);
+    calcPhysRow(i,buhler,p.unit);
+  });
+  calcPhysTotals();
+}
+function calcPhysRow(i,buhler,unit){
+  const phys=parseFloat(document.getElementById(`phys-phys-${i}`)?.value)||0;
+  const loaded=parseFloat(document.getElementById(`phys-loaded-${i}`)?.value)||0;
+  const diff=phys-buhler;
+  const mt=(phys*unit)/1000;
+  const diffEl=document.getElementById(`phys-diff-${i}`);
+  const mtEl=document.getElementById(`phys-mt-${i}`);
+  if(diffEl){diffEl.textContent=diff===0?'0':diff>0?'+'+diff:diff;diffEl.className=diff>0?'diff-pos':diff<0?'diff-neg':'';}
+  if(mtEl)mtEl.textContent=mt.toFixed(3);
+  calcPhysTotals();
+}
+function calcPhysTotals(){
+  let tB=0,tP=0,tL=0,tD=0,tMT=0;
+  PRODUCT_LIST.forEach((p,i)=>{
+    const b=parseInt(document.getElementById(`phys-buhler-${i}`)?.textContent)||0;
+    const ph=parseFloat(document.getElementById(`phys-phys-${i}`)?.value)||0;
+    const ld=parseFloat(document.getElementById(`phys-loaded-${i}`)?.value)||0;
+    tB+=b;tP+=ph;tL+=ld;tD+=(ph-b);tMT+=(ph*p.unit/1000);
+  });
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('totBuhler',tB);s('totPhysical',tP);s('totLoaded',tL);
+  s('totDiff',tD===0?'0':tD>0?'+'+tD:tD);s('totMT',tMT.toFixed(3));
+}
+function savePhysRecord(){
+  const date=document.getElementById('physRecDate').value||new Date().toISOString().split('T')[0];
+  const record={};
+  PRODUCT_LIST.forEach((p,i)=>{
+    const phys=document.getElementById(`phys-phys-${i}`)?.value||'';
+    const loaded=document.getElementById(`phys-loaded-${i}`)?.value||'';
+    if(phys||loaded)record[p.code]={physical:phys,loaded};
+  });
+  physRecords[date]=record;
+  logA(`Saved physical inventory record for ${date}`);
+  toast(`✅ Physical record saved for ${date}`,'success');
+}
+function loadPhysRecord(){renderPhysRecord();}
+function printPhysRecord(){
+  const date=document.getElementById('physRecDate').value||new Date().toISOString().split('T')[0];
+  const title=document.title;
+  document.title=`OFM Physical Inventory — ${date}`;
+  window.print();
+  document.title=title;
+}
+
+// ══ RECORDS ══
+function renderRecords(){
+  const tb=document.getElementById('recordsTbody');if(!tb)return;
+  if(!recordsData.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">No archived records yet. SOs appear here 3 days after loading.</td></tr>';return;}
+  tb.innerHTML=recordsData.map(s=>`<tr>
+    <td><strong>${s.so}</strong></td>
+    <td>${s.customer}<br><small style="color:var(--muted)">${s.phone}</small></td>
+    <td>${(s.products||[]).map(p=>`<small>${p.name} × ${p.qty}</small>`).join('<br>')}</td>
+    <td><small>${s.releaseDate}</small></td>
+    <td><small>${s.loadedDate||'—'}</small></td>
+    <td><small>${s.archivedDate||'—'}</small></td>
+    <td><small>${s.loadedBy||'—'}</small></td>
+  </tr>`).join('');
+  const rb=document.getElementById('navRecBadge');if(rb)rb.textContent=recordsData.length;
+  const dr=document.getElementById('d-rec');if(dr)dr.textContent=recordsData.length;
+}
+
 // ══ MGMT ROLLS ══
 function renderMgmtRolls(){
   const tb=document.getElementById('mgmtRolls');if(!tb)return;tb.innerHTML='';
-  soData.filter(s=>s.status!=='done').forEach(s=>{
-    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading'};
-    const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading'};
+  soData.filter(s=>s.status!=='done'&&s.status!=='archived').forEach(s=>{
+    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading',rescheduled:'sp-pending'};
+    const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',rescheduled:'🔄 Rescheduled'};
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><strong style="color:var(--cr)">#${s.roll}</strong></td><td>${s.so}</td><td>${s.customer}</td><td><span class="sb-pill ${sm[s.status]||''}">${sl[s.status]||s.status}</span></td><td>${s.confirmed?'<span style="color:var(--green);font-size:10.5px;">✅ Yes</span>':'<span style="color:var(--orange);font-size:10.5px;">❌ No</span>'}</td>`;
+    tr.innerHTML=`<td><strong style="color:var(--cr)">#${s.roll}</strong></td><td>${s.so}</td><td>${s.customer}</td><td><span class="sb-pill ${sm[s.status]||'sp-pending'}">${sl[s.status]||s.status}</span></td><td>${s.confirmed?'<span style="color:var(--green);font-size:10.5px;">✅ Yes</span>':'<span style="color:var(--orange);font-size:10.5px;">❌ No</span>'}</td>`;
     tb.appendChild(tr);
   });
+  updateDashStats();
+}
+
+// ══ SECURITY ══
+function renderSecurity(){
+  const next=queueTrucks[0];
+  document.getElementById('secNextRoll').textContent=next?`#${next.roll}`:'#—';
+  document.getElementById('secNextInfo').textContent=next?`${next.so}`:'No trucks in queue';
+  document.getElementById('secNextPlate').textContent=next?next.plate:'—';
+  const tb=document.getElementById('secQueueBody');if(!tb)return;
+  tb.innerHTML=queueTrucks.slice(0,10).map(t=>{
+    const sm={pending:'sp-pending',assigned:'sp-assigned',loading:'sp-loading'};
+    const soE=soData.find(s=>s.so===t.so);
+    const status=soE?soE.status:'pending';
+    return `<tr><td><strong style="color:var(--cr)">#${t.roll}</strong></td><td><span class="plate" style="font-size:9.5px;padding:1px 5px;">${t.plate}</span></td><td>${t.so}</td><td><span class="sb-pill ${sm[status]||'sp-pending'}">${status}</span></td></tr>`;
+  }).join('');
 }
 
 // ══ WHATSAPP ══
@@ -1115,23 +1493,33 @@ function sendWA(phone,so,roll,name){
   document.getElementById('waModal').classList.add('open');
 }
 function openWA(){
-  const msg=encodeURIComponent(`OFM Fleet: Roll ${curWA.roll} for ${curWA.so} ready. Reply CONFIRM to confirm arrival.`);
+  const msg=encodeURIComponent(`OFM Fleet: Roll ${curWA.roll} for ${curWA.so} ready. Reply CONFIRM.`);
   window.open(`https://api.whatsapp.com/send?phone=${curWA.cleanPhone}&text=${msg}`,'_blank');
   logA(`WhatsApp sent to ${curWA.phone} for ${curWA.so}`);closeM('waModal');
 }
 function manualConfirm(){
   const s=soData.find(x=>x.so===curWA.so);
   if(s){s.confirmed=true;s.status='assigned';s.lastEditedBy=CU?.displayName;}
-  logA(`Manually confirmed ${curWA.so}`);toast(`✅ ${curWA.so} confirmed`,'success');closeM('waModal');renderSOTable();renderMgmtRolls();
+  logA(`Manually confirmed ${curWA.so}`);toast(`✅ ${curWA.so} confirmed`,'success');
+  closeM('waModal');renderSOTable();renderMgmtRolls();
 }
-function reschedule(){logA(`Rescheduled ${curWA.so}`);toast('🔄 Rescheduled','info');closeM('waModal');}
 function openImport(){document.getElementById('importModal').classList.add('open');}
 
 // ══ CUSTOMER TRACK ══
 function trackSO(){
   const v=document.getElementById('trkIn').value.trim();
   if(!v){toast('Enter SO number','error');return;}
-  document.getElementById('trkResult').style.display='block';
+  const s=soData.find(x=>x.so===v)||recordsData.find(x=>x.so===v);
+  const c=document.getElementById('trkResult');
+  if(!s){c.style.display='block';c.innerHTML=`<div style="padding:14px;background:rgba(192,57,43,.04);border-radius:10px;border:1px solid rgba(192,57,43,.13);color:var(--cr);font-weight:600;">❌ SO "${v}" not found.</div>`;return;}
+  const sl={pending:'⏳ Pending',assigned:'🚛 Assigned',loading:'📦 Loading',done:'✅ Loaded',rescheduled:'🔄 Rescheduled',archived:'🗄️ Archived'};
+  c.style.display='block';
+  c.innerHTML=`<div style="padding:14px;background:rgba(192,57,43,.04);border-radius:10px;border:1px solid rgba(192,57,43,.13);margin-bottom:14px;">
+    <div style="font-size:12.5px;font-weight:700;">${s.so} — ${s.customer}</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">${(s.products||[]).map(p=>`${p.name} × ${p.qty} bags`).join(', ')}</div>
+    <div style="margin-top:7px;"><span class="sb-pill sp-${s.status==='done'?'done':s.status==='archived'?'archived':'assigned'}">${sl[s.status]||s.status}</span></div>
+    ${s.loadedDate?`<div style="font-size:11px;color:var(--muted);margin-top:5px;">Loaded: ${s.loadedDate} by ${s.loadedBy||'—'}</div>`:''}
+  </div>`;
 }
 
 // ══ MODALS ══
@@ -1139,9 +1527,7 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
 // ══ TIMERS ══
-function startTimers(){
-  Object.keys(lineState).forEach(l=>{if(lineState[l]?.occupied)startSlotTimer(l);});
-}
+function startTimers(){Object.keys(lineState).forEach(l=>{if(lineState[l]?.occupied)startSlotTimer(l);});}
 function startSlotTimer(line){
   if(timerIvs[line])clearInterval(timerIvs[line]);
   const start=lineState[line]?.startTime||Date.now();
@@ -1165,10 +1551,13 @@ function toast(msg,type='success'){
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/service-worker.js')
-      .then(r=>console.log('OFM SW registered:',r.scope))
-      .catch(e=>console.warn('OFM SW failed:',e));
+      .then(r=>console.log('OFM SW:',r.scope))
+      .catch(e=>console.warn('SW fail:',e));
   });
 }
+
+// ══ AUTO ARCHIVE CHECK every 60s ══
+setInterval(()=>{if(CU){checkAutoArchive();renderSOTable();renderRecords();}},60000);
 </script>
 </body>
 </html>
