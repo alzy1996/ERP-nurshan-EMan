@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ERP Nexus — Purchase Requests</title>
+<meta name="theme-color" content="#E8612C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="nexus-manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--primary:#E8612C;--primary-d:#C44D1E;--primary-l:rgba(232,97,44,.09);--blue:#2D7DD2;--blue-l:rgba(45,125,210,.1);--green:#1DB06A;--amber:#E8930A;--red:#E5484D;--purple:#7C3AED;--bg:#F4F5F9;--surface:#FFFFFF;--surface-2:#FAFBFE;--text:#0F1117;--muted:#7B8299;--border:#E7EAF2;--sh-sm:0 1px 3px rgba(15,17,23,.06);--sh:0 1px 3px rgba(15,17,23,.06),0 6px 18px rgba(15,17,23,.05);--sh-lg:0 20px 40px rgba(15,17,23,.16);--r:12px;--r-sm:8px;--r-lg:16px;--glass:rgba(255,255,255,.72);}
+[data-theme="dark"]{--bg:#0E1016;--surface:#171A22;--surface-2:#1E222C;--text:#EEF1F7;--muted:#8A92A6;--border:#272C38;--primary-l:rgba(232,97,44,.16);--blue-l:rgba(45,125,210,.18);--glass:rgba(23,26,34,.72);--sh-sm:0 1px 3px rgba(0,0,0,.4);--sh:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);}
+html,body{height:100%;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:14px;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:9px;height:9px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+.shell{display:flex;height:100vh;height:100dvh;}
+.sb{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;height:100dvh;}
+.sb-head{padding:18px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);}
+.sb-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--primary),#F4863F);border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:15px;flex-shrink:0;box-shadow:0 4px 12px rgba(232,97,44,.35);}
+.sb-brand{font-size:15px;font-weight:800;letter-spacing:-.3px;}.sb-brand span{color:var(--primary);}
+.sb-ver{font-size:10px;color:var(--muted);font-weight:600;}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 0;}
+.sb-sec{padding:14px 16px 6px;font-size:10px;font-weight:800;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;}
+.nav-i{display:flex;align-items:center;gap:11px;padding:10px 14px;margin:2px 9px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;transition:background .15s,color .15s;}
+.nav-i:hover{background:var(--surface-2);color:var(--text);}
+.nav-i.active{background:var(--primary-l);color:var(--primary);font-weight:700;}
+.nav-ico{font-size:17px;width:20px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:1px 7px;border-radius:9px;}
+.sb-foot{padding:12px;border-top:1px solid var(--border);}
+.u-card{display:flex;align-items:center;gap:10px;}
+.u-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#5AA0E6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;}
+.u-name{font-size:12.5px;font-weight:700;}.u-role{font-size:10.5px;color:var(--muted);}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);transition:all .15s;}
+.icon-btn:hover{color:var(--primary);border-color:var(--primary);}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.topbar{background:var(--glass);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:11px 22px;display:flex;align-items:center;gap:16px;flex-shrink:0;z-index:30;}
+.tb-title h1{font-size:17px;font-weight:800;letter-spacing:-.3px;}.tb-title p{font-size:11.5px;color:var(--muted);}
+.tb-actions{display:flex;align-items:center;gap:9px;margin-left:auto;}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(29,176,106,.1);border:1px solid rgba(29,176,106,.25);color:var(--green);padding:6px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.live-pill.offline{background:rgba(232,147,10,.1);border-color:rgba(232,147,10,.3);color:var(--amber);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.6);}}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:16px 22px;}
+.btn{border:none;border-radius:var(--r-sm);font-weight:700;font-size:12px;padding:8px 14px;transition:filter .15s,background .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-pri{background:var(--primary);color:#fff;}.btn-pri:hover{background:var(--primary-d);}
+.btn-ok{background:var(--green);color:#fff;}.btn-ok:hover{filter:brightness(.93);}
+.btn-no{background:rgba(229,72,77,.12);color:var(--red);}.btn-no:hover{background:rgba(229,72,77,.2);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}.btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
+.btn-sm{padding:6px 11px;font-size:11px;}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;}
+.b-green{background:rgba(29,176,106,.12);color:#0e7a4a;}.b-amber{background:rgba(232,147,10,.13);color:#a06003;}.b-red{background:rgba(229,72,77,.12);color:#c0292e;}.b-blue{background:var(--blue-l);color:#1a5fa0;}.b-grey{background:var(--surface-2);color:var(--muted);border:1px solid var(--border);}
+/* toolbar */
+.pr-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.seg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:3px;}
+.seg button{border:none;background:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;color:var(--muted);}
+.seg button.on{background:var(--primary);color:#fff;}
+.dup-warn{display:flex;align-items:center;gap:8px;background:rgba(232,147,10,.1);border:1px solid rgba(232,147,10,.3);color:#a06003;border-radius:10px;padding:8px 13px;font-size:12px;font-weight:600;margin-bottom:12px;}
+/* kanban */
+.kanban{flex:1;display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding-bottom:8px;}
+.kcol{flex:0 0 248px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;max-height:100%;}
+.kcol.drag-over{border-color:var(--primary);background:var(--primary-l);}
+.kcol-h{padding:11px 13px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border);position:sticky;top:0;}
+.kcol-dot{width:9px;height:9px;border-radius:50%;}
+.kcol-t{font-size:12px;font-weight:800;}
+.kcol-n{margin-left:auto;font-size:10.5px;font-weight:800;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1px 8px;}
+.kcol-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:9px;}
+.kcard{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:10px;padding:11px;cursor:grab;box-shadow:var(--sh-sm);transition:transform .12s,box-shadow .12s;}
+.kcard:hover{transform:translateY(-2px);box-shadow:var(--sh);}
+.kcard.dragging{opacity:.45;}
+.kcard.c-green{border-left-color:var(--green);}.kcard.c-amber{border-left-color:var(--amber);}.kcard.c-red{border-left-color:var(--red);}.kcard.c-blue{border-left-color:var(--blue);}
+.kc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.kc-id{font-size:12px;font-weight:800;color:var(--primary);}
+.kc-amt{font-size:12px;font-weight:800;}
+.kc-desc{font-size:12px;line-height:1.4;margin-bottom:8px;}
+.kc-meta{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:var(--muted);}
+.kc-actions{display:flex;gap:5px;margin-top:9px;}
+/* timeline */
+.timeline-wrap{flex:1;overflow-y:auto;}
+.tl-pr{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh-sm);}
+.tl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.tl-line{position:relative;padding-left:26px;}
+.tl-step{position:relative;padding-bottom:16px;}
+.tl-step:last-child{padding-bottom:0;}
+.tl-step::before{content:'';position:absolute;left:-19px;top:3px;width:11px;height:11px;border-radius:50%;background:var(--surface);border:2.5px solid var(--green);}
+.tl-step.pending::before{border-color:var(--amber);}
+.tl-step.wait::before{border-color:var(--border);}
+.tl-step::after{content:'';position:absolute;left:-14px;top:14px;bottom:0;width:2px;background:var(--border);}
+.tl-step:last-child::after{display:none;}
+.tl-s-title{font-size:12.5px;font-weight:700;}
+.tl-s-meta{font-size:11px;color:var(--muted);}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(8,10,16,.45);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:120;padding:18px;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:pop .2s cubic-bezier(.16,1,.3,1);}
+@keyframes pop{from{transform:scale(.95);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-h{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-t{font-size:15px;font-weight:800;}
+.modal-b{padding:18px;}
+.modal-f{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.fld{margin-bottom:14px;}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.fld input,.fld select,.fld textarea{width:100%;min-height:40px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-family:inherit;font-size:13px;outline:none;}
+.fld textarea{min-height:84px;resize:vertical;}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-l);}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--glass);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:50;justify-content:space-around;}
+.bn-i{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:9.5px;font-weight:700;}
+.bn-i.active{color:var(--primary);}.bn-i .nav-ico{font-size:19px;}
+.toast-wrap{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:12px 14px;box-shadow:var(--sh-lg);font-size:12.5px;font-weight:600;min-width:240px;animation:slideIn .3s ease;}
+@keyframes slideIn{from{transform:translateX(120%);}to{transform:translateX(0);}}
+@media(max-width:760px){.sb{display:none;}.bottom-nav{display:flex;}.topbar{padding:10px 14px;}.content{padding:12px;}.kcol{flex-basis:80vw;}}
+@media print{.sb,.topbar,.pr-bar,.bottom-nav,.dup-warn,.kc-actions{display:none!important;}body{overflow:visible;}.content{overflow:visible;}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sb" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="tb-title"><h1>Purchase Requests</h1><p id="tbSub">Visual approval pipeline</p></div>
+      <div class="tb-actions">
+        <div class="live-pill" id="livePill"><span class="live-dot"></span><span>Live</span></div>
+        <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+      </div>
+    </header>
+    <div class="content">
+      <div class="pr-bar">
+        <div class="seg" role="tablist">
+          <button id="vKanban" class="on" onclick="setView('kanban')">▦ Kanban</button>
+          <button id="vTimeline" onclick="setView('timeline')">≣ Timeline</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Print PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="openDelegate()">🤝 Delegate</button>
+        <button class="btn btn-pri btn-sm" style="margin-left:auto" onclick="openNew()">＋ New Request</button>
+      </div>
+      <div class="dup-warn" id="dupWarn" style="display:none">⚠️ <span id="dupTxt"></span></div>
+      <div class="kanban" id="kanban"></div>
+      <div class="timeline-wrap" id="timeline" style="display:none"></div>
+    </div>
+  </main>
+</div>
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- Approval modal -->
+<div class="overlay" id="approveModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-h"><div class="modal-t" id="amTitle">Approve Request</div><button class="icon-btn" onclick="closeModal('approveModal')">✕</button></div>
+    <div class="modal-b">
+      <div id="amSummary" style="font-size:13px;margin-bottom:14px;color:var(--muted)"></div>
+      <div class="fld"><label>Comment (optional)</label><textarea id="amComment" placeholder="Add an approval note…"></textarea></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('approveModal')">Cancel</button><button class="btn" id="amConfirm">Confirm</button></div>
+  </div>
+</div>
+<!-- New request modal -->
+<div class="overlay" id="newModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-h"><div class="modal-t">New Purchase Request</div><button class="icon-btn" onclick="closeModal('newModal')">✕</button></div>
+    <div class="modal-b">
+      <div class="fld"><label>Description</label><input id="nDesc" placeholder="e.g. Bitumen 60/70 — 50 ton"></div>
+      <div class="fld"><label>Amount (OMR)</label><input id="nAmt" type="number" inputmode="decimal" placeholder="0.000"></div>
+      <div class="fld"><label>Requester</label><input id="nReq" value="Salim Al-Harthy"></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('newModal')">Cancel</button><button class="btn btn-pri" onclick="submitNew()">Submit Request</button></div>
+  </div>
+</div>
+<!-- Delegate modal -->
+<div class="overlay" id="delModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-h"><div class="modal-t">Delegate Approvals</div><button class="icon-btn" onclick="closeModal('delModal')">✕</button></div>
+    <div class="modal-b">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Going on leave? Hand your pending approvals to a colleague.</p>
+      <div class="fld"><label>Delegate to</label><select id="delTo"><option>Eng. Khalid Al-Balushi</option><option>Aisha Al-Rashdi (Finance)</option><option>Eng. Noor Al-Saadi</option></select></div>
+      <div class="fld"><label>Until</label><input id="delUntil" type="date" value="2026-06-10"></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('delModal')">Cancel</button><button class="btn btn-pri" onclick="confirmDelegate()">Delegate</button></div>
+  </div>
+</div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+"use strict";
+var firebaseConfig={apiKey:"AIzaSyBRtMJLwkKRy1twdtezq6GN45GxrGxJx7c",authDomain:"ofm-trucks-movemments-harees.firebaseapp.com",projectId:"ofm-trucks-movemments-harees",storageBucket:"ofm-trucks-movemments-harees.firebasestorage.app",messagingSenderId:"887529330000",appId:"1:887529330000:web:0aee5473176e88df8b0855"};
+var db=null;try{firebase.initializeApp(firebaseConfig);db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){}
+
+var NAV=[{sec:'Overview'},{id:'dashboard',label:'Command Center',ico:'◈',href:'dashboard.html'},{id:'analytics',label:'Analytics',ico:'📊',href:'analytics.html'},{sec:'Procurement'},{id:'materials',label:'Materials',ico:'📦',href:'materials.html'},{id:'suppliers',label:'Suppliers',ico:'🏭',href:'suppliers.html'},{id:'offers',label:'Offers',ico:'🏷️',href:'offers.html'},{id:'purchaserequests',label:'Purchase Requests',ico:'📋',href:'purchaserequests.html',badge:'pr'},{sec:'Workspace'},{id:'notifications',label:'Notifications',ico:'🔔',href:'notifications.html',badge:'notif'},{id:'settings',label:'Settings',ico:'⚙️',href:'settings.html'}];
+var BOTTOM=['dashboard','materials','purchaserequests','suppliers','notifications'];
+var CURRENT='purchaserequests';
+var USER={name:'Salim Al-Harthy',role:'Procurement Officer',initials:'SH'};
+
+var STAGES=['Draft','Submitted','Level 1','Level 2','Level 3','Level 4','Level 5','Approved','Rejected'];
+var STAGE_COLOR={'Draft':'#7B8299','Submitted':'#2D7DD2','Level 1':'#2D7DD2','Level 2':'#E8930A','Level 3':'#E8930A','Level 4':'#7C3AED','Level 5':'#7C3AED','Approved':'#1DB06A','Rejected':'#E5484D'};
+
+var PRS=[
+  {id:'PR-1190',desc:'Bitumen 60/70 — 100 ton for Hadbin Section B',amount:28200,requester:'Eng. Khalid',supplier:'BRIGHT LIGHT',stage:'Level 3',age:1,created:'2026-06-02',history:[['Created by Eng. Khalid','2026-06-02 08:10','done'],['Submitted','2026-06-02 08:12','done'],['Level 1 — Manager approved (2h)','2026-06-02 10:05','done'],['Level 2 — Finance approved (1d)','2026-06-03 09:20','done'],['Level 3 — Procurement review','Waiting','pending'],['Level 4 — GM sign-off','—','wait']]},
+  {id:'PR-1191',desc:'Crawler Crane 150T rental — 1 month',amount:10900,requester:'Eng. Khalid',supplier:'OMAN HEAVY LIFT',stage:'Level 2',age:0,created:'2026-06-03',history:[['Created by Eng. Khalid','2026-06-03 08:00','done'],['Submitted','2026-06-03 08:02','done'],['Level 1 — Manager approved','2026-06-03 09:15','done'],['Level 2 — Finance review','Waiting','pending']]},
+  {id:'PR-1189',desc:'Diesel Fuel top-up — 20,000 L',amount:3920,requester:'Warehouse',supplier:'AL MAHA PETROLEUM',stage:'Submitted',age:2,created:'2026-06-01',history:[['Created by Warehouse','2026-06-01 14:00','done'],['Submitted','2026-06-01 14:05','done'],['Level 1 — Manager review','Waiting','pending']]},
+  {id:'PR-1188',desc:'Aggregate 20mm — 500 ton',amount:2050,requester:'Eng. Noor',supplier:'JABAL QUARRIES',stage:'Approved',age:4,created:'2026-05-30',history:[['Created by Eng. Noor','2026-05-30 11:00','done'],['Submitted','2026-05-30 11:10','done'],['Level 1 approved','2026-05-30 13:00','done'],['Level 2 approved','2026-05-31 10:00','done'],['Fully approved','2026-05-31 15:30','done']]},
+  {id:'PR-1187',desc:'Rebar 16mm — 40 ton',amount:12500,requester:'Eng. Noor',supplier:'MUSCAT STEEL',stage:'Rejected',age:5,created:'2026-05-29',history:[['Created by Eng. Noor','2026-05-29 09:00','done'],['Submitted','2026-05-29 09:05','done'],['Level 1 — rejected: price 8% over budget','2026-05-29 16:00','done']]}
+];
+
+function $(s,r){return (r||document).querySelector(s);}
+function pendingPRs(){return PRS.filter(function(p){return /Level|Submitted/.test(p.stage);}).length;}
+function fmtOMR(n){return Number(n).toLocaleString('en-OM');}
+function toast(m){var w=$('#toastWrap');var t=document.createElement('div');t.className='toast';t.textContent=m;w.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(function(){t.remove();},300);},3500);}
+function colorFor(p){if(p.stage==='Approved')return'c-green';if(p.stage==='Rejected')return'c-red';if(p.age>3)return'c-amber';return'c-blue';}
+
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');var b=$('#themeBtn');if(b)b.textContent=t==='dark'?'☀️':'🌙';localStorage.setItem('nexus-theme',t);}
+function initTheme(){var s=localStorage.getItem('nexus-theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');applyTheme(s);$('#themeBtn').onclick=function(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');};}
+
+function renderShell(){
+  var sb=$('#sidebar');
+  var h='<div class="sb-head"><div class="sb-mark">NX</div><div><div class="sb-brand">ERP <span>Nexus</span></div><div class="sb-ver">Procurement · v2.0</div></div></div><nav class="sb-nav">';
+  NAV.forEach(function(n){
+    if(n.sec){h+='<div class="sb-sec">'+n.sec+'</div>';return;}
+    var b='';if(n.badge==='pr'&&pendingPRs())b='<span class="nav-badge">'+pendingPRs()+'</span>';if(n.badge==='notif')b='<span class="nav-badge">5</span>';
+    h+='<a class="nav-i'+(n.id===CURRENT?' active':'')+'" href="'+n.href+'"><span class="nav-ico">'+n.ico+'</span>'+n.label+b+'</a>';
+  });
+  h+='</nav><div class="sb-foot"><div class="u-card"><div class="u-av">'+USER.initials+'</div><div style="flex:1;min-width:0"><div class="u-name">'+USER.name+'</div><div class="u-role">'+USER.role+'</div></div><button class="icon-btn" onclick="toast(\'Signed out (demo)\')" aria-label="Sign out">⏻</button></div></div>';
+  sb.innerHTML=h;
+  var bn=$('#bottomNav');var bh='';BOTTOM.forEach(function(id){var n=NAV.find(function(x){return x.id===id;});bh+='<a class="bn-i'+(id===CURRENT?' active':'')+'" href="'+n.href+'"><span class="nav-ico">'+n.ico+'</span>'+n.label.split(' ')[0]+'</a>';});bn.innerHTML=bh;
+}
+
+/* ---- Kanban ---- */
+function renderKanban(){
+  var k=$('#kanban');var html='';
+  STAGES.forEach(function(st){
+    var items=PRS.filter(function(p){return p.stage===st;});
+    html+='<div class="kcol" data-stage="'+st+'" ondragover="onOver(event)" ondragleave="onLeave(event)" ondrop="onDrop(event)">';
+    html+='<div class="kcol-h"><span class="kcol-dot" style="background:'+STAGE_COLOR[st]+'"></span><span class="kcol-t">'+st+'</span><span class="kcol-n">'+items.length+'</span></div><div class="kcol-body">';
+    items.forEach(function(p){
+      var canAct=/Level|Submitted/.test(p.stage);
+      html+='<div class="kcard '+colorFor(p)+'" draggable="true" data-id="'+p.id+'" ondragstart="onDrag(event)" ondragend="onEnd(event)">';
+      html+='<div class="kc-top"><span class="kc-id">'+p.id+'</span><span class="kc-amt">'+fmtOMR(p.amount)+' <small style="font-weight:600;color:var(--muted)">OMR</small></span></div>';
+      html+='<div class="kc-desc">'+p.desc+'</div>';
+      html+='<div class="kc-meta"><span>👤 '+p.requester+'</span><span class="badge '+(p.age>3?'b-amber':'b-grey')+'">'+p.age+'d</span></div>';
+      if(canAct)html+='<div class="kc-actions"><button class="btn btn-ok btn-sm" onclick="askApprove(\''+p.id+'\')">✓ Approve</button><button class="btn btn-no btn-sm" onclick="askReject(\''+p.id+'\')">✕ Reject</button></div>';
+      html+='</div>';
+    });
+    html+='</div></div>';
+  });
+  k.innerHTML=html;
+}
+var dragId=null;
+function onDrag(e){dragId=e.target.dataset.id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function onEnd(e){e.target.classList.remove('dragging');}
+function onOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function onLeave(e){e.currentTarget.classList.remove('drag-over');}
+function onDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  var st=e.currentTarget.dataset.stage;var p=PRS.find(function(x){return x.id===dragId;});
+  if(!p)return;
+  if(p.stage==='Approved'||p.stage==='Rejected'){toast('🔒 '+p.id+' is finalised — cannot move');return;}
+  p.stage=st;persist(p,'moved to '+st);renderKanban();renderShell();
+}
+
+/* ---- Approval flow ---- */
+var pendingAction=null;
+function askApprove(id){var p=PRS.find(function(x){return x.id===id;});pendingAction={id:id,type:'approve'};$('#amTitle').textContent='Approve '+id;$('#amSummary').textContent=p.desc+' · '+fmtOMR(p.amount)+' OMR';var c=$('#amConfirm');c.className='btn btn-ok';c.textContent='Approve';c.onclick=doAction;openModal('approveModal');}
+function askReject(id){var p=PRS.find(function(x){return x.id===id;});pendingAction={id:id,type:'reject'};$('#amTitle').textContent='Reject '+id;$('#amSummary').textContent=p.desc+' · '+fmtOMR(p.amount)+' OMR';var c=$('#amConfirm');c.className='btn btn-no';c.textContent='Reject';c.onclick=doAction;openModal('approveModal');}
+function doAction(){
+  var p=PRS.find(function(x){return x.id===pendingAction.id;});var note=$('#amComment').value;
+  if(pendingAction.type==='approve'){
+    var i=STAGES.indexOf(p.stage);var next=STAGES[Math.min(i+1,6)];
+    if(/Level 5/.test(p.stage)||i>=6)next='Approved';
+    if(p.stage==='Submitted')next='Level 1';
+    p.history.push([p.stage+' approved'+(note?': '+note:''),'2026-06-03 now','done']);
+    p.stage=next;toast('✅ '+p.id+' → '+next);
+  }else{
+    p.stage='Rejected';p.history.push(['Rejected'+(note?': '+note:''),'2026-06-03 now','done']);toast(''+p.id+' rejected');
+  }
+  persist(p,pendingAction.type);$('#amComment').value='';closeModal('approveModal');renderKanban();renderTimeline();renderShell();
+}
+function persist(p,what){if(!db)return;try{db.collection('nexus_prs').doc(p.id).set({stage:p.stage,amount:p.amount,desc:p.desc,updatedAt:Date.now(),by:USER.name});db.collection('nexus_activity').add({ref:p.id,action:what,at:Date.now(),by:USER.name});}catch(e){}}
+
+/* ---- Timeline ---- */
+function renderTimeline(){
+  var t=$('#timeline');var html='';
+  PRS.forEach(function(p){
+    var stColor=STAGE_COLOR[p.stage];
+    html+='<div class="tl-pr"><div class="tl-head"><div><span style="font-size:14px;font-weight:800;color:var(--primary)">'+p.id+'</span> <span style="font-size:13px">'+p.desc+'</span></div><span class="badge" style="background:'+stColor+'18;color:'+stColor+'">'+p.stage+' · '+fmtOMR(p.amount)+' OMR</span></div><div class="tl-line">';
+    p.history.forEach(function(s){html+='<div class="tl-step '+(s[2]==='done'?'':s[2])+'"><div class="tl-s-title">'+s[0]+'</div><div class="tl-s-meta">'+s[1]+'</div></div>';});
+    html+='</div></div>';
+  });
+  t.innerHTML=html;
+}
+
+function setView(v){
+  $('#vKanban').classList.toggle('on',v==='kanban');$('#vTimeline').classList.toggle('on',v==='timeline');
+  $('#kanban').style.display=v==='kanban'?'flex':'none';
+  $('#timeline').style.display=v==='timeline'?'block':'none';
+  if(v==='timeline')renderTimeline();
+}
+
+/* ---- New / duplicate detection ---- */
+function openNew(){openModal('newModal');}
+function submitNew(){
+  var desc=$('#nDesc').value.trim();var amt=parseFloat($('#nAmt').value)||0;
+  if(!desc){toast('Enter a description');return;}
+  var id='PR-'+(1192+PRS.filter(function(p){return p.id>'PR-1191';}).length);
+  PRS.unshift({id:id,desc:desc,amount:amt,requester:$('#nReq').value,supplier:'—',stage:'Submitted',age:0,created:'2026-06-03',history:[['Created by '+$('#nReq').value,'2026-06-03 now','done'],['Submitted','2026-06-03 now','done'],['Level 1 review','Waiting','pending']]});
+  persist(PRS[0],'created');closeModal('newModal');$('#nDesc').value='';$('#nAmt').value='';
+  checkDuplicate(desc);renderKanban();renderShell();toast('✅ '+id+' submitted');
+}
+function checkDuplicate(desc){
+  var key=desc.toLowerCase().split(' ')[0];
+  var dup=PRS.find(function(p){return p.desc.toLowerCase().indexOf(key)>-1&&p.stage!=='Rejected'&&PRS.indexOf(p)>0;});
+  var w=$('#dupWarn');
+  if(dup){$('#dupTxt').textContent='Possible duplicate: '+dup.id+' exists for similar material ("'+dup.desc.slice(0,40)+'…")';w.style.display='flex';setTimeout(function(){w.style.display='none';},8000);}
+}
+
+/* ---- delegate ---- */
+function openDelegate(){openModal('delModal');}
+function confirmDelegate(){toast('🤝 Approvals delegated to '+$('#delTo').value+' until '+$('#delUntil').value);closeModal('delModal');}
+
+function openModal(id){$('#'+id).classList.add('open');}
+function closeModal(id){$('#'+id).classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(function(o){o.classList.remove('open');});});
+document.querySelectorAll('.overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('open');});});
+
+function initLive(){function set(on){var p=$('#livePill');if(on){p.classList.remove('offline');p.innerHTML='<span class="live-dot"></span><span>Live</span>';}else{p.classList.add('offline');p.innerHTML='<span class="live-dot"></span><span>Offline</span>';}}window.addEventListener('online',function(){set(true);});window.addEventListener('offline',function(){set(false);});set(navigator.onLine);}
+
+function boot(){initTheme();renderShell();renderKanban();initLive();}
+document.addEventListener('DOMContentLoaded',boot);
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('nexus-sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
