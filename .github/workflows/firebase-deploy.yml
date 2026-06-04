@@ -9,12 +9,13 @@ name: Deploy ERP Nexus to Firebase
 #  2. In GitHub → repo Settings → Secrets and variables → Actions → New secret:
 #       Name:  FIREBASE_SERVICE_ACCOUNT
 #       Value: (paste the full service-account JSON)
-#  3. Push to main, or run this workflow manually (Actions tab → Run workflow).
+#  3. Push to the default branch (claude/erp-nexus-procurement-6lS85), or run
+#     this workflow manually (Actions tab → Run workflow).
 
 on:
   workflow_dispatch: {}
   push:
-    branches: [ main ]
+    branches: [ claude/erp-nexus-procurement-6lS85 ]
 
 jobs:
   deploy:
