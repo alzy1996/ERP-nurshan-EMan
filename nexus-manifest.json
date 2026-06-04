@@ -25,7 +25,7 @@
   ],
   "shortcuts": [
     { "name": "Command Center", "url": "dashboard.html" },
-    { "name": "Purchase Requests", "url": "purchaserequests.html" },
-    { "name": "Offers", "url": "offers.html" }
+    { "name": "Contracts", "url": "contracts.html" },
+    { "name": "Attendance", "url": "attendance.html" }
   ]
 }

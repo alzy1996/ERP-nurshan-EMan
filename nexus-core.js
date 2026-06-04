@@ -39,8 +39,16 @@
     { id: "suppliers", label: "Suppliers" },
     { id: "offers", label: "Offers" },
     { id: "purchaserequests", label: "Purchase Requests" },
+    { id: "contracts", label: "Contracts" },
+    { id: "attendance", label: "Attendance" },
     { id: "notifications", label: "Notifications" },
     { id: "settings", label: "Settings" }
+  ];
+
+  /* New modules to inject into every module's nav (id, label, icon, section header). */
+  var NAV_EXTRA = [
+    { id: "contracts", label: "Contracts", ico: "📄", after: "purchaserequests" },
+    { id: "attendance", label: "Attendance", ico: "🛂", after: "contracts" }
   ];
 
   var _session = undefined; /* memo */
@@ -377,6 +385,28 @@
     });
   }
 
+  /**
+   * Inject the new-module links (Contracts, Attendance) into the sidebar of any
+   * module whose NAV array predates them — so navigation is consistent app-wide
+   * without editing each module. Idempotent + permission-aware.
+   */
+  function ensureNavItems() {
+    var nav = document.querySelector("#sidebar .sb-nav");
+    if (!nav) { return; }
+    NAV_EXTRA.forEach(function (item) {
+      if (!canSee(item.id)) { return; }
+      if (nav.querySelector('a[href="' + item.id + '.html"]')) { return; }
+      var anchor = nav.querySelector('a[href="' + item.after + '.html"]');
+      var a = document.createElement("a");
+      a.className = "nav-i";
+      a.href = item.id + ".html";
+      if ((global.CURRENT || "") === item.id) { a.className += " active"; }
+      a.innerHTML = '<span class="nav-ico">' + item.ico + "</span>" + tr(item.label);
+      if (anchor && anchor.parentNode) { anchor.parentNode.insertBefore(a, anchor.nextSibling); }
+      else { nav.appendChild(a); }
+    });
+  }
+
   /** Inject the active-site switcher into the topbar actions area. */
   function injectSiteSwitcher() {
     var host = document.querySelector(".tb-actions");
@@ -413,26 +443,193 @@
     });
   }
 
+  /* ---------- geo + image helpers ---------- */
+
+  /**
+   * Great-circle distance between two lat/lng points (Haversine), in METRES.
+   * @param {number} la1 @param {number} lo1 @param {number} la2 @param {number} lo2
+   * @returns {number} distance in metres.
+   */
+  function haversine(la1, lo1, la2, lo2) {
+    var R = 6371000;
+    var r = function (d) { return d * Math.PI / 180; };
+    var dLa = r(la2 - la1), dLo = r(lo2 - lo1);
+    var a = Math.sin(dLa / 2) * Math.sin(dLa / 2) +
+      Math.cos(r(la1)) * Math.cos(r(la2)) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  /**
+   * Read an image File, downscale to maxPx on the longest edge, and return a
+   * compressed JPEG data URL (keeps Firestore docs well under 1 MB).
+   * @param {File} file @param {number} maxPx @param {number} quality 0..1
+   * @returns {Promise<string>} data URL.
+   */
+  function resizeImage(file, maxPx, quality) {
+    maxPx = maxPx || 1000; quality = quality || 0.6;
+    return new Promise(function (resolve, reject) {
+      if (!file) { reject(new Error("no file")); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          var scale = Math.min(1, maxPx / Math.max(w, h));
+          var cv = document.createElement("canvas");
+          cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+          cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+          resolve(cv.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = function () { reject(new Error("bad image")); };
+        img.src = reader.result;
+      };
+      reader.onerror = function () { reject(new Error("read failed")); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ---------- i18n + RTL (whole app, lives in the shared core) ---------- */
+
+  var LANG_KEY = "nexus-lang";
+  /* Exact-string EN→AR dictionary. Only whole-string matches are swapped, so
+     numbers, names, plates and dynamic data are never corrupted. */
+  var DICT = {
+    "Command Center": "مركز القيادة", "Analytics": "التحليلات", "Materials": "المواد",
+    "Suppliers": "الموردون", "Offers": "العروض", "Purchase Requests": "طلبات الشراء",
+    "Contracts": "العقود", "Attendance": "الحضور", "Notifications": "الإشعارات",
+    "Settings": "الإعدادات", "Sign out": "تسجيل الخروج", "Sign in": "تسجيل الدخول",
+    "Save": "حفظ", "Cancel": "إلغاء", "Delete": "حذف", "Create": "إنشاء", "Add": "إضافة",
+    "Edit": "تعديل", "Close": "إغلاق", "Search": "بحث", "Active": "نشط", "Status": "الحالة",
+    "Date": "التاريخ", "Name": "الاسم", "Live": "مباشر", "Offline": "غير متصل",
+    "Contract title": "عنوان العقد", "Contractor name": "اسم المقاول",
+    "Contractor phone": "هاتف المقاول", "Contract value": "قيمة العقد",
+    "Start date": "تاريخ البداية", "End date": "تاريخ النهاية", "Scope of work": "نطاق العمل",
+    "Terms & conditions": "الشروط والأحكام", "New Contract": "عقد جديد", "Draft": "مسودة",
+    "Signed": "موقّع", "Send to contractor": "إرسال للمقاول", "Print": "طباعة",
+    "Sign contract": "توقيع العقد", "Full name": "الاسم الكامل", "Clear": "مسح",
+    "Pre-Shipment Inspection": "الفحص قبل الشحن", "Inspection date": "تاريخ الفحص",
+    "Inspector name": "اسم المفتش", "Item inspected": "الصنف المفحوص", "Result": "النتيجة",
+    "Pass": "ناجح", "Fail": "راسب", "Notes": "ملاحظات", "Photo": "صورة",
+    "Sign In": "تسجيل الدخول", "Sign Out": "تسجيل الخروج", "Present": "حاضر",
+    "Absent": "غائب", "Incomplete": "غير مكتمل", "Time In": "وقت الدخول",
+    "Time Out": "وقت الخروج", "Total Hours": "إجمالي الساعات",
+    "Attendance Dashboard": "لوحة الحضور", "Live Map": "الخريطة المباشرة",
+    "Geofence Setup": "إعداد النطاق الجغرافي", "Use my current location": "استخدم موقعي الحالي",
+    "Radius (m)": "النطاق (متر)", "Latitude": "خط العرض", "Longitude": "خط الطول",
+    "Contracts ending soon": "عقود تنتهي قريباً", "No contracts yet": "لا توجد عقود بعد",
+    "Contractor": "مقاول", "PSI History": "سجل الفحص", "Add PSI Record": "إضافة سجل فحص",
+    "Expiry Alerts": "تنبيهات الانتهاء", "All sites": "كل المواقع"
+  };
+  var REV = {}; Object.keys(DICT).forEach(function (k) { REV[DICT[k]] = k; });
+
+  /** @returns {string} current language code ("en"|"ar"). */
+  function getLang() { return localStorage.getItem(LANG_KEY) || "en"; }
+
+  /** Translate an English key for the current language. @param {string} k @returns {string} */
+  function tr(k) {
+    if (getLang() === "ar" && DICT[k]) { return DICT[k]; }
+    return k;
+  }
+
+  /** Set document direction + lang attribute for the current language. */
+  function applyDir() {
+    var ar = getLang() === "ar";
+    document.documentElement.setAttribute("dir", ar ? "rtl" : "ltr");
+    document.documentElement.setAttribute("lang", ar ? "ar" : "en");
+  }
+
+  /** Inject minimal, safe RTL layout overrides once. */
+  function injectRtlStyle() {
+    if (document.getElementById("nexusRtlStyle")) { return; }
+    var st = document.createElement("style");
+    st.id = "nexusRtlStyle";
+    st.textContent =
+      '[dir="rtl"] body,[dir="rtl"]{text-align:right;}' +
+      '[dir="rtl"] .sb{border-right:none;border-left:1px solid var(--border);}' +
+      '[dir="rtl"] .tb-actions{margin-left:0;margin-right:auto;}' +
+      '[dir="rtl"] .search-ico{left:auto;right:13px;}' +
+      '[dir="rtl"] .search-box{padding:0 40px 0 14px;}' +
+      '[dir="rtl"] .nav-badge{margin-left:0;margin-right:auto;}';
+    document.head.appendChild(st);
+  }
+
+  /**
+   * Translate the visible DOM under root by exact whole-string match
+   * (text nodes + placeholder/title/aria-label). Reversible via the EN↔AR maps.
+   * @param {Node} root
+   */
+  function translateDOM(root) {
+    root = root || document.body;
+    if (!root) { return; }
+    var map = getLang() === "ar" ? DICT : REV;
+    var skip = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, CODE: 1, CANVAS: 1 };
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var nodes = [], n;
+    while ((n = walker.nextNode())) { nodes.push(n); }
+    nodes.forEach(function (node) {
+      if (node.parentNode && skip[node.parentNode.nodeName]) { return; }
+      var raw = node.nodeValue, key = raw.trim();
+      if (key && map[key]) { node.nodeValue = raw.replace(key, map[key]); }
+    });
+    ["placeholder", "title", "aria-label"].forEach(function (attr) {
+      var els = root.querySelectorAll ? root.querySelectorAll("[" + attr + "]") : [];
+      els.forEach(function (el) {
+        var v = el.getAttribute(attr), key = (v || "").trim();
+        if (key && map[key]) { el.setAttribute(attr, v.replace(key, map[key])); }
+      });
+    });
+  }
+
+  /** Switch language, persist, apply direction, and re-translate. @param {string} l */
+  function setLang(l) {
+    localStorage.setItem(LANG_KEY, l === "ar" ? "ar" : "en");
+    applyDir();
+    injectRtlStyle();
+    translateDOM(document.body);
+    var b = document.getElementById("nexusLangBtn");
+    if (b) { b.textContent = getLang() === "ar" ? "EN" : "ع"; }
+  }
+
+  /** Inject the EN/AR toggle into the topbar actions area (once). */
+  function injectLangToggle() {
+    var host = document.querySelector(".tb-actions");
+    if (!host || document.getElementById("nexusLangBtn")) { return; }
+    var b = document.createElement("button");
+    b.id = "nexusLangBtn";
+    b.className = "icon-btn";
+    b.setAttribute("aria-label", "Toggle language");
+    b.style.fontWeight = "800";
+    b.textContent = getLang() === "ar" ? "EN" : "ع";
+    b.addEventListener("click", function () { setLang(getLang() === "ar" ? "en" : "ar"); });
+    host.appendChild(b);
+  }
+
   var _observing = false;
 
   /**
-   * One-call chrome setup for a module: filter the nav, inject the site
-   * switcher, and keep the nav filtered across later shell re-renders.
+   * One-call chrome setup for a module: inject the new nav links, filter the
+   * nav by permission, inject the site switcher + language toggle, translate,
+   * and keep all of it applied across later shell re-renders.
    * Safe to call after renderShell().
    * @param {string} current - module CURRENT nav id.
    */
   function applyChrome(current) {
+    if (current) { global.CURRENT = current; }
+    ensureNavItems();
     filterNav();
     injectSiteSwitcher();
+    injectLangToggle();
+    applyDir();
+    injectRtlStyle();
+    translateDOM(document.body);
     if (!_observing) {
       _observing = true;
       var sb = document.getElementById("sidebar");
       var bn = document.getElementById("bottomNav");
-      var obs = new MutationObserver(function () { filterNav(); });
+      var obs = new MutationObserver(function () { ensureNavItems(); filterNav(); });
       if (sb) { obs.observe(sb, { childList: true, subtree: true }); }
       if (bn) { obs.observe(bn, { childList: true, subtree: true }); }
     }
-    void current;
   }
 
   /* ---------- exports ---------- */
@@ -459,8 +656,32 @@
     set: set,
     remove: remove,
     wipe: wipe,
+    haversine: haversine,
+    resizeImage: resizeImage,
+    t: tr,
+    tr: tr,
+    getLang: getLang,
+    setLang: setLang,
+    applyDir: applyDir,
+    translateDOM: translateDOM,
+    injectLangToggle: injectLangToggle,
     applyIdentity: applyIdentity,
     guardSection: guardSection,
     applyChrome: applyChrome
   };
+
+  /* Auto-apply language/direction on every page (incl. public standalone pages
+     such as login.html, offer-submit.html, contract-sign.html that don't call
+     applyChrome). Runs once the DOM is ready. */
+  function autoInit() {
+    applyDir();
+    injectRtlStyle();
+    translateDOM(document.body);
+    injectLangToggle();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", autoInit);
+  } else {
+    autoInit();
+  }
 })(window);

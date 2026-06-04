@@ -1,12 +1,15 @@
 /* ERP Nexus — Service Worker (offline-first PWA) */
-const CACHE = 'nexus-v2';
+const CACHE = 'nexus-v3';
 const SHELL = [
   'login.html', 'offer-submit.html', 'nexus-core.js',
   'dashboard.html', 'materials.html', 'suppliers.html', 'offers.html',
   'purchaserequests.html', 'analytics.html', 'notifications.html', 'settings.html',
+  'contracts.html', 'contract-sign.html', 'attendance.html',
   'nexus-manifest.json',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
 ];

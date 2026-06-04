@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ERP Nexus — Attendance</title>
+<meta name="theme-color" content="#E8612C">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="nexus-manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="nexus-core.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--primary:#E8612C;--primary-d:#C44D1E;--primary-l:rgba(232,97,44,.09);--blue:#2D7DD2;--blue-l:rgba(45,125,210,.1);--green:#1DB06A;--amber:#E8930A;--red:#E5484D;--purple:#7C3AED;--bg:#F4F5F9;--surface:#FFFFFF;--surface-2:#FAFBFE;--text:#0F1117;--muted:#7B8299;--border:#E7EAF2;--sh-sm:0 1px 3px rgba(15,17,23,.06);--sh:0 1px 3px rgba(15,17,23,.06),0 6px 18px rgba(15,17,23,.05);--sh-lg:0 20px 40px rgba(15,17,23,.16);--r:12px;--r-sm:8px;--r-lg:16px;--glass:rgba(255,255,255,.72);}
+[data-theme="dark"]{--bg:#0E1016;--surface:#171A22;--surface-2:#1E222C;--text:#EEF1F7;--muted:#8A92A6;--border:#272C38;--primary-l:rgba(232,97,44,.16);--blue-l:rgba(45,125,210,.18);--glass:rgba(23,26,34,.72);--sh-sm:0 1px 3px rgba(0,0,0,.4);--sh:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);}
+html,body{height:100%;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:14px;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:9px;height:9px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+.shell{display:flex;height:100vh;height:100dvh;}
+.sb{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;height:100dvh;}
+.sb-head{padding:18px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);}
+.sb-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--primary),#F4863F);border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:15px;flex-shrink:0;box-shadow:0 4px 12px rgba(232,97,44,.35);}
+.sb-brand{font-size:15px;font-weight:800;letter-spacing:-.3px;}.sb-brand span{color:var(--primary);}
+.sb-ver{font-size:10px;color:var(--muted);font-weight:600;}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 0;}
+.sb-sec{padding:14px 16px 6px;font-size:10px;font-weight:800;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;}
+.nav-i{display:flex;align-items:center;gap:11px;padding:10px 14px;margin:2px 9px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;transition:background .15s,color .15s;}
+.nav-i:hover{background:var(--surface-2);color:var(--text);}
+.nav-i.active{background:var(--primary-l);color:var(--primary);font-weight:700;}
+.nav-ico{font-size:17px;width:20px;text-align:center;}
+.sb-foot{padding:12px;border-top:1px solid var(--border);}
+.u-card{display:flex;align-items:center;gap:10px;}
+.u-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#5AA0E6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;}
+.u-name{font-size:12.5px;font-weight:700;}.u-role{font-size:10.5px;color:var(--muted);}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);transition:all .15s;}
+.icon-btn:hover{color:var(--primary);border-color:var(--primary);}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.topbar{background:var(--glass);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:11px 22px;display:flex;align-items:center;gap:16px;flex-shrink:0;z-index:30;}
+.tb-title h1{font-size:17px;font-weight:800;letter-spacing:-.3px;}.tb-title p{font-size:11.5px;color:var(--muted);}
+.tb-actions{display:flex;align-items:center;gap:9px;margin-left:auto;}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(29,176,106,.1);border:1px solid rgba(29,176,106,.25);color:var(--green);padding:6px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.live-pill.offline{background:rgba(232,147,10,.1);border-color:rgba(232,147,10,.3);color:var(--amber);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.6);}}
+.content{flex:1;overflow-y:auto;padding:20px 22px 90px;}
+.page-grid{max-width:1280px;margin:0 auto;}
+.btn{border:none;border-radius:var(--r-sm);font-weight:700;font-size:12px;padding:8px 14px;transition:filter .15s,background .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-pri{background:var(--primary);color:#fff;}.btn-pri:hover{background:var(--primary-d);}
+.btn-ok{background:var(--green);color:#fff;}.btn-ok:hover{filter:brightness(.93);}
+.btn-no{background:rgba(229,72,77,.12);color:var(--red);}.btn-no:hover{background:rgba(229,72,77,.2);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}.btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
+.btn-sm{padding:6px 11px;font-size:11px;}
+.btn-big{padding:16px;font-size:15px;border-radius:12px;width:100%;justify-content:center;}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;}
+.b-green{background:rgba(29,176,106,.12);color:#0e7a4a;}.b-amber{background:rgba(232,147,10,.13);color:#a06003;}.b-red{background:rgba(229,72,77,.12);color:#c0292e;}.b-blue{background:var(--blue-l);color:#1a5fa0;}.b-grey{background:var(--surface-2);color:var(--muted);border:1px solid var(--border);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh-sm);margin-bottom:14px;}
+.card-t{font-size:14px;font-weight:800;margin-bottom:12px;}
+/* contractor punch */
+.punch{max-width:460px;margin:0 auto;}
+.punch-status{text-align:center;padding:20px;border:1px solid var(--border);border-radius:14px;margin-bottom:16px;background:var(--surface-2);}
+.punch-status .big{font-size:28px;font-weight:800;margin:6px 0;}
+.geo-msg{font-size:12.5px;font-weight:600;border-radius:10px;padding:11px 13px;margin-top:12px;display:none;}
+.geo-msg.ok{background:rgba(29,176,106,.1);color:#0e7a4a;display:block;}
+.geo-msg.err{background:rgba(229,72,77,.1);color:#c0292e;display:block;}
+.geo-msg.info{background:var(--blue-l);color:#1a5fa0;display:block;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* admin */
+.ctrl-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;}
+.ctrl label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.ctrl input,.ctrl select{height:38px;padding:0 11px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-family:inherit;font-size:13px;outline:none;}
+.att-table{width:100%;border-collapse:collapse;font-size:13px;}
+.att-table th{text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:9px 10px;border-bottom:1px solid var(--border);}
+.att-table td{padding:10px;border-bottom:1px solid var(--border);}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--sh-sm);}
+.kpi-v{font-size:24px;font-weight:800;}.kpi-l{font-size:11px;color:var(--muted);font-weight:600;}
+#map{height:360px;border-radius:12px;border:1px solid var(--border);}
+.geo-site{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;}
+.geo-site .gs-name{font-weight:700;font-size:13px;min-width:120px;}
+.geo-site input{width:120px;height:34px;padding:0 9px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-family:inherit;font-size:12px;}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 16px;}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--glass);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:50;justify-content:space-around;}
+.bn-i{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:9.5px;font-weight:700;}
+.bn-i.active{color:var(--primary);}.bn-i .nav-ico{font-size:19px;}
+.toast-wrap{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:12px 14px;box-shadow:var(--sh-lg);font-size:12.5px;font-weight:600;min-width:240px;}
+@media(max-width:760px){.sb{display:none;}.bottom-nav{display:flex;}.topbar{padding:10px 14px;}.content{padding:14px 14px 90px;}.kpis{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sb" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="tb-title"><h1>Attendance</h1><p id="tbSub">GPS sign-in &amp; out</p></div>
+      <div class="tb-actions">
+        <div class="live-pill" id="livePill"><span class="live-dot"></span><span>Live</span></div>
+        <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+      </div>
+    </header>
+    <div class="content">
+      <div class="page-grid">
+
+        <!-- Contractor punch view -->
+        <div id="contractorView" style="display:none">
+          <div class="punch">
+            <div class="card">
+              <div class="card-t">📍 <span id="siteName">Your site</span></div>
+              <div class="punch-status">
+                <div style="font-size:12px;color:var(--muted)">Today</div>
+                <div class="big" id="todayState">Not signed in</div>
+                <div style="font-size:12.5px;color:var(--muted)" id="todayTimes"></div>
+              </div>
+              <div class="row2">
+                <button class="btn btn-ok btn-big" id="inBtn" onclick="punch('in')">🟢 Sign In</button>
+                <button class="btn btn-no btn-big" id="outBtn" onclick="punch('out')">🔴 Sign Out</button>
+              </div>
+              <div class="geo-msg" id="geoMsg"></div>
+              <p style="font-size:11px;color:var(--muted);margin-top:12px;text-align:center">Sign-in is only allowed inside your site's GPS boundary.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin dashboard view -->
+        <div id="adminView" style="display:none">
+          <div class="ctrl-bar">
+            <div class="ctrl"><label>Date</label><input type="date" id="aDate" onchange="loadDay()"></div>
+            <div class="ctrl"><label>Site</label><select id="aSite" onchange="loadDay()"></select></div>
+            <div class="ctrl"><label>Range from</label><input type="date" id="aFrom" onchange="loadRange()"></div>
+            <div class="ctrl"><label>Range to</label><input type="date" id="aTo" onchange="loadRange()"></div>
+          </div>
+          <div class="kpis" id="attKpis"></div>
+          <div class="card"><div class="card-t">Daily attendance — <span id="dayLabel"></span></div><div style="overflow-x:auto"><table class="att-table" id="attTable"><thead><tr><th>Contractor</th><th>Site</th><th>Time In</th><th>Time Out</th><th>Hours</th><th>Status</th></tr></thead><tbody id="attBody"></tbody></table></div></div>
+          <div class="card"><div class="card-t">🗺️ Live sign-in map</div><div id="map"></div></div>
+          <div class="card"><div class="card-t">📐 Site geofence setup</div><div id="geoSetup"></div><p style="font-size:11px;color:var(--muted);margin-top:6px">Set each site's GPS centre + allowed radius (metres). Use “current location” while standing on site.</p></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+<nav class="bottom-nav" id="bottomNav"></nav>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+"use strict";
+var db=window.db;
+var NAV=[{sec:'Overview'},{id:'dashboard',label:'Command Center',ico:'◈',href:'dashboard.html'},{id:'analytics',label:'Analytics',ico:'📊',href:'analytics.html'},{sec:'Procurement'},{id:'materials',label:'Materials',ico:'📦',href:'materials.html'},{id:'suppliers',label:'Suppliers',ico:'🏭',href:'suppliers.html'},{id:'offers',label:'Offers',ico:'🏷️',href:'offers.html'},{id:'purchaserequests',label:'Purchase Requests',ico:'📋',href:'purchaserequests.html'},{id:'contracts',label:'Contracts',ico:'📄',href:'contracts.html'},{id:'attendance',label:'Attendance',ico:'🛂',href:'attendance.html'},{sec:'Workspace'},{id:'notifications',label:'Notifications',ico:'🔔',href:'notifications.html'},{id:'settings',label:'Settings',ico:'⚙️',href:'settings.html'}];
+var BOTTOM=['dashboard','contracts','attendance','suppliers','settings'];
+var CURRENT='attendance';
+var USER={name:'User',role:'',initials:'U'};
+var SITES=[],myDoc=null,map=null,markers=[];
+
+function $(s,r){return (r||document).querySelector(s);}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;}
+function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function toast(m){var w=$('#toastWrap');var t=el('div','toast',m);w.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(function(){t.remove();},300);},3500);}
+function hhmm(ms){if(!ms)return '—';var d=new Date(ms);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+function today(){return new Date().toISOString().slice(0,10);}
+
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');var b=$('#themeBtn');if(b)b.textContent=t==='dark'?'☀️':'🌙';localStorage.setItem('nexus-theme',t);}
+function initTheme(){var s=localStorage.getItem('nexus-theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');applyTheme(s);$('#themeBtn').onclick=function(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');};}
+function signOut(){if(window.Nexus){Nexus.logout();}}
+
+function renderShell(){
+  var sb=$('#sidebar');
+  var h='<div class="sb-head"><div class="sb-mark">NX</div><div><div class="sb-brand">ERP <span>Nexus</span></div><div class="sb-ver">Procurement · v2.0</div></div></div><nav class="sb-nav">';
+  NAV.forEach(function(n){if(n.sec){h+='<div class="sb-sec">'+n.sec+'</div>';return;}h+='<a class="nav-i'+(n.id===CURRENT?' active':'')+'" href="'+n.href+'"><span class="nav-ico">'+n.ico+'</span>'+n.label+'</a>';});
+  h+='</nav><div class="sb-foot"><div class="u-card"><div class="u-av">'+USER.initials+'</div><div style="flex:1;min-width:0"><div class="u-name">'+USER.name+'</div><div class="u-role">'+USER.role+'</div></div><button class="icon-btn" onclick="signOut()" aria-label="Sign out">⏻</button></div></div>';
+  sb.innerHTML=h;
+  var bn=$('#bottomNav');var bh='';BOTTOM.forEach(function(id){var n=NAV.find(function(x){return x.id===id;});if(!n)return;bh+='<a class="bn-i'+(id===CURRENT?' active':'')+'" href="'+n.href+'"><span class="nav-ico">'+n.ico+'</span>'+n.label.split(' ')[0]+'</a>';});bn.innerHTML=bh;
+}
+function initLive(){function set(on){var p=$('#livePill');if(on){p.classList.remove('offline');p.innerHTML='<span class="live-dot"></span><span>Live</span>';}else{p.classList.add('offline');p.innerHTML='<span class="live-dot"></span><span>Offline</span>';}}window.addEventListener('online',function(){set(true);});window.addEventListener('offline',function(){set(false);});set(navigator.onLine);}
+
+function getPosition(){
+  return new Promise(function(res,rej){
+    if(!navigator.geolocation){rej(new Error('This device has no GPS support'));return;}
+    navigator.geolocation.getCurrentPosition(function(p){res(p.coords);},function(e){rej(new Error(e.message||'Location unavailable'));},{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+  });
+}
+function geo(kind,txt){var m=$('#geoMsg');m.className='geo-msg '+kind;m.textContent=txt;}
+
+/* ---- contractor punch ---- */
+function siteById(id){return SITES.find(function(s){return s.id===id;});}
+function refreshPunchUI(){
+  var s=siteById(Nexus.activeSite());
+  $('#siteName').textContent=s?s.name:'Your site';
+  var st='Not signed in',times='';
+  if(myDoc&&myDoc.timeIn){st='Signed in';times='In: '+hhmm(myDoc.timeIn);}
+  if(myDoc&&myDoc.timeIn&&myDoc.timeOut){st='Completed';times='In: '+hhmm(myDoc.timeIn)+'  ·  Out: '+hhmm(myDoc.timeOut);}
+  $('#todayState').textContent=st;$('#todayTimes').textContent=times;
+  $('#inBtn').disabled=!!(myDoc&&myDoc.timeIn);
+  $('#outBtn').disabled=!(myDoc&&myDoc.timeIn)||!!(myDoc&&myDoc.timeOut);
+}
+function loadMyDoc(){
+  var uid=(Nexus.session()||{}).uid;var id=uid+'_'+today();
+  return db.collection('nexus_attendance').doc(id).get().then(function(d){myDoc=d.exists?d.data():null;refreshPunchUI();}).catch(function(){});
+}
+function punch(kind){
+  var s=siteById(Nexus.activeSite());
+  if(!s){geo('err','No site assigned to your account.');return;}
+  if(s.latitude==null||s.longitude==null){geo('info','Your site has no GPS boundary configured yet. Please ask the administrator to set it.');return;}
+  geo('info','📡 Getting your location…');
+  getPosition().then(function(co){
+    var dist=Nexus.haversine(co.latitude,co.longitude,s.latitude,s.longitude);
+    var radius=s.radius||200;
+    if(dist>radius){geo('err','⛔ You are '+Math.round(dist)+' m away — '+Math.round(dist-radius)+' m outside the '+radius+' m site boundary. '+(kind==='in'?'Sign-in':'Sign-out')+' blocked.');return;}
+    var sess=Nexus.session()||{};var id=sess.uid+'_'+today();
+    var data={contractorUid:sess.uid,contractorName:sess.name,siteId:s.id,date:today()};
+    if(kind==='in'){
+      if(myDoc&&myDoc.timeIn){geo('err','You already signed in at '+hhmm(myDoc.timeIn));return;}
+      data.timeIn=Date.now();data.inLat=co.latitude;data.inLng=co.longitude;
+    }else{
+      if(!myDoc||!myDoc.timeIn){geo('err','Please sign in first.');return;}
+      if(myDoc.timeOut){geo('err','You already signed out at '+hhmm(myDoc.timeOut));return;}
+      data.timeOut=Date.now();data.outLat=co.latitude;data.outLng=co.longitude;
+    }
+    db.collection('nexus_attendance').doc(id).set(data,{merge:true}).then(function(){
+      geo('ok','✅ '+(kind==='in'?'Signed in':'Signed out')+' at '+hhmm(Date.now())+' ('+Math.round(dist)+' m from centre)');
+      loadMyDoc();
+    }).catch(function(){geo('err','Could not save — please try again.');});
+  }).catch(function(e){geo('err','Location error: '+e.message+' — please enable location and retry.');});
+}
+
+/* ---- admin dashboard ---- */
+function siteFilterOptions(){
+  var sel=$('#aSite');var html='';
+  if(Nexus.isAdmin())html+='<option value="__ALL__">All sites</option>';
+  SITES.forEach(function(s){html+='<option value="'+s.id+'">'+esc(s.name)+'</option>';});
+  sel.innerHTML=html;
+}
+function contractorRoster(siteId){
+  return db.collection('nexus_users').get().then(function(snap){
+    var users=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;}).filter(function(u){return (u.jobType||'')==='Contractor';});
+    if(siteId&&siteId!=='__ALL__'){users=users.filter(function(u){return (u.sites||[]).indexOf(siteId)>-1;});}
+    return users;
+  }).catch(function(){return [];});
+}
+function attendanceForDate(date,siteId){
+  var q=db.collection('nexus_attendance').where('date','==',date);
+  return q.get().then(function(snap){
+    var rows=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
+    if(siteId&&siteId!=='__ALL__'){rows=rows.filter(function(r){return r.siteId===siteId;});}
+    return rows;
+  }).catch(function(){return [];});
+}
+function statusOf(rec){
+  if(rec&&rec.timeIn&&rec.timeOut)return {t:'Present',c:'b-green'};
+  if(rec&&(rec.timeIn||rec.timeOut))return {t:'Incomplete',c:'b-amber'};
+  return {t:'Absent',c:'b-red'};
+}
+function loadDay(){
+  var date=$('#aDate').value||today();var siteId=$('#aSite').value;
+  $('#dayLabel').textContent=date;
+  Promise.all([contractorRoster(siteId),attendanceForDate(date,siteId)]).then(function(r){
+    var roster=r[0],recs=r[1];
+    var byUid={};recs.forEach(function(x){byUid[x.contractorUid]=x;});
+    var present=0,absent=0,incomplete=0,html='';
+    /* contractors from roster */
+    roster.forEach(function(u){
+      var rec=byUid[u.id];var st=statusOf(rec);
+      if(st.t==='Present')present++;else if(st.t==='Absent')absent++;else incomplete++;
+      var hrs=(rec&&rec.timeIn&&rec.timeOut)?((rec.timeOut-rec.timeIn)/3.6e6).toFixed(1):'—';
+      var site=siteById(rec?rec.siteId:(u.sites||[])[0]);
+      html+='<tr><td>'+esc(u.name||u.username)+'</td><td>'+esc(site?site.name:'—')+'</td><td>'+hhmm(rec&&rec.timeIn)+'</td><td>'+hhmm(rec&&rec.timeOut)+'</td><td>'+hrs+'</td><td><span class="badge '+st.c+'">'+st.t+'</span></td></tr>';
+      delete byUid[u.id];
+    });
+    /* any attendance records whose user is not in the contractor roster (still show) */
+    Object.keys(byUid).forEach(function(uid){
+      var rec=byUid[uid];var st=statusOf(rec);if(st.t==='Present')present++;else incomplete++;
+      var hrs=(rec.timeIn&&rec.timeOut)?((rec.timeOut-rec.timeIn)/3.6e6).toFixed(1):'—';
+      var site=siteById(rec.siteId);
+      html+='<tr><td>'+esc(rec.contractorName||uid)+'</td><td>'+esc(site?site.name:'—')+'</td><td>'+hhmm(rec.timeIn)+'</td><td>'+hhmm(rec.timeOut)+'</td><td>'+hrs+'</td><td><span class="badge '+st.c+'">'+st.t+'</span></td></tr>';
+    });
+    if(!html)html='<tr><td colspan="6" class="empty">No contractors for this site/date.</td></tr>';
+    $('#attBody').innerHTML=html;
+    $('#attKpis').innerHTML=
+      '<div class="kpi"><div class="kpi-v">'+(roster.length||recs.length)+'</div><div class="kpi-l">Contractors</div></div>'+
+      '<div class="kpi"><div class="kpi-v" style="color:var(--green)">'+present+'</div><div class="kpi-l">Present</div></div>'+
+      '<div class="kpi"><div class="kpi-v" style="color:var(--amber)">'+incomplete+'</div><div class="kpi-l">Incomplete</div></div>'+
+      '<div class="kpi"><div class="kpi-v" style="color:var(--red)">'+absent+'</div><div class="kpi-l">Absent</div></div>';
+    renderMap(recs);
+    if(window.Nexus){Nexus.translateDOM(document.body);}
+  });
+}
+function loadRange(){
+  var from=$('#aFrom').value,to=$('#aTo').value,siteId=$('#aSite').value;
+  if(!from||!to){return;}
+  if(from>to){toast('Range start must be before end');return;}
+  $('#dayLabel').textContent=from+' → '+to+' (summary)';
+  db.collection('nexus_attendance').where('date','>=',from).where('date','<=',to).get().then(function(snap){
+    var rows=snap.docs.map(function(d){return d.data();});
+    if(siteId&&siteId!=='__ALL__'){rows=rows.filter(function(r){return r.siteId===siteId;});}
+    var agg={};
+    rows.forEach(function(r){
+      var k=r.contractorUid||r.contractorName;
+      if(!agg[k]){agg[k]={name:r.contractorName,siteId:r.siteId,present:0,incomplete:0,hours:0};}
+      if(r.timeIn&&r.timeOut){agg[k].present++;agg[k].hours+=(r.timeOut-r.timeIn)/3.6e6;}
+      else{agg[k].incomplete++;}
+    });
+    var keys=Object.keys(agg),html='';
+    keys.forEach(function(k){var a=agg[k];var site=siteById(a.siteId);
+      html+='<tr><td>'+esc(a.name||k)+'</td><td>'+esc(site?site.name:'—')+'</td><td>'+a.present+' present</td><td>'+a.incomplete+' incomplete</td><td>'+a.hours.toFixed(1)+'</td><td><span class="badge b-blue">'+(from+' → '+to)+'</span></td></tr>';
+    });
+    if(!html){html='<tr><td colspan="6" class="empty">No attendance records in this range.</td></tr>';}
+    $('#attBody').innerHTML=html;
+    if(window.Nexus){Nexus.translateDOM(document.body);}
+  }).catch(function(){toast('Could not load range');});
+}
+
+/* ---- Leaflet map ---- */
+function renderMap(recs){
+  var center=[23.5880,58.3829];var s=siteById($('#aSite').value);if(s&&s.latitude!=null)center=[s.latitude,s.longitude];
+  if(!map){
+    map=L.map('map').setView(center,12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
+  }else{map.setView(center,12);}
+  markers.forEach(function(m){map.removeLayer(m);});markers=[];
+  recs.forEach(function(r){
+    if(r.inLat==null)return;
+    var mk=L.marker([r.inLat,r.inLng]).addTo(map).bindPopup('<b>'+esc(r.contractorName||'')+'</b><br>Signed in: '+hhmm(r.timeIn));
+    markers.push(mk);
+  });
+  setTimeout(function(){map.invalidateSize();},200);
+}
+
+/* ---- geofence setup ---- */
+function renderGeoSetup(){
+  var box=$('#geoSetup');var html='';
+  if(!SITES.length){box.innerHTML='<div class="empty">No sites yet — create sites in Settings first.</div>';return;}
+  SITES.forEach(function(s){
+    html+='<div class="geo-site" data-id="'+s.id+'"><div class="gs-name">'+esc(s.name)+'</div>'+
+      '<input type="number" step="0.0001" class="g-lat" placeholder="Latitude" value="'+(s.latitude!=null?s.latitude:'')+'">'+
+      '<input type="number" step="0.0001" class="g-lng" placeholder="Longitude" value="'+(s.longitude!=null?s.longitude:'')+'">'+
+      '<input type="number" step="10" class="g-rad" placeholder="Radius m" value="'+(s.radius!=null?s.radius:200)+'">'+
+      '<button class="btn btn-ghost btn-sm" onclick="useHere(this)">📍 Current location</button>'+
+      '<button class="btn btn-pri btn-sm" onclick="saveGeo(this)">Save</button></div>';
+  });
+  box.innerHTML=html;
+}
+function useHere(btn){
+  var row=btn.closest('.geo-site');
+  btn.disabled=true;btn.textContent='📡 …';
+  getPosition().then(function(co){
+    row.querySelector('.g-lat').value=co.latitude.toFixed(6);
+    row.querySelector('.g-lng').value=co.longitude.toFixed(6);
+    btn.disabled=false;btn.textContent='📍 Current location';toast('Captured your current location');
+  }).catch(function(e){btn.disabled=false;btn.textContent='📍 Current location';toast('Location error: '+e.message);});
+}
+function saveGeo(btn){
+  var row=btn.closest('.geo-site');var id=row.dataset.id;
+  var lat=parseFloat(row.querySelector('.g-lat').value);
+  var lng=parseFloat(row.querySelector('.g-lng').value);
+  var rad=parseInt(row.querySelector('.g-rad').value,10)||200;
+  if(isNaN(lat)||isNaN(lng)){toast('Enter latitude and longitude');return;}
+  db.collection('nexus_sites').doc(id).set({latitude:lat,longitude:lng,radius:rad},{merge:true}).then(function(){
+    toast('Geofence saved');var s=siteById(id);if(s){s.latitude=lat;s.longitude=lng;s.radius=rad;}
+  }).catch(function(){toast('Could not save geofence');});
+}
+
+/* ---- boot ---- */
+function boot(){
+  if(!window.Nexus||!Nexus.requireAuth())return;
+  if(!Nexus.guardSection('attendance'))return;
+  Nexus.applyIdentity();
+  var sess=Nexus.session()||{};
+  USER={name:sess.name||'User',role:sess.jobType||'',initials:(sess.name||'U').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()};
+  initTheme();renderShell();initLive();Nexus.applyChrome('attendance');
+  Nexus.sites().then(function(list){
+    SITES=list;
+    if(Nexus.isAdmin()){
+      $('#adminView').style.display='block';
+      $('#aDate').value=today();
+      siteFilterOptions();renderGeoSetup();loadDay();
+    }else{
+      $('#contractorView').style.display='block';
+      loadMyDoc();refreshPunchUI();
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded',boot);
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('nexus-sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
