@@ -1,0 +1,41 @@
+name: Deploy ERP Nexus to Firebase
+
+# Deploys Firebase Hosting + Firestore rules for project procurement-erp-6e271.
+#
+# SETUP (one time):
+#  1. In the Firebase/Google Cloud console create a service account with roles
+#     "Firebase Hosting Admin" + "Cloud Datastore Owner" (or "Firebase Admin"),
+#     and download its JSON key.
+#  2. In GitHub → repo Settings → Secrets and variables → Actions → New secret:
+#       Name:  FIREBASE_SERVICE_ACCOUNT
+#       Value: (paste the full service-account JSON)
+#  3. Push to main, or run this workflow manually (Actions tab → Run workflow).
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write service account key
+        run: printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$HOME/sa.json"
+
+      - name: Deploy hosting + Firestore rules
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/sa.json"
+          firebase deploy \
+            --only hosting,firestore:rules \
+            --project procurement-erp-6e271 \
+            --non-interactive

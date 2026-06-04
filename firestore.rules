@@ -48,6 +48,13 @@ service cloud.firestore {
       allow read, write: if true;     // TODO: restrict writes to admins via Auth
     }
 
+    // ---- Contracts: public signing page may merge-update an existing doc ----
+    // (sets status:'Signed' + signature). App-level gating still applies; harden
+    // once Firebase Auth is added so only the contractor link can sign.
+    match /nexus_contracts/{doc}          { allow read, write: if true; }
+    match /nexus_psi/{doc}                { allow read, write: if true; }
+    match /nexus_attendance/{doc}         { allow read, write: if true; }
+
     // ---- All other Nexus collections ----
     match /nexus_sites/{doc}              { allow read, write: if true; }
     match /nexus_suppliers/{doc}          { allow read, write: if true; }
