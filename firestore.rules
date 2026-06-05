@@ -29,9 +29,10 @@ service cloud.firestore {
     // Anyone with a valid offer link may CREATE an offer, but only with the
     // expected shape; they may not read, edit or delete existing offers.
     match /nexus_offers/{offerId} {
-      allow read: if true;            // procurement app reads site-scoped offers
-      allow update, delete: if true;  // TODO: restrict to authenticated procurement
+      allow read: if request.auth != null;            // procurement app reads site-scoped offers
+      allow update, delete: if request.auth != null;  // TODO: restrict to authenticated procurement
       allow create: if
+        request.auth != null &&
         request.resource.data.keys().hasOnly([
           'siteId','supplierId','supplierName','items','price','validity',
           'contact','note','status','source','token','createdAt','createdBy'
@@ -45,29 +46,29 @@ service cloud.firestore {
     // ---- Users: contain passwordHash — keep readable for custom-auth login ----
     // (Login queries by username. Harden once Firebase Auth is added.)
     match /nexus_users/{userId} {
-      allow read, write: if true;     // TODO: restrict writes to admins via Auth
+      allow read, write: if request.auth != null;     // TODO: restrict writes to admins via Auth
     }
 
     // ---- Contracts: public signing page may merge-update an existing doc ----
     // (sets status:'Signed' + signature). App-level gating still applies; harden
     // once Firebase Auth is added so only the contractor link can sign.
-    match /nexus_contracts/{doc}          { allow read, write: if true; }
-    match /nexus_psi/{doc}                { allow read, write: if true; }
-    match /nexus_attendance/{doc}         { allow read, write: if true; }
+    match /nexus_contracts/{doc}          { allow read, write: if request.auth != null; }
+    match /nexus_psi/{doc}                { allow read, write: if request.auth != null; }
+    match /nexus_attendance/{doc}         { allow read, write: if request.auth != null; }
 
     // ---- All other Nexus collections ----
-    match /nexus_sites/{doc}              { allow read, write: if true; }
-    match /nexus_suppliers/{doc}          { allow read, write: if true; }
-    match /nexus_materials/{doc}          { allow read, write: if true; }
-    match /nexus_prs/{doc}                { allow read, write: if true; }
-    match /nexus_activity/{doc}           { allow read, write: if true; }
-    match /nexus_notifications/{doc}      { allow read, write: if true; }
-    match /nexus_settings/{doc}           { allow read, write: if true; }
-    match /nexus_quotes/{doc}             { allow read, write: if true; }
-    match /nexus_negotiations/{doc}       { allow read, write: if true; }
-    match /nexus_schedules/{doc}          { allow read, write: if true; }
-    match /nexus_whatsapp_tokens/{doc}    { allow read, write: if true; }
-    match /nexus_meta/{doc}               { allow read, write: if true; }
+    match /nexus_sites/{doc}              { allow read, write: if request.auth != null; }
+    match /nexus_suppliers/{doc}          { allow read, write: if request.auth != null; }
+    match /nexus_materials/{doc}          { allow read, write: if request.auth != null; }
+    match /nexus_prs/{doc}                { allow read, write: if request.auth != null; }
+    match /nexus_activity/{doc}           { allow read, write: if request.auth != null; }
+    match /nexus_notifications/{doc}      { allow read, write: if request.auth != null; }
+    match /nexus_settings/{doc}           { allow read, write: if request.auth != null; }
+    match /nexus_quotes/{doc}             { allow read, write: if request.auth != null; }
+    match /nexus_negotiations/{doc}       { allow read, write: if request.auth != null; }
+    match /nexus_schedules/{doc}          { allow read, write: if request.auth != null; }
+    match /nexus_whatsapp_tokens/{doc}    { allow read, write: if request.auth != null; }
+    match /nexus_meta/{doc}               { allow read, write: if request.auth != null; }
 
     // Deny anything not explicitly matched above.
     match /{document=**} { allow read, write: if false; }

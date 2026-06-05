@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="nexus-core.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -138,13 +140,16 @@ function submitSign(){
   if(!name){setMsg('Please type your full name','err');return;}
   if(!contract){setMsg('Contract not loaded','err');return;}
   var btn=$('#signBtn');btn.disabled=true;setMsg('Submitting…');
-  var sig=c.toDataURL('image/png');
-  db.collection('nexus_contracts').doc(CONTRACT_ID).set({
-    status:'Signed',signerName:name,signedDate:$('#signDate').value||null,
-    signedAt:Date.now(),signatureImg:sig,signToken:TOKEN||null
-  },{merge:true}).then(function(){
-    $('#formView').style.display='none';$('#doneView').style.display='block';
-  }).catch(function(){btn.disabled=false;setMsg('Could not submit — please try again','err');});
+  c.toBlob(function(blob){
+    Nexus.uploadBlob(blob,'signatures','png').then(function(r){
+      return db.collection('nexus_contracts').doc(CONTRACT_ID).set({
+        status:'Signed',signerName:name,signedDate:$('#signDate').value||null,
+        signedAt:Date.now(),signatureUrl:r.url,signToken:TOKEN||null
+      },{merge:true});
+    }).then(function(){
+      $('#formView').style.display='none';$('#doneView').style.display='block';
+    }).catch(function(){btn.disabled=false;setMsg('Could not submit — please try again','err');});
+  },'image/png');
 }
 
 function boot(){

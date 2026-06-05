@@ -28,6 +28,63 @@
   } catch (e) { console.warn("[nexus-core] firebase init", e); }
   global.db = db;
 
+  var auth = null, storage = null;
+  try {
+    auth = firebase.auth(); storage = firebase.storage();
+    global.authReady = auth.signInAnonymously().catch(function (e) { console.warn("[nexus-core] auth", e); });
+  } catch (e) { console.warn("[nexus-core] auth/storage init", e); }
+  global.auth = auth; global.storage = storage;
+
+  /* ---- secure file upload (whitelist + magic bytes + UUID + Cloud Storage) ---- */
+  var ALLOW = { jpg: [[0xFF, 0xD8, 0xFF]], jpeg: [[0xFF, 0xD8, 0xFF]], png: [[0x89, 0x50, 0x4E, 0x47]], pdf: [[0x25, 0x50, 0x44, 0x46]], docx: [[0x50, 0x4B, 0x03, 0x04]] };
+  var BLOCK = /\.(php|phtml|php5|pht|phar|jsp|asp|aspx|py|sh|exe|bat|cmd|js|html?)$/i;
+  var MAXB = 5 * 1024 * 1024;
+  function uuid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now() + "" + Math.random().toString(36).slice(2); }
+  function magicOK(b, sigs) { return sigs.some(function (s) { return s.every(function (x, i) { return b[i] === x; }); }); }
+
+  /**
+   * Validate (extension + magic bytes + size), rename to a UUID, upload to
+   * Cloud Storage (never Hosting). @param {File} file @param {string} folder
+   * @returns {Promise<{url:string,path:string}>}
+   */
+  function uploadFile(file, folder) {
+    return new Promise(function (res, rej) {
+      if (!file) { return rej(new Error("No file")); }
+      if (file.size > MAXB) { return rej(new Error("Max 5MB")); }
+      var nm = (file.name || "").toLowerCase(), ext = nm.split(".").pop();
+      if (BLOCK.test(nm) || !ALLOW[ext]) { return rej(new Error("Only pdf, jpg, png, docx")); }
+      var fr = new FileReader();
+      fr.onload = function () {
+        if (!magicOK(new Uint8Array(fr.result), ALLOW[ext])) { return rej(new Error("Content does not match extension")); }
+        var uid = (auth && auth.currentUser && auth.currentUser.uid) || "anon";
+        var path = folder + "/" + uid + "/" + uuid() + "." + ext;
+        storage.ref(path).put(file, { contentType: file.type }).then(function (s) { return s.ref.getDownloadURL(); })
+          .then(function (url) { res({ url: url, path: path }); }).catch(rej);
+      };
+      fr.onerror = function () { rej(new Error("Read failed")); };
+      fr.readAsArrayBuffer(file.slice(0, 8));
+    });
+  }
+
+  /** Upload a generated blob (e.g. signature PNG) — trusted, no magic check. */
+  function uploadBlob(blob, folder, ext) {
+    var uid = (auth && auth.currentUser && auth.currentUser.uid) || "anon";
+    var path = folder + "/" + uid + "/" + uuid() + "." + ext;
+    return storage.ref(path).put(blob).then(function (s) { return s.ref.getDownloadURL(); })
+      .then(function (url) { return { url: url, path: path }; });
+  }
+
+  /** Save FIRST, then open WhatsApp after 500ms. */
+  function sendWhatsApp(number, msg, saveFn) {
+    var url = "https://wa.me/" + String(number).replace(/\D/g, "") + "?text=" + encodeURIComponent(msg);
+    return Promise.resolve(saveFn && saveFn()).then(function () { setTimeout(function () { window.open(url, "_blank", "noopener,noreferrer"); }, 500); });
+  }
+  /** Save FIRST, then open mailto after 500ms. */
+  function sendEmail(email, subject, body, saveFn) {
+    var url = "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    return Promise.resolve(saveFn && saveFn()).then(function () { setTimeout(function () { window.open(url, "_blank", "noopener,noreferrer"); }, 500); });
+  }
+
   var SESSION_KEY = "nexus_session";
   var ALL = "__ALL__"; /* admin aggregate "all sites" */
 
@@ -728,6 +785,10 @@
     set: set,
     remove: remove,
     wipe: wipe,
+    uploadFile: uploadFile,
+    uploadBlob: uploadBlob,
+    sendWhatsApp: sendWhatsApp,
+    sendEmail: sendEmail,
     haversine: haversine,
     resizeImage: resizeImage,
     t: tr,

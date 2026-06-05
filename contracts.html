@@ -12,6 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="nexus-core.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -336,7 +338,7 @@ function openDetail(id){
   rows.forEach(function(r){html+='<div class="detail-row"><span>'+r[0]+'</span><span style="text-align:right;font-weight:600">'+esc(r[1]||'—')+'</span></div>';});
   if(c.status==='Signed'){
     html+='<div style="margin-top:12px;font-size:12px;color:var(--muted)">Signed by <b style="color:var(--text)">'+esc(c.signerName||'')+'</b> on '+new Date(c.signedAt||Date.now()).toLocaleString('en-GB')+'</div>';
-    if(c.signatureImg){html+='<img class="sig-show" src="'+c.signatureImg+'" alt="signature">';}
+    if(c.signatureUrl){html+='<img class="sig-show" src="'+c.signatureUrl+'" alt="signature">';}
   }
   $('#detailInfo').innerHTML=html;
   renderPsiList(id);
@@ -356,7 +358,7 @@ function renderPsiList(contractId){
     html+='<div class="psi-item"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">'+esc(p.item||'')+'</b>'+rb+'</div>';
     html+='<div style="font-size:11.5px;color:var(--muted);margin-top:3px">'+esc(p.inspectionDate||'')+' · '+esc(p.inspectorName||'')+'</div>';
     if(p.notes){html+='<div style="font-size:12px;margin-top:5px">'+esc(p.notes)+'</div>';}
-    if(p.photoImg){html+='<img src="'+p.photoImg+'" alt="PSI photo">';}
+    if(p.photoUrl){html+='<img src="'+p.photoUrl+'" alt="PSI photo">';}
     html+='</div>';
   });
   $('#detailPsi').innerHTML=html;
@@ -368,15 +370,15 @@ function addPsi(){
   var btn=$('#savePsiBtn');btn.disabled=true;
   var base={contractId:activeContractId,inspectionDate:$('#pDate').value,inspectorName:$('#pInspector').value.trim(),item:item,result:$('#pResult').value,notes:$('#pNotes').value.trim()};
   var file=$('#pPhoto').files[0];
-  var save=function(photo){
-    if(photo)base.photoImg=photo;
+  var save=function(url){
+    if(url)base.photoUrl=url;
     Nexus.add('psi',base).then(function(){
       btn.disabled=false;closeModal('psiModal');
       ['pInspector','pItem','pNotes'].forEach(function(id){$('#'+id).value='';});$('#pPhoto').value='';
       toast('PSI record saved');reload();
     }).catch(function(){btn.disabled=false;msg.textContent='Could not save';});
   };
-  if(file){Nexus.resizeImage(file,1000,0.6).then(save).catch(function(){save(null);});}
+  if(file){Nexus.uploadFile(file,'psi').then(function(r){save(r.url);}).catch(function(e){btn.disabled=false;msg.textContent=e.message;});}
   else{save(null);}
 }
 
@@ -390,7 +392,7 @@ function printContract(id){
   h+='<div class="detail-row"><span>Period</span><span>'+esc(c.startDate||'?')+' → '+esc(c.endDate||'?')+'</span></div>';
   h+='<div class="sec-t">Scope of Work</div><div>'+esc(c.scope||'—')+'</div>';
   h+='<div class="sec-t">Terms &amp; Conditions</div><div>'+esc(c.terms||'—')+'</div>';
-  h+='<div class="sign-grid"><div class="sign-box">Contractor signature'+(c.status==='Signed'&&c.signatureImg?'<br><img src="'+c.signatureImg+'" style="max-width:200px;margin-top:6px">':'')+'<br>'+esc(c.signerName||'')+'</div><div class="sign-box">For the Company<br>&nbsp;</div></div>';
+  h+='<div class="sign-grid"><div class="sign-box">Contractor signature'+(c.status==='Signed'&&c.signatureUrl?'<br><img src="'+c.signatureUrl+'" style="max-width:200px;margin-top:6px">':'')+'<br>'+esc(c.signerName||'')+'</div><div class="sign-box">For the Company<br>&nbsp;</div></div>';
   $('#printSheet').innerHTML=h;
   $('#printPreview').classList.add('open');
 }
