@@ -262,15 +262,16 @@
 
   /**
    * Load several scoped collections, then apply each into the module's
-   * existing data arrays. Empty collections are skipped so demo SEED
-   * fallback data still renders on a fresh project.
+   * existing data arrays. Always applies the fetched result (including an
+   * empty array) so deletions and an emptied collection are reflected in the
+   * UI — otherwise a just-deleted last item would linger on screen.
    * @param {Array<{name:string, apply:function(Array):void}>} specs
    * @returns {Promise<void>}
    */
   function load(specs) {
     var jobs = (specs || []).map(function (spec) {
       return fetchScoped(spec.name).then(function (rows) {
-        if (rows && rows.length) { spec.apply(rows); }
+        spec.apply(rows || []);
       });
     });
     return Promise.all(jobs).then(function () {});
