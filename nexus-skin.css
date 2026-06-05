@@ -1,0 +1,100 @@
+/* ============================================================
+   ERP NEXUS — SKIN  (visual layer only · clean light admin)
+   Loaded AFTER each module's inline <style> so it overrides.
+   Pure CSS: no markup, no logic changes. Works with the
+   existing dark-mode toggle ([data-theme="dark"]) and RTL.
+   ============================================================ */
+
+/* ---- Palette: shift accent to blue, soften surfaces ---- */
+:root{
+  --primary:#2563EB; --primary-d:#1D4ED8; --primary-l:rgba(37,99,235,.10);
+  --blue:#2563EB; --blue-l:rgba(37,99,235,.10);
+  --bg:#F4F6FB; --surface:#FFFFFF; --surface-2:#F7F9FC;
+  --text:#0F1729; --muted:#64748B; --border:#E6EAF2;
+  --sh-sm:0 1px 2px rgba(16,24,40,.05);
+  --sh:0 1px 3px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  --sh-lg:0 24px 48px rgba(16,24,40,.16);
+  --r:14px; --r-sm:9px; --r-lg:18px;
+  --glass:rgba(255,255,255,.78);
+  --sidebar-1:#1E40AF; --sidebar-2:#2563EB; /* sidebar gradient */
+}
+[data-theme="dark"]{
+  --primary:#3B82F6; --primary-d:#2563EB; --primary-l:rgba(59,130,246,.16);
+  --blue:#3B82F6; --blue-l:rgba(59,130,246,.16);
+  --bg:#0B1120; --surface:#111A2E; --surface-2:#16223B;
+  --text:#E8EDF7; --muted:#93A1B8; --border:#243049;
+  --glass:rgba(17,26,46,.78);
+  --sh-sm:0 1px 2px rgba(0,0,0,.4);
+  --sh:0 1px 3px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.35);
+  --sh-lg:0 24px 48px rgba(0,0,0,.5);
+  --sidebar-1:#0B1428; --sidebar-2:#13234A;
+}
+
+/* ---- Sidebar: blue, white text, user card moved to top ---- */
+.sb{
+  background:linear-gradient(180deg,var(--sidebar-1),var(--sidebar-2));
+  border-right:none; box-shadow:var(--sh);
+}
+.sb-head{order:0; border-bottom:1px solid rgba(255,255,255,.12);}
+.sb-foot{order:1; border-top:none; border-bottom:1px solid rgba(255,255,255,.12); margin-top:0;}
+.sb-nav{order:2;}
+.sb-brand{color:#fff;} .sb-brand span{color:#BFD3FF;}
+.sb-ver{color:rgba(255,255,255,.55);}
+.sb-sec{color:rgba(255,255,255,.5);}
+.sb-mark{box-shadow:0 6px 16px rgba(0,0,0,.3);}
+.nav-i{color:rgba(255,255,255,.78); font-weight:600; position:relative;}
+.nav-i:hover{background:rgba(255,255,255,.12); color:#fff;}
+.nav-i.active{background:rgba(255,255,255,.16); color:#fff; font-weight:700;}
+.nav-i.active::before{content:""; position:absolute; left:6px; top:8px; bottom:8px; width:3px; border-radius:3px; background:#fff;}
+[dir="rtl"] .nav-i.active::before{left:auto; right:6px;}
+.nav-badge{background:#fff; color:var(--primary);}
+.u-name{color:#fff;} .u-role{color:rgba(255,255,255,.6);}
+.sb-foot .icon-btn{background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.22); color:#fff;}
+.sb-foot .icon-btn:hover{background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.4);}
+.u-av{box-shadow:0 4px 12px rgba(0,0,0,.25);}
+
+/* ---- Top bar ---- */
+.topbar{background:var(--glass); backdrop-filter:blur(14px); box-shadow:var(--sh-sm);}
+.tb-title h1{letter-spacing:-.4px;}
+
+/* ---- Cards: rounded, soft shadow, gentle entrance ---- */
+.card,.kpi,.sc,.ccard,.kcol,.tl-pr,.action-item,.kpi.alert{
+  border-radius:var(--r); box-shadow:var(--sh); border-color:var(--border);
+}
+.card,.kpi,.ccard,.tl-pr{animation:nx-rise .38s cubic-bezier(.16,1,.3,1) both;}
+.kpis .kpi:nth-child(2){animation-delay:.04s;}
+.kpis .kpi:nth-child(3){animation-delay:.08s;}
+.kpis .kpi:nth-child(4){animation-delay:.12s;}
+.kpis .kpi:nth-child(5){animation-delay:.16s;}
+.kpi:hover,.ccard:hover{transform:translateY(-3px); box-shadow:var(--sh-lg);}
+@keyframes nx-rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---- Big bold blue stat numbers ---- */
+.kpi-val,.sc-val,.kpi-v{color:var(--primary); font-weight:800; letter-spacing:-.5px;}
+.kpi.alert .kpi-val{color:var(--red);} /* keep alert red */
+.kpi-ico{border-radius:12px;}
+
+/* ---- Buttons: solid, rounded, hover lift ---- */
+.btn{border-radius:10px; transition:transform .12s ease, box-shadow .15s ease, background .15s ease, filter .15s ease;}
+.btn-pri{box-shadow:0 6px 16px rgba(37,99,235,.25);}
+.btn:hover{transform:translateY(-1px);}
+.btn-pri:hover{box-shadow:0 10px 22px rgba(37,99,235,.32);}
+.btn:active{transform:translateY(0);}
+.link-btn{color:var(--primary);}
+
+/* ---- Misc polish ---- */
+.badge{font-weight:700;}
+.b-blue{background:var(--primary-l); color:var(--primary);}
+.search-box:focus{box-shadow:0 0 0 3px var(--primary-l);}
+.content{scroll-behavior:smooth;}
+.feed-i,.action-item{transition:background .15s ease;}
+
+/* ---- Mobile bottom nav ---- */
+.bottom-nav{box-shadow:0 -4px 20px rgba(16,24,40,.08);}
+.bn-i.active{color:var(--primary);}
+
+/* ---- Respect reduced-motion ---- */
+@media (prefers-reduced-motion: reduce){
+  .card,.kpi,.ccard,.tl-pr{animation:none;}
+  .btn:hover,.kpi:hover,.ccard:hover{transform:none;}
+}

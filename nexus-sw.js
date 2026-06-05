@@ -1,7 +1,7 @@
 /* ERP Nexus — Service Worker (offline-first PWA) */
-const CACHE = 'nexus-v3';
+const CACHE = 'nexus-v4';
 const SHELL = [
-  'login.html', 'offer-submit.html', 'nexus-core.js',
+  'login.html', 'offer-submit.html', 'nexus-core.js', 'nexus-skin.css',
   'dashboard.html', 'materials.html', 'suppliers.html', 'offers.html',
   'purchaserequests.html', 'analytics.html', 'notifications.html', 'settings.html',
   'contracts.html', 'contract-sign.html', 'attendance.html',
