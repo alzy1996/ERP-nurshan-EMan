@@ -990,7 +990,7 @@ function createSupplier(){
   if(!name){msg.textContent='Enter a supplier name';return;}
   if(!phone){msg.textContent='Enter a phone number';return;}
   if(!window.Nexus){msg.textContent='Offline — cannot save';return;}
-  if(Nexus.activeSite()===Nexus.ALL){msg.textContent='Select a specific site (top bar) before adding a supplier';return;}
+  if(!Nexus.resolveSite()){msg.textContent='Pick a site in the top bar first (or create one in Settings → Sites)';return;}
   var btn=$('#nsSaveBtn');
   btn.disabled=true;
   Nexus.add('suppliers',{
@@ -1033,8 +1033,8 @@ function requestOffer(supplierId){
   if(!s)return;
   var phoneRaw=(s.phone||'').replace(/\D/g,'');
   if(!phoneRaw){toast('This supplier has no phone number');return;}
-  var site=Nexus.activeSite();
-  if(site===Nexus.ALL){toast('Select a specific site before requesting an offer');return;}
+  var site=s.siteId||Nexus.resolveSite();
+  if(!site){toast('Pick a site in the top bar first');return;}
   var base=location.href.replace(/[^/]*$/,'');
   var token='req-'+Date.now().toString(36);
   var link=base+'offer-submit.html?supplier='+encodeURIComponent(s.id)+'&site='+encodeURIComponent(site)+'&name='+encodeURIComponent(s.name)+'&token='+token;

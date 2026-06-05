@@ -294,7 +294,7 @@ function createContract(){
   var msg=$('#cMsg');msg.textContent='';
   if(!t){msg.textContent='Enter a contract title';return;}
   if(!name){msg.textContent='Enter the contractor name';return;}
-  if(window.Nexus.activeSite()===Nexus.ALL){msg.textContent='Select a specific site (top bar) before creating a contract';return;}
+  if(!Nexus.resolveSite()){msg.textContent='Pick a site in the top bar first (or create one in Settings → Sites)';return;}
   var btn=$('#saveContractBtn');btn.disabled=true;
   Nexus.add('contracts',{
     title:t,contractorName:name,contractorPhone:$('#cPhone').value.trim(),
@@ -317,7 +317,7 @@ function sendWhatsApp(id){
   var c=CONTRACTS.find(function(x){return x.id===id;});if(!c)return;
   var phone=(c.contractorPhone||'').replace(/\D/g,'');
   if(!phone){toast('This contract has no contractor phone');return;}
-  var site=Nexus.activeSite();var token='sign-'+Date.now().toString(36);
+  var site=c.siteId||Nexus.resolveSite()||'';var token='sign-'+Date.now().toString(36);
   var base=location.href.replace(/[^/]*$/,'');
   var link=base+'contract-sign.html?contract='+encodeURIComponent(id)+'&site='+encodeURIComponent(site)+'&token='+token;
   var msg='Hello '+c.contractorName+', please review and sign the contract "'+c.title+'" here: '+link;

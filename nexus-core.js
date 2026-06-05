@@ -118,6 +118,23 @@
   }
 
   /**
+   * Resolve a concrete site id to WRITE new records under.
+   * Uses the active site when one is selected; otherwise (admin "All sites")
+   * falls back to the only site that exists / is assigned. Returns null only
+   * when the choice is genuinely ambiguous (admin with several sites) or no
+   * site exists yet — callers should then ask the user to pick / create one.
+   * @returns {string|null}
+   */
+  function resolveSite() {
+    var a = activeSite();
+    if (a && a !== ALL) { return a; }
+    if (_sitesCache && _sitesCache.length === 1) { return _sitesCache[0].id; }
+    var s = session();
+    if (s && s.sites && s.sites.length === 1) { return s.sites[0]; }
+    return null;
+  }
+
+  /**
    * Switch the active site and reload so data re-scopes.
    * @param {string} id - site id or "__ALL__".
    */
@@ -288,8 +305,7 @@
   function add(shortName, data) {
     if (!db) { return Promise.reject(new Error("offline")); }
     var s = session();
-    var site = activeSite();
-    if (site === ALL) { site = (s && s.sites && s.sites[0]) || null; }
+    var site = resolveSite();
     var doc = Object.assign({}, data, {
       siteId: data.siteId || site,
       createdBy: (s && s.username) || "system",
@@ -698,6 +714,7 @@
     isAdmin: isAdmin,
     canSee: canSee,
     activeSite: activeSite,
+    resolveSite: resolveSite,
     switchSite: switchSite,
     sites: sites,
     hash: hash,
