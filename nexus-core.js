@@ -495,13 +495,35 @@
   /* Exact-string EN→AR dictionary. Only whole-string matches are swapped, so
      numbers, names, plates and dynamic data are never corrupted. */
   var DICT = {
+    /* nav + chrome */
     "Command Center": "مركز القيادة", "Analytics": "التحليلات", "Materials": "المواد",
     "Suppliers": "الموردون", "Offers": "العروض", "Purchase Requests": "طلبات الشراء",
     "Contracts": "العقود", "Attendance": "الحضور", "Notifications": "الإشعارات",
-    "Settings": "الإعدادات", "Sign out": "تسجيل الخروج", "Sign in": "تسجيل الدخول",
-    "Save": "حفظ", "Cancel": "إلغاء", "Delete": "حذف", "Create": "إنشاء", "Add": "إضافة",
-    "Edit": "تعديل", "Close": "إغلاق", "Search": "بحث", "Active": "نشط", "Status": "الحالة",
-    "Date": "التاريخ", "Name": "الاسم", "Live": "مباشر", "Offline": "غير متصل",
+    "Settings": "الإعدادات", "Procurement": "المشتريات", "Overview": "نظرة عامة",
+    "Workspace": "مساحة العمل", "All sites": "كل المواقع", "All sites (God mode)": "كل المواقع (وضع المدير)",
+    /* common actions / words */
+    "Sign out": "تسجيل الخروج", "Sign in": "تسجيل الدخول", "Save": "حفظ", "Cancel": "إلغاء",
+    "Delete": "حذف", "Create": "إنشاء", "Add": "إضافة", "Edit": "تعديل", "Close": "إغلاق",
+    "Search": "بحث", "View": "عرض", "View all →": "عرض الكل ←", "Review": "مراجعة",
+    "Approve": "موافقة", "Reject": "رفض", "Submit": "إرسال", "Confirm": "تأكيد",
+    "Active": "نشط", "Status": "الحالة", "Date": "التاريخ", "Name": "الاسم",
+    "Live": "مباشر", "Offline": "غير متصل", "Amount": "المبلغ", "Description": "الوصف",
+    "Total": "الإجمالي", "Phone": "الهاتف", "Email": "البريد الإلكتروني", "Location": "الموقع",
+    "Role": "الدور", "Hours": "الساعات", "Site": "الموقع", "Pending": "معلق",
+    "Approved": "موافق عليه", "Rejected": "مرفوض", "Submitted": "مُقدّم", "Loading…": "جارٍ التحميل…",
+    /* dashboard */
+    "Pending Approvals": "الموافقات المعلقة", "Active Offers": "العروض النشطة",
+    "Materials Catalog": "كتالوج المواد", "Monthly Spend (OMR)": "الإنفاق الشهري (ر.ع)",
+    "Critical Stock Alerts": "تنبيهات المخزون الحرجة", "Action Center": "مركز الإجراءات",
+    "needs your attention": "يحتاج انتباهك", "Spend by Category": "الإنفاق حسب الفئة",
+    "Monthly Spend Trend": "اتجاه الإنفاق الشهري", "Top Suppliers by Volume": "أهم الموردين حسب الحجم",
+    "Recent Activity": "النشاط الأخير", "Request Quote": "طلب عرض سعر",
+    /* suppliers */
+    "Vendor intelligence": "ذكاء الموردين", "New Supplier": "مورد جديد", "Request Offer": "طلب عرض",
+    "View Details": "عرض التفاصيل", "WhatsApp": "واتساب", "Score": "التقييم",
+    "Company / Supplier name": "اسم الشركة / المورد", "All Contracts": "كل العقود",
+    "E-contracts & signatures": "العقود الإلكترونية والتواقيع",
+    /* contracts + PSI */
     "Contract title": "عنوان العقد", "Contractor name": "اسم المقاول",
     "Contractor phone": "هاتف المقاول", "Contract value": "قيمة العقد",
     "Start date": "تاريخ البداية", "End date": "تاريخ النهاية", "Scope of work": "نطاق العمل",
@@ -511,15 +533,28 @@
     "Pre-Shipment Inspection": "الفحص قبل الشحن", "Inspection date": "تاريخ الفحص",
     "Inspector name": "اسم المفتش", "Item inspected": "الصنف المفحوص", "Result": "النتيجة",
     "Pass": "ناجح", "Fail": "راسب", "Notes": "ملاحظات", "Photo": "صورة",
+    "PSI History": "سجل الفحص", "Add PSI Record": "إضافة سجل فحص",
+    "Expiry Alerts": "تنبيهات الانتهاء", "Contracts ending soon": "عقود تنتهي قريباً",
+    "No contracts yet": "لا توجد عقود بعد", "Details": "التفاصيل",
+    /* attendance */
     "Sign In": "تسجيل الدخول", "Sign Out": "تسجيل الخروج", "Present": "حاضر",
     "Absent": "غائب", "Incomplete": "غير مكتمل", "Time In": "وقت الدخول",
-    "Time Out": "وقت الخروج", "Total Hours": "إجمالي الساعات",
+    "Time Out": "وقت الخروج", "Total Hours": "إجمالي الساعات", "Contractors": "المقاولون",
     "Attendance Dashboard": "لوحة الحضور", "Live Map": "الخريطة المباشرة",
-    "Geofence Setup": "إعداد النطاق الجغرافي", "Use my current location": "استخدم موقعي الحالي",
-    "Radius (m)": "النطاق (متر)", "Latitude": "خط العرض", "Longitude": "خط الطول",
-    "Contracts ending soon": "عقود تنتهي قريباً", "No contracts yet": "لا توجد عقود بعد",
-    "Contractor": "مقاول", "PSI History": "سجل الفحص", "Add PSI Record": "إضافة سجل فحص",
-    "Expiry Alerts": "تنبيهات الانتهاء", "All sites": "كل المواقع"
+    "GPS sign-in & out": "تسجيل الدخول والخروج عبر GPS",
+    "Daily attendance": "الحضور اليومي", "Geofence Setup": "إعداد النطاق الجغرافي",
+    "Use my current location": "استخدم موقعي الحالي", "Radius (m)": "النطاق (متر)",
+    "Latitude": "خط العرض", "Longitude": "خط الطول", "Contractor": "مقاول",
+    "Not signed in": "لم يسجل الدخول", "Completed": "مكتمل",
+    /* settings */
+    "Sites": "المواقع", "User Management": "إدارة المستخدمين", "Approval Matrix": "مصفوفة الموافقات",
+    "Appearance": "المظهر", "Backup & Export": "النسخ الاحتياطي والتصدير",
+    "Danger Zone": "منطقة الخطر", "New Site": "موقع جديد", "Create User": "إنشاء مستخدم",
+    "Job Type": "نوع الوظيفة", "Username": "اسم المستخدم", "Password": "كلمة المرور",
+    "Site Name": "اسم الموقع", "Administrator": "مدير", "Light": "فاتح", "Dark": "داكن", "Auto": "تلقائي",
+    /* login */
+    "Welcome back": "مرحباً بعودتك", "Create administrator": "إنشاء مدير",
+    "Procurement & Construction": "المشتريات والإنشاءات"
   };
   var REV = {}; Object.keys(DICT).forEach(function (k) { REV[DICT[k]] = k; });
 
@@ -581,6 +616,24 @@
     });
   }
 
+  var _i18nObserving = false, _i18nTimer = null;
+  /**
+   * Keep Arabic applied to content rendered AFTER initial load (lists, modals,
+   * tables that re-render). Watches structural DOM changes and re-translates,
+   * debounced, only while the language is Arabic. Text-node edits don't fire
+   * childList mutations, so this can't loop.
+   */
+  function startI18nObserver() {
+    if (_i18nObserving || !document.body) { return; }
+    _i18nObserving = true;
+    var obs = new MutationObserver(function () {
+      if (getLang() !== "ar") { return; }
+      clearTimeout(_i18nTimer);
+      _i18nTimer = setTimeout(function () { translateDOM(document.body); }, 60);
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
   /** Switch language, persist, apply direction, and re-translate. @param {string} l */
   function setLang(l) {
     localStorage.setItem(LANG_KEY, l === "ar" ? "ar" : "en");
@@ -623,6 +676,7 @@
     applyDir();
     injectRtlStyle();
     translateDOM(document.body);
+    startI18nObserver();
     if (!_observing) {
       _observing = true;
       var sb = document.getElementById("sidebar");
@@ -679,6 +733,7 @@
     injectRtlStyle();
     translateDOM(document.body);
     injectLangToggle();
+    startI18nObserver();
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", autoInit);
