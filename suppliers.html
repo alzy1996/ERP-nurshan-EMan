@@ -360,13 +360,21 @@ button{font-family:inherit;cursor:pointer;}
 <div class="overlay" id="newSupplierModal" role="dialog" aria-modal="true" aria-labelledby="newSupTitle">
   <div class="modal">
     <div class="modal-h">
-      <div class="modal-t" id="newSupTitle">New Supplier</div>
+      <div class="modal-t" id="newSupTitle" style="display:flex;align-items:center;gap:8px;"><span style="width:30px;height:30px;background:var(--primary-l);color:var(--primary);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;">🏭</span> New Supplier</div>
       <button class="icon-btn" onclick="closeModal('newSupplierModal')" aria-label="Close">✕</button>
     </div>
     <div class="modal-b">
       <div class="fld"><label for="nsName">Company / Supplier name</label><input id="nsName" type="text" placeholder="e.g. AL NOOR TRADING" autocomplete="off"></div>
-      <div class="fld"><label for="nsPhone">Phone (with country code)</label><input id="nsPhone" type="tel" placeholder="e.g. +968 9XXX XXXX" autocomplete="off"></div>
-      <div class="fld"><label for="nsEmail">Email (optional)</label><input id="nsEmail" type="email" placeholder="e.g. sales@supplier.om" autocomplete="off"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="fld"><label for="nsPhone">Phone (with country code)</label><input id="nsPhone" type="tel" placeholder="+968 9XXX XXXX" autocomplete="off"></div>
+        <div class="fld"><label for="nsEmail">Email <span style="color:var(--muted);font-weight:400;text-transform:none;">(optional)</span></label><input id="nsEmail" type="email" placeholder="sales@supplier.om" autocomplete="off"></div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:0 0 14px;"></div>
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span>Account Numbers</span><span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);opacity:.7;">— optional</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="fld"><label for="nsSR" style="display:flex;align-items:center;gap:5px;">SR Account <span style="background:rgba(45,125,210,.1);color:var(--blue);font-size:9px;padding:1px 7px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0;">Sales Reg.</span></label><input id="nsSR" type="text" placeholder="e.g. SR-12345" autocomplete="off"></div>
+        <div class="fld"><label for="nsVT" style="display:flex;align-items:center;gap:5px;">VT Account <span style="background:rgba(29,176,106,.1);color:var(--green);font-size:9px;padding:1px 7px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0;">VAT</span></label><input id="nsVT" type="text" placeholder="e.g. OM1234567890" autocomplete="off"></div>
+      </div>
       <div class="msg" id="nsMsg" role="status" aria-live="polite" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
     </div>
     <div class="modal-f">
@@ -928,6 +936,10 @@ function renderGrid(){
     html+='<div class="sc-name">'+s.name+'</div>';
     var binText=s.bin?'BIN: '+s.bin:'BIN: Not registered';
     html+='<div class="sc-bin">'+binText+'</div>';
+    var acctBadges='';
+    if(s.srAccount)acctBadges+='<span style="font-size:9.5px;font-weight:700;background:rgba(45,125,210,.1);color:var(--blue);padding:1px 7px;border-radius:999px;margin-right:4px;">SR: '+s.srAccount+'</span>';
+    if(s.vtAccount)acctBadges+='<span style="font-size:9.5px;font-weight:700;background:rgba(29,176,106,.1);color:var(--green);padding:1px 7px;border-radius:999px;">VT: '+s.vtAccount+'</span>';
+    if(acctBadges)html+='<div style="margin-top:4px;">'+acctBadges+'</div>';
     html+='</div>';
     html+='<div class="score-badge '+scoreCls+'" title="Performance score '+s.score+'">'+s.score+'</div>';
     html+='</div>';
@@ -978,7 +990,9 @@ function renderGrid(){
 /* ---- Create supplier (procurement) ---- */
 /** Open the New Supplier modal. */
 function openNewSupplier(){
-  $('#nsName').value='';$('#nsPhone').value='';$('#nsEmail').value='';$('#nsMsg').textContent='';
+  $('#nsName').value='';$('#nsPhone').value='';$('#nsEmail').value='';
+  $('#nsSR').value='';$('#nsVT').value='';
+  $('#nsMsg').textContent='';
   openModal('newSupplierModal');
 }
 
@@ -995,8 +1009,11 @@ function createSupplier(){
   if(!Nexus.resolveSite()){msg.textContent='Pick a site in the top bar first (or create one in Settings → Sites)';return;}
   var btn=$('#nsSaveBtn');
   btn.disabled=true;
+  var srAcc=($('#nsSR').value||'').trim();
+  var vtAcc=($('#nsVT').value||'').trim();
   Nexus.add('suppliers',{
     name:name,phone:phone,email:email,
+    srAccount:srAcc,vtAccount:vtAcc,
     bin:'',loc:'New',score:'B',orders:0,onTime:0,priceVsMkt:0,
     avatarColor:'#2D7DD2',
     docs:[],orders_history:[],contracts:[],
@@ -1172,6 +1189,8 @@ function buildTabProfile(s){
   var rows=[
     ['Company',s.name],
     ['BIN',s.bin||'Not registered'],
+    ['SR Account',s.srAccount||'—'],
+    ['VT Account',s.vtAccount||'—'],
     ['Location',s.loc],
     ['Phone',s.phone],
     ['Email',hasEmail?s.email:'—'],
@@ -1414,22 +1433,30 @@ if('serviceWorker' in navigator){
 /**
  * Bootstrap the Suppliers module.
  */
+function renderSkeleton(){
+  var grid=$('#supGrid');
+  if(!grid)return;
+  var skels='';
+  for(var i=0;i<6;i++){skels+='<div class="sup-card" style="gap:14px;"><div class="skeleton" style="height:48px;width:48px;border-radius:13px;flex-shrink:0;"></div><div style="flex:1;display:flex;flex-direction:column;gap:8px;"><div class="skeleton" style="height:14px;width:70%;border-radius:6px;"></div><div class="skeleton" style="height:11px;width:40%;border-radius:6px;"></div></div></div>';}
+  grid.innerHTML=skels;
+  var kpis=$('#supKpis');
+  if(kpis){var ks='';for(var j=0;j<4;j++){ks+='<div class="kpi"><div class="skeleton" style="height:38px;width:38px;border-radius:10px;margin-bottom:11px;"></div><div class="skeleton" style="height:11px;width:60%;border-radius:5px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:45%;border-radius:6px;"></div></div>';}kpis.innerHTML=ks;}
+}
 function boot(){
   if(!window.Nexus||!Nexus.requireAuth())return;
   if(!Nexus.guardSection('suppliers'))return;
   Nexus.applyIdentity();
   initTheme();
   renderShell();
-  renderKpis();
+  renderSkeleton();
   renderFilters();
-  renderGrid();
   initSearch();
   initLive();
   Nexus.applyChrome('suppliers');
   Nexus.load([
-    {name:'suppliers',apply:function(a){SEED.suppliers=a;}},
+    {name:'suppliers',apply:function(a){if(a&&a.length)SEED.suppliers=a;}},
     {name:'offers',apply:function(a){SEED.offers=a.map(function(o){if(o.item){return o;}return {id:o.id,supplier:o.supplierName||o.supplier||'Supplier',item:o.items||o.item||'',price:o.price||0,unit:o.unit||o.price||0,valid:o.validity||o.valid||'',status:o.status||'New',insight:o.insight||'',source:o.source||'manual'};});}}
-  ]).then(function(){renderKpis();renderGrid();renderShell();Nexus.applyChrome('suppliers');});
+  ]).then(function(){renderKpis();renderFilters();renderGrid();renderShell();Nexus.applyChrome('suppliers');});
 
   /* Close overlays by clicking backdrop */
   document.querySelectorAll('.overlay').forEach(function(o){
