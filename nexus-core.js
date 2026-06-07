@@ -341,7 +341,7 @@
     if (!(s && s.isAdmin && s.activeSite === ALL)) {
       q = col.where("siteId", "==", activeSite());
     }
-    return q.get().then(function (snap) {
+    return q.get({source:'server'}).catch(function(){return q.get();}).then(function (snap) {
       return snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; });
     }).catch(function (e) { console.warn("[nexus-core] fetch " + shortName, e); return []; });
   }

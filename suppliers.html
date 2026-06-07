@@ -369,11 +369,15 @@ button{font-family:inherit;cursor:pointer;}
         <div class="fld"><label for="nsPhone">Phone (with country code)</label><input id="nsPhone" type="tel" placeholder="+968 9XXX XXXX" autocomplete="off"></div>
         <div class="fld"><label for="nsEmail">Email <span style="color:var(--muted);font-weight:400;text-transform:none;">(optional)</span></label><input id="nsEmail" type="email" placeholder="sales@supplier.om" autocomplete="off"></div>
       </div>
-      <div style="height:1px;background:var(--border);margin:0 0 14px;"></div>
-      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span>Account Numbers</span><span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);opacity:.7;">— optional</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="fld"><label for="nsSR" style="display:flex;align-items:center;gap:5px;">SR Account <span style="background:rgba(45,125,210,.1);color:var(--blue);font-size:9px;padding:1px 7px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0;">Sales Reg.</span></label><input id="nsSR" type="text" placeholder="e.g. SR-12345" autocomplete="off"></div>
-        <div class="fld"><label for="nsVT" style="display:flex;align-items:center;gap:5px;">VT Account <span style="background:rgba(29,176,106,.1);color:var(--green);font-size:9px;padding:1px 7px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0;">VAT</span></label><input id="nsVT" type="text" placeholder="e.g. OM1234567890" autocomplete="off"></div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+          <span style="width:18px;height:18px;background:var(--primary-l);color:var(--primary);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;">🔑</span>
+          Account Numbers <span style="font-weight:500;text-transform:none;letter-spacing:0;opacity:.6;">— optional</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="fld" style="margin-bottom:0"><label for="nsSR" style="display:flex;align-items:center;gap:5px;">SR Account <span style="background:rgba(45,125,210,.12);color:var(--blue);font-size:9px;padding:1px 7px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0;">Sales Reg.</span></label><input id="nsSR" type="text" placeholder="SR-12345" autocomplete="off"></div>
+          <div class="fld" style="margin-bottom:0"><label for="nsVT" style="display:flex;align-items:center;gap:5px;">VT Account <span style="background:rgba(29,176,106,.12);color:var(--green);font-size:9px;padding:1px 7px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0;">VAT</span></label><input id="nsVT" type="text" placeholder="OM1234567890" autocomplete="off"></div>
+        </div>
       </div>
       <div class="msg" id="nsMsg" role="status" aria-live="polite" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
     </div>
