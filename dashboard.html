@@ -396,13 +396,25 @@ function renderKPIs(){
 /* ---- Action center ---- */
 function renderActions(){
   var c=$('#actionCenter');
+  if(!c)return;
   var pend=SEED.prs.filter(function(p){return /Level|Submitted/.test(p.stage);});
   var html='';
-  html+='<div class="action-item"><div class="ai-ico" style="background:var(--primary-l);color:var(--primary)">📋</div><div class="ai-body"><div class="ai-title">'+pend.length+' requests awaiting your approval</div><div class="ai-meta">Oldest: '+pend[pend.length-1].id+' · '+pend[pend.length-1].age+'d old</div></div><div class="ai-actions"><button class="btn btn-ok btn-sm" onclick="approve(\''+pend[0].id+'\')">Approve</button><button class="btn btn-no btn-sm" onclick="reject(\''+pend[0].id+'\')">Reject</button><a class="btn btn-ghost btn-sm" href="purchaserequests.html">View</a></div></div>';
+  if(pend.length){
+    var oldest=pend[pend.length-1];var first=pend[0];
+    html+='<div class="action-item"><div class="ai-ico" style="background:var(--primary-l);color:var(--primary)">📋</div><div class="ai-body"><div class="ai-title">'+pend.length+' request'+(pend.length===1?'':'s')+' awaiting your approval</div><div class="ai-meta">Oldest: '+oldest.id+' · '+(oldest.age||0)+'d old</div></div><div class="ai-actions"><button class="btn btn-ok btn-sm" onclick="approve(\''+first.id+'\')">Approve</button><button class="btn btn-no btn-sm" onclick="reject(\''+first.id+'\')">Reject</button><a class="btn btn-ghost btn-sm" href="purchaserequests.html">View</a></div></div>';
+  } else {
+    html+='<div class="action-item"><div class="ai-ico" style="background:rgba(29,176,106,.12);color:var(--green)">✅</div><div class="ai-body"><div class="ai-title">No pending approvals</div><div class="ai-meta">All requests are cleared</div></div><div class="ai-actions"><a class="btn btn-ghost btn-sm" href="purchaserequests.html">View all</a></div></div>';
+  }
   var exp=SEED.offers.filter(function(o){return o.status==='Active';}).map(function(o){o._d=daysUntil(o.valid);return o;}).sort(function(a,b){return a._d-b._d;})[0];
-  html+='<div class="action-item"><div class="ai-ico" style="background:var(--blue-l);color:var(--blue)">⏱️</div><div class="ai-body"><div class="ai-title">Offer from '+exp.supplier.split(' ')[0]+' '+exp.supplier.split(' ')[1]+' expires in '+exp._d+' day'+(exp._d===1?'':'s')+'</div><div class="ai-meta">'+exp.item+' · '+fmtOMR(exp.price)+' OMR</div></div><div class="ai-actions"><a class="btn btn-pri btn-sm" href="offers.html">Review</a></div></div>';
+  if(exp){
+    var parts=(exp.supplier||'').split(' ');
+    html+='<div class="action-item"><div class="ai-ico" style="background:var(--blue-l);color:var(--blue)">⏱️</div><div class="ai-body"><div class="ai-title">Offer from '+(parts[0]||exp.supplier)+' expires in '+exp._d+' day'+(exp._d===1?'':'s')+'</div><div class="ai-meta">'+exp.item+' · '+fmtOMR(exp.price)+' OMR</div></div><div class="ai-actions"><a class="btn btn-pri btn-sm" href="offers.html">Review</a></div></div>';
+  }
   var crit=SEED.materials.filter(function(m){return m.stock<m.reorder;})[0];
-  html+='<div class="action-item"><div class="ai-ico" style="background:rgba(229,72,77,.12);color:var(--red)">⚠️</div><div class="ai-body"><div class="ai-title">'+crit.name+' below reorder point</div><div class="ai-meta">Stock '+crit.stock+' '+crit.unit+' · reorder at '+crit.reorder+'</div></div><div class="ai-actions"><a class="btn btn-ghost btn-sm" href="materials.html">Request Quote</a></div></div>';
+  if(crit){
+    html+='<div class="action-item"><div class="ai-ico" style="background:rgba(229,72,77,.12);color:var(--red)">⚠️</div><div class="ai-body"><div class="ai-title">'+crit.name+' below reorder point</div><div class="ai-meta">Stock '+crit.stock+' '+crit.unit+' · reorder at '+crit.reorder+'</div></div><div class="ai-actions"><a class="btn btn-ghost btn-sm" href="materials.html">Request Quote</a></div></div>';
+  }
+  if(!html)html='<div class="action-item"><div class="ai-ico" style="background:rgba(29,176,106,.12);color:var(--green)">✅</div><div class="ai-body"><div class="ai-title">Everything looks good</div><div class="ai-meta">No actions needed right now</div></div></div>';
   c.innerHTML=html;
 }
 function approve(id){toast('✅ '+id+' approved');var p=SEED.prs.find(function(x){return x.id===id;});if(p)p.stage='Approved';renderActions();renderShell();renderKPIs();logFirestore('approve',id);}
@@ -448,13 +460,23 @@ function normOffer(o){
   return {id:o.id,supplier:o.supplierName||o.supplier||'Supplier',item:o.items||o.item||'',price:o.price||0,unit:o.unit||o.price||0,valid:o.validity||o.valid||'',status:o.status||'New',insight:o.insight||'',source:o.source||'manual'};
 }
 
+/* ---- skeleton (shown while Firestore loads) ---- */
+function renderDashSkeleton(){
+  var kpiSkel='<div class="kpi"><div class="skeleton" style="height:38px;width:38px;border-radius:10px;margin-bottom:11px;"></div><div class="skeleton" style="height:11px;width:70%;border-radius:5px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:45%;border-radius:6px;"></div></div>';
+  var r=$('#kpiRow');if(r){var kh='';for(var i=0;i<5;i++)kh+=kpiSkel;r.innerHTML=kh;}
+  var aSkel='<div class="action-item"><div class="ai-ico skeleton" style="width:38px;height:38px;border-radius:10px;flex-shrink:0;"></div><div class="ai-body"><div class="skeleton" style="height:13px;width:68%;border-radius:5px;margin-bottom:7px;"></div><div class="skeleton" style="height:11px;width:44%;border-radius:5px;"></div></div></div>';
+  var ac=$('#actionCenter');if(ac){var ah='';for(var j=0;j<3;j++)ah+=aSkel;ac.innerHTML=ah;}
+  var fSkel='<div class="feed-i"><div class="feed-dot skeleton" style="background:var(--surface-2);"></div><div style="flex:1"><div class="skeleton" style="height:12px;width:78%;border-radius:5px;margin-bottom:5px;"></div><div class="skeleton" style="height:10px;width:32%;border-radius:5px;"></div></div></div>';
+  var fd=$('#feed');if(fd){var fh='';for(var k=0;k<5;k++)fh+=fSkel;fd.innerHTML=fh;}
+}
+
 /* ---- boot ---- */
 function boot(){
   if(!window.Nexus||!Nexus.requireAuth())return;
   if(!Nexus.guardSection('dashboard'))return;
   Nexus.applyIdentity();
   $('#tbDate').textContent=new Date('2026-06-03').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+SEED.meta.project;
-  initTheme();renderShell();renderKPIs();renderActions();renderFeed();renderCharts();initSearch();initLive();Nexus.applyChrome('dashboard');
+  initTheme();renderShell();renderDashSkeleton();initSearch();initLive();Nexus.applyChrome('dashboard');
   Nexus.load([
     {name:'materials',apply:function(a){SEED.materials=a;}},
     {name:'suppliers',apply:function(a){SEED.suppliers=a;}},

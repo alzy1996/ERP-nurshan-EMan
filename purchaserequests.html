@@ -333,7 +333,7 @@ function boot(){
   if(!window.Nexus||!Nexus.requireAuth())return;
   if(!Nexus.guardSection('purchaserequests'))return;
   Nexus.applyIdentity();
-  initTheme();renderShell();renderKanban();initLive();Nexus.applyChrome('purchaserequests');
+  initTheme();renderShell();initLive();Nexus.applyChrome('purchaserequests');
   Nexus.load([{name:'prs',apply:function(a){PRS=a;}}]).then(function(){renderKanban();renderShell();Nexus.applyChrome('purchaserequests');});
 }
 document.addEventListener('DOMContentLoaded',boot);

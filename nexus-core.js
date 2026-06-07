@@ -815,6 +815,16 @@
     applyChrome: applyChrome
   };
 
+  /* Apply theme + dir IMMEDIATELY — this script loads in <head> so
+     document.documentElement is available right now, before any body is painted.
+     Prevents the flash of wrong theme color or wrong text direction. */
+  try {
+    var _t=localStorage.getItem('nexus-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+    document.documentElement.setAttribute('data-theme',_t);
+    var _l=localStorage.getItem(LANG_KEY)||'en';
+    if(_l==='ar'){document.documentElement.setAttribute('dir','rtl');document.documentElement.setAttribute('lang','ar');}
+  } catch(_e){}
+
   /* Auto-apply language/direction on every page (incl. public standalone pages
      such as login.html, offer-submit.html, contract-sign.html that don't call
      applyChrome). Runs once the DOM is ready. */
