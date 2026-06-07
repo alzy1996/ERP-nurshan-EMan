@@ -30,7 +30,15 @@
   var auth = null, storage = null;
   try {
     auth = firebase.auth(); storage = firebase.storage();
-    global.authReady = auth.signInAnonymously().catch(function (e) { console.warn("[nexus-core] auth", e); });
+    /* Sync Firebase Auth state → localStorage. If the Firebase token expires or
+       the user signs out in another tab, wipe the local session so requireAuth()
+       redirects on the next navigation. */
+    auth.onAuthStateChanged(function (user) {
+      if (!user && _session) {
+        localStorage.removeItem(SESSION_KEY);
+        _session = undefined;
+      }
+    });
   } catch (e) { console.warn("[nexus-core] auth/storage init", e); }
   global.auth = auth; global.storage = storage;
 
@@ -148,6 +156,7 @@
   function logout() {
     localStorage.removeItem(SESSION_KEY);
     _session = undefined;
+    if (auth) { auth.signOut().catch(function () {}); }
     location.replace("login.html");
   }
 
@@ -216,11 +225,9 @@
 
   /* ---------- password hashing ---------- */
 
-  /**
-   * SHA-256 hash a password to a hex string (no plaintext is ever stored).
-   * @param {string} pw - plaintext password.
-   * @returns {Promise<string>} hex digest.
-   */
+  /* ---------- password hashing (kept for legacy migration path) ---------- */
+
+  /** SHA-256 hex of a string. @param {string} pw @returns {Promise<string>} */
   function hash(pw) {
     var enc = new TextEncoder().encode(String(pw));
     return crypto.subtle.digest("SHA-256", enc).then(function (buf) {
@@ -233,77 +240,188 @@
 
   /* ---------- auth flows ---------- */
 
+  /** Derive the Firebase Auth email from a username. */
+  function _userEmail(u) {
+    return u.toLowerCase().replace(/[^a-z0-9._+-]/g, "_") + "@nexus-erp.app";
+  }
+
+  /** Build + persist session from a Firestore profile doc. */
+  function _buildSession(uid, u, username) {
+    if (u.status && u.status !== "Active") {
+      if (auth) { auth.signOut().catch(function () {}); }
+      throw new Error("Account is " + u.status + " — contact your administrator");
+    }
+    var sites = u.sites || [];
+    var s = {
+      uid: uid,
+      username: u.username || username,
+      name: u.name || username,
+      jobType: u.jobType || "User",
+      isAdmin: !!u.isAdmin,
+      sites: sites,
+      sections: u.sections || {},
+      activeSite: u.isAdmin ? ALL : (sites[0] || null)
+    };
+    setSession(s);
+    return s;
+  }
+
   /**
-   * Attempt a username/password login against nexus_users.
-   * @param {string} username
-   * @param {string} password
-   * @returns {Promise<object>} resolves with session, rejects with Error(message).
+   * Log in with username + password.
+   * Tries Firebase Authentication first (new system). If the account does not
+   * exist in Firebase Auth yet, falls back to the legacy Firestore passwordHash
+   * check and auto-migrates the account to Firebase Auth on success.
    */
   function login(username, password) {
     username = String(username || "").trim().toLowerCase();
-    if (!db) { return Promise.reject(new Error("Offline — cannot reach the database")); }
     if (!username || !password) { return Promise.reject(new Error("Enter username and password")); }
-    return hash(password).then(function (ph) {
-      return db.collection("nexus_users").where("username", "==", username).limit(1).get().then(function (snap) {
-        if (snap.empty) { throw new Error("Unknown username or password"); }
-        var doc = snap.docs[0];
-        var u = doc.data();
-        if (u.passwordHash !== ph) { throw new Error("Unknown username or password"); }
-        if (u.status && u.status !== "Active") { throw new Error("Account is " + u.status + " — contact your administrator"); }
-        var sites = u.sites || [];
-        var s = {
-          uid: doc.id,
-          username: u.username,
-          name: u.name || u.username,
-          jobType: u.jobType || "User",
-          isAdmin: !!u.isAdmin,
-          sites: sites,
-          sections: u.sections || {},
-          activeSite: u.isAdmin ? ALL : (sites[0] || null)
-        };
-        setSession(s);
-        return s;
+    if (!auth || !db) { return Promise.reject(new Error("Offline — cannot reach the database")); }
+    var email = _userEmail(username);
+
+    return auth.signInWithEmailAndPassword(email, password)
+      .then(function (cred) {
+        return db.collection("nexus_users").doc(cred.user.uid).get({ source: "server" })
+          .then(function (doc) {
+            if (!doc.exists) { throw new Error("User profile not found — contact your administrator"); }
+            return _buildSession(cred.user.uid, doc.data(), username);
+          });
+      })
+      .catch(function (err) {
+        /* Wrong password for an existing Firebase Auth account → tell the user */
+        if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+          throw new Error("Unknown username or password");
+        }
+        /* Account not in Firebase Auth yet → try legacy system and auto-migrate */
+        if (err.code === "auth/user-not-found" || err.code === "auth/invalid-login-credentials") {
+          return _loginLegacy(username, password, email);
+        }
+        /* Any other error (e.g. our own from _buildSession) — re-throw as-is */
+        throw err.message ? err : new Error("Unknown username or password");
       });
+  }
+
+  /** Legacy login: verify passwordHash in Firestore, then create a Firebase Auth account. */
+  function _loginLegacy(username, password, email) {
+    /* Need anonymous auth to be able to read nexus_users before a real session exists */
+    var anonP = (auth.currentUser) ? Promise.resolve() : auth.signInAnonymously().catch(function () {});
+    return anonP.then(function () { return hash(password); }).then(function (ph) {
+      return db.collection("nexus_users").where("username", "==", username).limit(1)
+        .get({ source: "server" })
+        .then(function (snap) {
+          if (snap.empty) { throw new Error("Unknown username or password"); }
+          var oldDoc = snap.docs[0];
+          var u = oldDoc.data();
+          if (u.passwordHash !== ph) { throw new Error("Unknown username or password"); }
+          if (u.status && u.status !== "Active") { throw new Error("Account is " + u.status + " — contact your administrator"); }
+
+          /* Valid credentials — promote to Firebase Auth */
+          return auth.signOut()
+            .then(function () { return auth.createUserWithEmailAndPassword(email, password); })
+            .then(function (cred) {
+              var profile = {
+                username: u.username, name: u.name, jobType: u.jobType || "User",
+                isAdmin: !!u.isAdmin, sites: u.sites || [], sections: u.sections || {},
+                status: u.status || "Active",
+                initials: u.initials || String(u.name || "").split(" ").map(function (w) { return w[0] || ""; }).slice(0, 2).join("").toUpperCase(),
+                createdAt: u.createdAt || Date.now(), migratedAt: Date.now()
+              };
+              return db.collection("nexus_users").doc(cred.user.uid).set(profile)
+                .then(function () { return _buildSession(cred.user.uid, profile, username); });
+            });
+        });
     });
   }
 
   /**
-   * Whether any user exists yet (controls first-admin bootstrap).
+   * Whether any user document exists (controls first-admin bootstrap flow).
    * @returns {Promise<boolean>}
    */
   function hasAnyUser() {
     if (!db) { return Promise.resolve(true); }
-    return db.collection("nexus_users").limit(1).get()
-      .then(function (s) { return !s.empty; })
-      .catch(function () { return true; });
+    /* Use anonymous auth if not yet signed in so the Firestore read is allowed */
+    var anonP = (auth && !auth.currentUser) ? auth.signInAnonymously().catch(function () {}) : Promise.resolve();
+    return anonP.then(function () {
+      return db.collection("nexus_users").limit(1).get({ source: "server" });
+    }).then(function (s) { return !s.empty; }).catch(function () { return true; });
   }
 
   /**
-   * Create the first administrator (god-mode, all sections).
-   * @param {string} name
-   * @param {string} username
-   * @param {string} password
+   * Create the first administrator account via Firebase Authentication.
+   * @param {string} name @param {string} username @param {string} password
    * @returns {Promise<object>} the created session.
    */
   function bootstrapAdmin(name, username, password) {
     username = String(username || "").trim().toLowerCase();
     if (!name || !username || !password) { return Promise.reject(new Error("All fields are required")); }
+    if (!auth || !db) { return Promise.reject(new Error("Offline")); }
     var sections = {};
     SECTIONS.forEach(function (x) { sections[x.id] = true; });
-    return hash(password).then(function (ph) {
-      return db.collection("nexus_users").add({
-        username: username, passwordHash: ph, name: name,
-        jobType: "Administrator", isAdmin: true, sites: [], sections: sections,
-        status: "Active", createdAt: Date.now()
+    var initials = name.split(" ").map(function (w) { return w[0] || ""; }).slice(0, 2).join("").toUpperCase();
+    var email = _userEmail(username);
+
+    /* Sign out any anonymous session first */
+    return auth.signOut()
+      .then(function () { return auth.createUserWithEmailAndPassword(email, password); })
+      .then(function (cred) {
+        var profile = {
+          username: username, name: name, jobType: "Administrator",
+          isAdmin: true, sites: [], sections: sections,
+          status: "Active", initials: initials, createdAt: Date.now()
+        };
+        return db.collection("nexus_users").doc(cred.user.uid).set(profile)
+          .then(function () {
+            var s = { uid: cred.user.uid, username: username, name: name,
+              jobType: "Administrator", isAdmin: true, sites: [], sections: sections, activeSite: ALL };
+            setSession(s);
+            return s;
+          });
+      })
+      .catch(function (err) {
+        if (err.code === "auth/email-already-in-use") { throw new Error("That username is already taken"); }
+        throw err.message ? err : new Error("Could not create administrator — try again");
       });
-    }).then(function (ref) {
-      var s = {
-        uid: ref.id, username: username, name: name, jobType: "Administrator",
-        isAdmin: true, sites: [], sections: sections, activeSite: ALL
-      };
-      setSession(s);
-      return s;
-    });
+  }
+
+  /**
+   * Create a new user: Firebase Auth account + nexus_users profile.
+   * Uses a secondary Firebase App so the current admin session is not displaced.
+   * @param {object} data  {username, name, password, jobType, isAdmin, sites, sections}
+   * @returns {Promise<string>} the new user's UID.
+   */
+  function createUser(data) {
+    if (!isAdmin()) { return Promise.reject(new Error("Only administrators can create users")); }
+    var username = String(data.username || "").trim().toLowerCase();
+    if (!username || !data.password) { return Promise.reject(new Error("Username and password are required")); }
+    var email = _userEmail(username);
+    var sections = Object.assign({}, data.sections || {});
+    if (data.isAdmin) { SECTIONS.forEach(function (s) { sections[s.id] = true; }); }
+    var initials = String(data.name || "").split(" ").map(function (w) { return w[0] || ""; }).slice(0, 2).join("").toUpperCase();
+
+    /* Secondary app so admin's auth session is not replaced */
+    var secName = "nexus_uc_" + Date.now();
+    var secApp;
+    try { secApp = firebase.initializeApp(firebaseConfig, secName); }
+    catch (e) { secApp = firebase.app(secName); }
+
+    return secApp.auth().createUserWithEmailAndPassword(email, data.password)
+      .then(function (cred) {
+        var uid = cred.user.uid;
+        var profile = {
+          username: username, name: data.name || username,
+          jobType: data.isAdmin ? "Administrator" : (data.jobType || "User"),
+          isAdmin: !!data.isAdmin, sites: data.sites || [], sections: sections,
+          status: "Active", initials: initials,
+          createdAt: Date.now(), createdBy: (session() || {}).username || "admin"
+        };
+        return db.collection("nexus_users").doc(uid).set(profile)
+          .then(function () { return secApp.delete().catch(function () {}); })
+          .then(function () { return uid; });
+      })
+      .catch(function (err) {
+        secApp.delete().catch(function () {});
+        if (err.code === "auth/email-already-in-use") { throw new Error("That username is already taken"); }
+        throw err.message ? err : new Error("Could not create user — try again");
+      });
   }
 
   /* ---------- site list ---------- */
@@ -775,6 +893,7 @@
   global.Nexus = {
     ALL: ALL,
     SECTIONS: SECTIONS,
+    firebaseConfig: firebaseConfig,
     db: db,
     session: session,
     setSession: setSession,
@@ -790,6 +909,7 @@
     logout: logout,
     hasAnyUser: hasAnyUser,
     bootstrapAdmin: bootstrapAdmin,
+    createUser: createUser,
     fetchScoped: fetchScoped,
     load: load,
     add: add,

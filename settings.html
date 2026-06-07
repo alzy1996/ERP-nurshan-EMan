@@ -1155,20 +1155,18 @@ function confirmInvite(){
 
   var btn=$('#createUserBtn');
   btn.disabled=true;
-  Nexus.hash(password).then(function(ph){
-    return db.collection('nexus_users').add({
-      username:username,passwordHash:ph,name:name,jobType:isAdminUser?'Administrator':jobType,
-      isAdmin:isAdminUser,sites:sites,sections:sections,status:'Active',
-      initials:initialsOf(name),createdAt:Date.now(),createdBy:(Nexus.session()||{}).username||'admin'
-    });
+  Nexus.createUser({
+    username:username, name:name, password:password,
+    jobType:isAdminUser?'Administrator':jobType,
+    isAdmin:isAdminUser, sites:sites, sections:sections
   }).then(function(){
     btn.disabled=false;
     closeModal('inviteModal');
     toast('User created: '+username);
     loadUsersFromFirestore();
-  }).catch(function(){
+  }).catch(function(e){
     btn.disabled=false;
-    msg.textContent='Could not create user — try again';
+    msg.textContent=e.message||'Could not create user — try again';
   });
 }
 
