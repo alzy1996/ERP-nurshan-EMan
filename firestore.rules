@@ -2,12 +2,16 @@ rules_version = '2';
 
 // ============================================================
 // ERP Nexus — Firestore security rules
+// ============================================================
 // Auth model: Firebase Authentication (email/password).
-//   - Anonymous auth is allowed only for the login-page bootstrap
-//     check and the one-time legacy migration read.
-//   - All real app operations require password auth.
-//   - isAdmin() reads the caller's nexus_users profile server-side,
-//     so the client can never fake admin status via localStorage.
+//
+// Key design decisions:
+//  • isAdmin() reads the caller's nexus_users profile on the server —
+//    setting isAdmin:true in localStorage cannot bypass this.
+//  • nexus_users allows anonymous reads (needed for the one-time
+//    legacy migration login that queries by username).
+//  • nexus_meta/bootstrap_status is publicly readable so the login
+//    page can detect a fresh install without any auth.
 // ============================================================
 
 service cloud.firestore {
@@ -15,100 +19,92 @@ service cloud.firestore {
 
     // ---- helpers --------------------------------------------------------
 
-    /** True when the request comes from a real email/password sign-in. */
     function isPasswordAuth() {
       return request.auth != null
           && request.auth.token.firebase.sign_in_provider == "password";
     }
 
-    /** Read the caller's own profile (one extra read, cached by Firestore). */
     function callerProfile() {
       return get(/databases/$(database)/documents/nexus_users/$(request.auth.uid)).data;
     }
 
-    /**
-     * Server-side admin check — reads caller's Firestore profile.
-     * Cannot be faked by editing localStorage.
-     */
+    // Server-side admin check — cannot be faked via localStorage.
     function isAdmin() {
       return isPasswordAuth() && callerProfile().isAdmin == true;
     }
 
-    /** True when the document's siteId is in the caller's assigned sites. */
     function inSite(siteId) {
       return isAdmin() || siteId in callerProfile().sites;
     }
 
     // ---- nexus_users ----------------------------------------------------
-    // READ  : authenticated users can read their own doc; admin reads all.
-    // LIST  : only admin (loadUsersFromFirestore in settings.html).
-    // CREATE: only admin; shape must include required fields + valid hash.
-    // UPDATE: user updates own doc OR admin updates any.
-    // DELETE: blocked via API — use Firebase console / Admin SDK.
+    // READ  : any authenticated session (anonymous OK — needed for legacy
+    //         migration query and bootstrap check).
+    // CREATE: user creates own profile (bootstrap + migration) OR admin
+    //         creates another user's profile.
+    // UPDATE: user updates own profile OR admin updates any.
+    // DELETE: blocked via client API.
     match /nexus_users/{userId} {
-      allow get  : if request.auth != null
-                    && (request.auth.uid == userId || isAdmin());
-      allow list : if isAdmin();
-      allow create: if isAdmin()
-                    && request.resource.data.keys().hasAll(
-                         ['username','name','jobType','isAdmin','status','createdAt'])
-                    && request.resource.data.username is string
-                    && request.resource.data.username.size() >= 2;
-      allow update: if request.auth != null
-                    && (request.auth.uid == userId || isAdmin());
-      allow delete: if false;
+      allow read   : if request.auth != null;
+      allow create : if request.auth.uid == userId || isAdmin();
+      allow update : if request.auth.uid == userId || isAdmin();
+      allow delete : if false;
+    }
+
+    // ---- bootstrap status (publicly readable, written once) -------------
+    // The login page reads this to decide whether to show the login form
+    // or the first-admin setup form — no auth required.
+    match /nexus_meta/bootstrap_status {
+      allow read  : if true;
+      allow create: if !exists(/databases/$(database)/documents/nexus_meta/bootstrap_status);
+      allow update, delete: if isAdmin();
     }
 
     // ---- public offer submission (offer-submit.html) --------------------
-    // CREATE is allowed for any authenticated user (anonymous or password)
-    // with a validated shape — this is the supplier-facing form.
-    // Reads, updates, deletes need real password auth.
     match /nexus_offers/{offerId} {
-      allow read  : if isPasswordAuth() && inSite(resource.data.siteId);
+      allow read         : if isPasswordAuth() && inSite(resource.data.siteId);
       allow update, delete: if isPasswordAuth() && inSite(resource.data.siteId);
-      allow create: if request.auth != null
-                    && request.resource.data.keys().hasOnly([
-                         'siteId','supplierId','supplierName','items','price',
-                         'validity','contact','note','status','source',
-                         'token','createdAt','createdBy'
-                       ])
-                    && request.resource.data.items  is string
-                    && request.resource.data.price  is number
-                    && request.resource.data.price  >= 0;
+      allow create       : if request.auth != null
+                           && request.resource.data.keys().hasOnly([
+                                'siteId','supplierId','supplierName','items','price',
+                                'validity','contact','note','status','source',
+                                'token','createdAt','createdBy'
+                              ])
+                           && request.resource.data.items is string
+                           && request.resource.data.price is number
+                           && request.resource.data.price >= 0;
     }
 
     // ---- contract signing (contract-sign.html) --------------------------
-    // Only authenticated staff read/create/delete.
-    // Merge-updates (signing) are allowed if only signing fields change.
     match /nexus_contracts/{doc} {
-      allow read  : if isPasswordAuth();
+      allow read          : if isPasswordAuth();
       allow create, delete: if isPasswordAuth();
-      allow update: if request.auth != null      // allows contractor to sign
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['status','signature','signedAt','signerName']);
+      allow update        : if request.auth != null
+                            && request.resource.data.diff(resource.data).affectedKeys()
+                                 .hasOnly(['status','signature','signedAt','signerName']);
     }
 
-    // ---- scoped collections: read/write only within user's site(s) ------
+    // ---- scoped collections ---------------------------------------------
     match /nexus_suppliers/{doc} {
-      allow read  : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow write : if isPasswordAuth() && inSite(request.resource.data.siteId)
-                    && request.resource.data.siteId is string
-                    && request.resource.data.siteId.size() > 0;
+      allow read : if isPasswordAuth() && inSite(resource.data.siteId);
+      allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
+                   && request.resource.data.siteId is string
+                   && request.resource.data.siteId.size() > 0;
     }
     match /nexus_materials/{doc} {
-      allow read  : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow write : if isPasswordAuth() && inSite(request.resource.data.siteId)
-                    && request.resource.data.siteId is string
-                    && request.resource.data.siteId.size() > 0;
+      allow read : if isPasswordAuth() && inSite(resource.data.siteId);
+      allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
+                   && request.resource.data.siteId is string
+                   && request.resource.data.siteId.size() > 0;
     }
     match /nexus_prs/{doc} {
-      allow read  : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow write : if isPasswordAuth() && inSite(request.resource.data.siteId)
-                    && request.resource.data.siteId is string
-                    && request.resource.data.siteId.size() > 0;
+      allow read : if isPasswordAuth() && inSite(resource.data.siteId);
+      allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
+                   && request.resource.data.siteId is string
+                   && request.resource.data.siteId.size() > 0;
     }
 
-    // ---- other collections: password auth required ----------------------
+    // ---- other app collections ------------------------------------------
     match /nexus_psi/{doc}              { allow read, write: if isPasswordAuth(); }
     match /nexus_attendance/{doc}       { allow read, write: if isPasswordAuth(); }
     match /nexus_sites/{doc}            { allow read, write: if isPasswordAuth(); }
@@ -121,7 +117,6 @@ service cloud.firestore {
     match /nexus_whatsapp_tokens/{doc}  { allow read, write: if isPasswordAuth(); }
     match /nexus_meta/{doc}             { allow read, write: if isPasswordAuth(); }
 
-    // Deny everything not explicitly matched.
     match /{document=**} { allow read, write: if false; }
   }
 }

@@ -18,21 +18,27 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(html|js)",
+        "source": "**/*.html",
         "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Pragma",        "value": "no-cache" },
+          { "key": "Expires",       "value": "0" }
         ]
       },
       {
-        "source": "nexus-sw.js",
+        "source": "**/*.js",
         "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Pragma",        "value": "no-cache" },
+          { "key": "Expires",       "value": "0" }
+        ]
+      },
+      {
+        "source": "**/*.css",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Pragma",        "value": "no-cache" },
+          { "key": "Expires",       "value": "0" }
         ]
       }
     ]

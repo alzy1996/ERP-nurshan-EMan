@@ -334,15 +334,14 @@
 
   /**
    * Whether any user document exists (controls first-admin bootstrap flow).
+   * Reads nexus_meta/bootstrap_status which is publicly readable — no auth needed.
    * @returns {Promise<boolean>}
    */
   function hasAnyUser() {
     if (!db) { return Promise.resolve(true); }
-    /* Use anonymous auth if not yet signed in so the Firestore read is allowed */
-    var anonP = (auth && !auth.currentUser) ? auth.signInAnonymously().catch(function () {}) : Promise.resolve();
-    return anonP.then(function () {
-      return db.collection("nexus_users").limit(1).get({ source: "server" });
-    }).then(function (s) { return !s.empty; }).catch(function () { return true; });
+    return db.collection("nexus_meta").doc("bootstrap_status").get({ source: "server" })
+      .then(function (doc) { return doc.exists; })
+      .catch(function () { return true; });
   }
 
   /**
@@ -369,6 +368,10 @@
           status: "Active", initials: initials, createdAt: Date.now()
         };
         return db.collection("nexus_users").doc(cred.user.uid).set(profile)
+          .then(function () {
+            return db.collection("nexus_meta").doc("bootstrap_status")
+              .set({ bootstrapped: true, at: Date.now() });
+          })
           .then(function () {
             var s = { uid: cred.user.uid, username: username, name: name,
               jobType: "Administrator", isAdmin: true, sites: [], sections: sections, activeSite: ALL };
