@@ -24,7 +24,6 @@
   try {
     if (global.firebase && !firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     db = firebase.firestore();
-    db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
   } catch (e) { console.warn("[nexus-core] firebase init", e); }
   global.db = db;
 
@@ -834,6 +833,12 @@
     translateDOM(document.body);
     injectLangToggle();
     startI18nObserver();
+    if (!document.querySelector('link[rel~="icon"]')) {
+      var fav = document.createElement('link');
+      fav.rel = 'icon'; fav.type = 'image/svg+xml';
+      fav.href = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%23E8612C"/><text x="11" y="72" font-size="52" font-weight="900" font-family="system-ui,sans-serif" fill="white">NX</text></svg>';
+      document.head.appendChild(fav);
+    }
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", autoInit);

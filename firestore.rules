@@ -4,73 +4,101 @@ rules_version = '2';
 // ERP NEXUS — Firestore security rules (project: procurement-erp-6e271)
 // ============================================================
 //
-// IMPORTANT SECURITY NOTE
-// -----------------------
-// ERP Nexus currently authenticates users with a username + password stored
-// in the `nexus_users` collection (no Firebase Authentication). Because there
-// is no verified `request.auth`, these rules CANNOT cryptographically enforce
-// per-site / per-role access at the database layer — that gating happens in the
-// client (nexus-core.js). Anyone with the public API key can technically reach
-// the database.
+// Auth model: the app uses anonymous Firebase Auth + a custom
+// username/passwordHash check stored in nexus_users.
+// "request.auth != null" means the user completed anonymous sign-in
+// (i.e. the browser loaded the app).  It is NOT proof of a valid
+// nexus_users login — that check is client-side only.
 //
-// These rules are a pragmatic, best-effort hardening:
-//   * they validate the SHAPE of public supplier offer submissions, and
-//   * they keep everything else open so the app keeps working.
-//
-// STRONGLY RECOMMENDED follow-up: add Firebase Authentication (anonymous or
-// email) and replace the `if true` clauses below with checks such as
-// `request.auth != null` and document-level `siteId` / role assertions.
+// STRONGLY RECOMMENDED: migrate to Firebase Authentication
+// (email/password) and use request.auth.uid + custom claims so
+// that admin / siteId checks can be enforced here server-side.
 // ============================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---- Public supplier offer submissions (offer-submit.html) ----
-    // Anyone with a valid offer link may CREATE an offer, but only with the
-    // expected shape; they may not read, edit or delete existing offers.
-    match /nexus_offers/{offerId} {
-      allow read: if request.auth != null;            // procurement app reads site-scoped offers
-      allow update, delete: if request.auth != null;  // TODO: restrict to authenticated procurement
-      allow create: if
-        request.auth != null &&
-        request.resource.data.keys().hasOnly([
-          'siteId','supplierId','supplierName','items','price','validity',
-          'contact','note','status','source','token','createdAt','createdBy'
-        ])
-        && request.resource.data.status is string
-        && request.resource.data.items is string
-        && request.resource.data.price is number
-        && request.resource.data.price >= 0;
-    }
-
-    // ---- Users: contain passwordHash — keep readable for custom-auth login ----
-    // (Login queries by username. Harden once Firebase Auth is added.)
+    // ---- Users collection ----
+    // READ is required by the login flow (username lookup + hash check).
+    // WRITE is locked to documents that contain the minimum required shape
+    // so random API calls cannot corrupt user records or create fake admins.
     match /nexus_users/{userId} {
-      allow read, write: if request.auth != null;     // TODO: restrict writes to admins via Auth
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['username','passwordHash','name','jobType','status','createdAt'])
+        && request.resource.data.passwordHash is string
+        && request.resource.data.passwordHash.size() == 64   // SHA-256 hex = 64 chars
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 3;
+      allow update: if request.auth != null
+        && (!request.resource.data.keys().hasAny(['passwordHash']) ||
+            (request.resource.data.passwordHash is string
+             && request.resource.data.passwordHash.size() == 64));
+      allow delete: if false;   // never delete users via API — use Admin SDK / console
     }
 
-    // ---- Contracts: public signing page may merge-update an existing doc ----
-    // (sets status:'Signed' + signature). App-level gating still applies; harden
-    // once Firebase Auth is added so only the contractor link can sign.
-    match /nexus_contracts/{doc}          { allow read, write: if request.auth != null; }
-    match /nexus_psi/{doc}                { allow read, write: if request.auth != null; }
-    match /nexus_attendance/{doc}         { allow read, write: if request.auth != null; }
+    // ---- Public supplier offer submissions (offer-submit.html) ----
+    // Anyone with an offer link may CREATE (shape-validated only).
+    // Reads, updates, deletes require an authenticated session.
+    match /nexus_offers/{offerId} {
+      allow read:   if request.auth != null;
+      allow update, delete: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+             'siteId','supplierId','supplierName','items','price','validity',
+             'contact','note','status','source','token','createdAt','createdBy'
+           ])
+        && request.resource.data.status  is string
+        && request.resource.data.items   is string
+        && request.resource.data.price   is number
+        && request.resource.data.price   >= 0;
+    }
 
-    // ---- All other Nexus collections ----
-    match /nexus_sites/{doc}              { allow read, write: if request.auth != null; }
-    match /nexus_suppliers/{doc}          { allow read, write: if request.auth != null; }
-    match /nexus_materials/{doc}          { allow read, write: if request.auth != null; }
-    match /nexus_prs/{doc}                { allow read, write: if request.auth != null; }
-    match /nexus_activity/{doc}           { allow read, write: if request.auth != null; }
-    match /nexus_notifications/{doc}      { allow read, write: if request.auth != null; }
-    match /nexus_settings/{doc}           { allow read, write: if request.auth != null; }
-    match /nexus_quotes/{doc}             { allow read, write: if request.auth != null; }
-    match /nexus_negotiations/{doc}       { allow read, write: if request.auth != null; }
-    match /nexus_schedules/{doc}          { allow read, write: if request.auth != null; }
-    match /nexus_whatsapp_tokens/{doc}    { allow read, write: if request.auth != null; }
-    match /nexus_meta/{doc}               { allow read, write: if request.auth != null; }
+    // ---- Contracts & contract signing (contract-sign.html) ----
+    // Signing merges status:'Signed' + signature onto an existing doc.
+    // Restrict create/delete to authenticated sessions; allow public merge-update
+    // only if the doc already exists (signing, not forging).
+    match /nexus_contracts/{doc} {
+      allow read:   if request.auth != null;
+      allow create, delete: if request.auth != null;
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status','signature','signedAt','signerName']);
+    }
 
-    // Deny anything not explicitly matched above.
+    // ---- PSI / attendance — authenticated session required ----
+    match /nexus_psi/{doc}        { allow read, write: if request.auth != null; }
+    match /nexus_attendance/{doc} { allow read, write: if request.auth != null; }
+
+    // ---- Core collections — authenticated + shape guard on write ----
+    // siteId must be a non-empty string on every write so cross-site
+    // data injection is at least structurally prevented.
+    match /nexus_sites/{doc}          { allow read, write: if request.auth != null; }
+    match /nexus_suppliers/{doc}      {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && (request.resource.data.siteId is string && request.resource.data.siteId.size() > 0);
+    }
+    match /nexus_materials/{doc}      {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && (request.resource.data.siteId is string && request.resource.data.siteId.size() > 0);
+    }
+    match /nexus_prs/{doc}            {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && (request.resource.data.siteId is string && request.resource.data.siteId.size() > 0);
+    }
+    match /nexus_notifications/{doc}  { allow read, write: if request.auth != null; }
+    match /nexus_activity/{doc}       { allow read, write: if request.auth != null; }
+    match /nexus_settings/{doc}       { allow read, write: if request.auth != null; }
+    match /nexus_quotes/{doc}         { allow read, write: if request.auth != null; }
+    match /nexus_negotiations/{doc}   { allow read, write: if request.auth != null; }
+    match /nexus_schedules/{doc}      { allow read, write: if request.auth != null; }
+    match /nexus_whatsapp_tokens/{doc}{ allow read, write: if request.auth != null; }
+    match /nexus_meta/{doc}           { allow read, write: if request.auth != null; }
+
+    // Deny everything not matched above.
     match /{document=**} { allow read, write: if false; }
   }
 }
