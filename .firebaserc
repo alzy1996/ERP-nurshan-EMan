@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "procurement-erp-6e271"
-  }
+    "default": "procurement-erp-6e271",
+    "procurement": "procurement-erp-6e271"
+  },
+  "targets": {},
+  "etags": {}
 }
