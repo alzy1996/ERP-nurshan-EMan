@@ -73,6 +73,15 @@ export function AppProvider({ children }) {
   }, [session, setSessionPersist]);
 
   const activeSite = session ? (session.activeSite || ALL) : null;
+
+  /** Concrete site id to write under (auto-resolves single-site; null if ambiguous). */
+  const resolveSite = useCallback(() => {
+    if (activeSite && activeSite !== ALL) return activeSite;
+    if (sites.length === 1) return sites[0].id;
+    if (session && (session.sites || []).length === 1) return session.sites[0];
+    return null;
+  }, [activeSite, sites, session]);
+
   const canSee = useCallback((navId) => {
     if (!session) return false;
     if (session.isAdmin) return true;
@@ -85,8 +94,8 @@ export function AppProvider({ children }) {
     ALL, session, sites, lang, theme, activeSite,
     setLang: setLangState, toggleLang: () => setLangState((l) => (l === "ar" ? "en" : "ar")),
     setTheme: setThemeState, toggleTheme: () => setThemeState((x) => (x === "dark" ? "light" : "dark")),
-    login, logout, switchSite, canSee, t, isAdmin: !!(session && session.isAdmin)
-  }), [session, sites, lang, theme, activeSite, login, logout, switchSite, canSee, t]);
+    login, logout, switchSite, resolveSite, canSee, t, isAdmin: !!(session && session.isAdmin)
+  }), [session, sites, lang, theme, activeSite, login, logout, switchSite, resolveSite, canSee, t]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
