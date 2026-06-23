@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import Materials from "./pages/Materials";
 import PurchaseRequests from "./pages/PurchaseRequests";
 import Analytics from "./pages/Analytics";
+import Notifications from "./pages/Notifications";
 
 function Protected({ children }) {
   const app = useApp();
@@ -24,7 +25,7 @@ function Placeholder({ name }) {
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
@@ -36,7 +37,7 @@ export default function App() {
           <Route path="/materials" element={<Protected><Materials /></Protected>} />
           <Route path="/purchase-requests" element={<Protected><PurchaseRequests /></Protected>} />
           <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
-          <Route path="/notifications" element={<Protected><Placeholder name="Notifications" /></Protected>} />
+          <Route path="/notifications" element={<Protected><Notifications /></Protected>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
