@@ -7,6 +7,9 @@ import Contracts from "./pages/Contracts";
 import Attendance from "./pages/Attendance";
 import Offers from "./pages/Offers";
 import Settings from "./pages/Settings";
+import Materials from "./pages/Materials";
+import PurchaseRequests from "./pages/PurchaseRequests";
+import Analytics from "./pages/Analytics";
 
 function Protected({ children }) {
   const app = useApp();
@@ -30,6 +33,10 @@ export default function App() {
           <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
           <Route path="/offers" element={<Protected><Offers /></Protected>} />
           <Route path="/settings" element={<Protected><Settings /></Protected>} />
+          <Route path="/materials" element={<Protected><Materials /></Protected>} />
+          <Route path="/purchase-requests" element={<Protected><PurchaseRequests /></Protected>} />
+          <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
+          <Route path="/notifications" element={<Protected><Placeholder name="Notifications" /></Protected>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
