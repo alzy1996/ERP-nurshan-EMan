@@ -59,7 +59,8 @@ export function AppProvider({ children }) {
     const s = {
       uid: snap.docs[0].id, username: u.username, name: u.name || u.username,
       jobType: u.jobType || "User", isAdmin: !!u.isAdmin, sites: u.sites || [],
-      sections: u.sections || {}, activeSite: u.isAdmin ? ALL : (u.sites || [])[0] || null
+      sections: u.sections || {}, approvalLevel: u.approvalLevel || 0,
+      activeSite: u.isAdmin ? ALL : (u.sites || [])[0] || null
     };
     setSessionPersist(s);
     return s;

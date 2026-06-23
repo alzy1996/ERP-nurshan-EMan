@@ -11,7 +11,17 @@ const SECTIONS = [
   ["offers", "Offers"], ["purchaserequests", "Purchase Requests"], ["contracts", "Contracts"],
   ["attendance", "Attendance"], ["notifications", "Notifications"], ["settings", "Settings"]
 ];
-const JOBS = ["Procurement Officer", "Procurement Manager", "Finance", "Site Engineer", "Project Manager", "Warehouse Staff", "Contractor", "Viewer"];
+const JOBS = [
+  "Procurement Officer", "Procurement Manager", "Procurement Director",
+  "Finance Officer", "Finance Manager", "Accountant",
+  "Site Engineer", "Senior Engineer", "QA/QC Inspector",
+  "Project Manager", "Project Director", "Operations Manager",
+  "Warehouse Staff", "Store Keeper",
+  "Contractor", "Consultant",
+  "General Manager", "CEO", "Viewer"
+];
+const LEVELS = [0, 1, 2, 3, 4, 5];
+const levelLabel = (n) => (n ? "Level " + n : "None (no approval)");
 const TABS = [["sites", "Sites"], ["users", "Users"], ["danger", "Danger Zone"]];
 
 export default function Settings() {
@@ -81,7 +91,7 @@ function Users() {
   const [users, setUsers] = useState([]);
   const [sites, setSites] = useState([]);
   const [open, setOpen] = useState(false);
-  const blank = { name: "", username: "", password: "", jobType: JOBS[0], isAdmin: false, sites: [], sections: { dashboard: true } };
+  const blank = { name: "", username: "", password: "", jobType: JOBS[0], approvalLevel: 0, isAdmin: false, sites: [], sections: { dashboard: true } };
   const [f, setF] = useState(blank);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -107,6 +117,7 @@ function Users() {
       const passwordHash = await sha256(f.password);
       await addDoc(collection(db, "nexus_users"), {
         username: u, passwordHash, name: f.name.trim(), jobType: f.isAdmin ? "Administrator" : f.jobType,
+        approvalLevel: f.isAdmin ? 5 : Number(f.approvalLevel) || 0,
         isAdmin: f.isAdmin, sites: f.sites, sections, status: "Active", createdAt: Date.now()
       });
       setOpen(false); setF(blank); load();
@@ -128,13 +139,14 @@ function Users() {
         <Button className="ms-auto" onClick={() => { setF(blank); setMsg(""); setOpen(true); }}>＋ Create User</Button></div>
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
-          <thead><tr>{["Name", "Username", "Job Type", "Sites", "Status", ""].map((h) => <th key={h} className="text-start font-bold text-[10.5px] uppercase tracking-wide py-2 border-b" style={{ borderColor: "var(--border)" }}>{h}</th>)}</tr></thead>
+          <thead><tr>{["Name", "Username", "Job Type", "Level", "Sites", "Status", ""].map((h) => <th key={h} className="text-start font-bold text-[10.5px] uppercase tracking-wide py-2 border-b" style={{ borderColor: "var(--border)" }}>{h}</th>)}</tr></thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
                 <td className="py-2.5 border-b font-semibold" style={{ borderColor: "var(--border)" }}>{u.name || u.username}</td>
                 <td className="border-b" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>{u.username}</td>
                 <td className="border-b" style={{ borderColor: "var(--border)" }}>{u.isAdmin ? "Administrator" : u.jobType || "—"}</td>
+                <td className="border-b" style={{ borderColor: "var(--border)" }}>{u.isAdmin ? <Badge tone="blue">Admin</Badge> : u.approvalLevel ? <Badge tone="amber">L{u.approvalLevel}</Badge> : <span style={{ color: "var(--muted)" }}>—</span>}</td>
                 <td className="border-b text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>{u.isAdmin ? "All sites" : (u.sites || []).map((id) => (sites.find((s) => s.id === id) || {}).name || id).join(", ") || "—"}</td>
                 <td className="border-b" style={{ borderColor: "var(--border)" }}><Badge tone="green">{u.status || "Active"}</Badge></td>
                 <td className="border-b" style={{ borderColor: "var(--border)" }}>{u.id !== app.session.uid && <Button variant="no" onClick={() => del(u)}>🗑️</Button>}</td>
@@ -157,6 +169,15 @@ function Users() {
             {JOBS.map((j) => <option key={j}>{j}</option>)}
           </select>
         </label>
+        {!f.isAdmin && (
+          <label className="block mb-3.5">
+            <span className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--muted)" }}>Approval Level</span>
+            <select value={f.approvalLevel} onChange={(e) => setF({ ...f, approvalLevel: Number(e.target.value) })} className="w-full rounded-lg border px-3 py-2.5 text-sm" style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--text)" }}>
+              {LEVELS.map((n) => <option key={n} value={n}>{levelLabel(n)}</option>)}
+            </select>
+            <span className="block text-[11px] mt-1" style={{ color: "var(--muted)" }}>Can approve a Purchase Request only when it reaches this level.</span>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-sm mb-3 cursor-pointer">
           <input type="checkbox" checked={f.isAdmin} onChange={(e) => setF({ ...f, isAdmin: e.target.checked })} /> Administrator (all sites &amp; sections)
         </label>

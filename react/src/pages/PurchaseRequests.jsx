@@ -35,6 +35,11 @@ export default function PurchaseRequests() {
   }
   async function del(pr) { if (window.confirm("Delete " + (pr.id) + "?")) { await removeScoped("prs", pr.id); load(); } }
 
+  const myLevel = app.session.approvalLevel || 0;
+  const reqLevel = (stage) => { const m = /^Level (\d)/.exec(stage || ""); if (m) return +m[1]; if (stage === "Submitted") return 1; return null; };
+  const canApprove = (p) => app.isAdmin || (myLevel > 0 && reqLevel(p.stage || "Submitted") === myLevel);
+  async function approve(p) { const rl = reqLevel(p.stage || "Submitted"); await move(p, rl == null || rl >= 5 ? "Approved" : "Level " + (rl + 1)); }
+
   return (
     <Shell title="Purchase Requests">
       <div className="flex items-center gap-2 mb-3">
@@ -54,24 +59,31 @@ export default function PurchaseRequests() {
                   <span className="ms-auto text-[10.5px] font-extrabold px-2 rounded-lg" style={{ color: "var(--muted)", background: "var(--surface)", border: "1px solid var(--border)" }}>{items.length}</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5">
-                  {items.map((p) => (
-                    <div key={p.id} draggable onDragStart={() => setDrag(p)} onDragEnd={() => setDrag(null)}
-                      className="card p-2.5 cursor-grab" style={{ borderInlineStartWidth: 3, borderInlineStartColor: DOT[st] }}>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-xs font-extrabold" style={{ color: "var(--primary)" }}>{(p.id || "").slice(0, 6)}</span>
-                        <span className="text-xs font-extrabold">{fmtOMR(p.amount)}</span>
-                      </div>
-                      <div className="text-xs leading-snug mb-1.5">{p.desc}</div>
-                      <div className="text-[10.5px]" style={{ color: "var(--muted)" }}>👤 {p.requester || "—"}</div>
-                      {/Level|Submitted/.test(st) && (
-                        <div className="flex gap-1.5 mt-2">
-                          <Button variant="ok" onClick={() => move(p, STAGES[Math.min(STAGES.indexOf(st) + 1, 7)] === "Approved" || STAGES.indexOf(st) >= 6 ? "Approved" : STAGES[STAGES.indexOf(st) + 1])}>✓</Button>
-                          <Button variant="no" onClick={() => move(p, "Rejected")}>✕</Button>
-                          {app.isAdmin && <Button variant="ghost" onClick={() => del(p)}>🗑️</Button>}
+                  {items.map((p) => {
+                    const mine = canApprove(p) && !app.isAdmin;
+                    return (
+                      <div key={p.id} draggable={app.isAdmin} onDragStart={() => app.isAdmin && setDrag(p)} onDragEnd={() => setDrag(null)}
+                        className={"card p-2.5 " + (app.isAdmin ? "cursor-grab" : "")} style={{ borderInlineStartWidth: 3, borderInlineStartColor: mine ? "#1DB06A" : DOT[st] }}>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-xs font-extrabold" style={{ color: "var(--primary)" }}>{(p.id || "").slice(0, 6)}</span>
+                          <span className="text-xs font-extrabold">{fmtOMR(p.amount)}</span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="text-xs leading-snug mb-1.5">{p.desc}</div>
+                        <div className="text-[10.5px]" style={{ color: "var(--muted)" }}>👤 {p.requester || "—"}</div>
+                        {mine && <div className="text-[10px] font-bold mt-1.5" style={{ color: "#0e7a4a" }}>● Awaiting your approval (Level {myLevel})</div>}
+                        {/Level|Submitted/.test(st) && canApprove(p) && (
+                          <div className="flex gap-1.5 mt-2">
+                            <Button variant="ok" onClick={() => approve(p)}>✓ Approve</Button>
+                            <Button variant="no" onClick={() => move(p, "Rejected")}>✕</Button>
+                            {app.isAdmin && <Button variant="ghost" onClick={() => del(p)}>🗑️</Button>}
+                          </div>
+                        )}
+                        {/Level|Submitted/.test(st) && !canApprove(p) && !app.isAdmin && (
+                          <div className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>🔒 Needs Level {reqLevel(p.stage || "Submitted")} approver</div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
