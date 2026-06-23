@@ -30,6 +30,15 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Build React app (served at /app)
+        run: |
+          cd react
+          npm ci
+          npm run build
+          mkdir -p ../app
+          rm -rf ../app/*
+          cp -r dist/* ../app/
+
       - name: Write service account key (if provided)
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
