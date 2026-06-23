@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, addDoc, deleteDoc, doc, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
 
 const ALL = "__ALL__";
@@ -25,6 +25,16 @@ export function addScoped(shortName, data, session, siteId) {
 /** Delete a doc by id. */
 export function removeScoped(shortName, id) {
   return deleteDoc(doc(db, "nexus_" + shortName, id));
+}
+
+/** Bulk-delete every doc in a collection for the active site (admin). Returns count. */
+export async function wipeCollection(shortName, session) {
+  const docs = await fetchScoped(shortName, session);
+  if (!docs.length) return 0;
+  const batch = writeBatch(db);
+  docs.forEach((d) => batch.delete(doc(db, "nexus_" + shortName, d.id)));
+  await batch.commit();
+  return docs.length;
 }
 
 /** Write a WhatsApp token to Firestore, THEN open wa.me after 500ms (token-first rule). */

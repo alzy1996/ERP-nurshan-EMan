@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import Suppliers from "./pages/Suppliers";
 import Contracts from "./pages/Contracts";
 import Attendance from "./pages/Attendance";
+import Offers from "./pages/Offers";
+import Settings from "./pages/Settings";
 
 function Protected({ children }) {
   const app = useApp();
@@ -26,6 +28,8 @@ export default function App() {
           <Route path="/suppliers" element={<Protected><Suppliers /></Protected>} />
           <Route path="/contracts" element={<Protected><Contracts /></Protected>} />
           <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
+          <Route path="/offers" element={<Protected><Offers /></Protected>} />
+          <Route path="/settings" element={<Protected><Settings /></Protected>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
