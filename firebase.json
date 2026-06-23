@@ -7,10 +7,15 @@
       "**/.*",
       "**/node_modules/**",
       "*.md",
+      "react/**",
       "firestore.rules",
       "firestore.indexes.json"
     ],
     "rewrites": [
+      {
+        "source": "/app/**",
+        "destination": "/app/index.html"
+      },
       {
         "source": "/",
         "destination": "/login.html"
