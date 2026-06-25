@@ -19,7 +19,10 @@ Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4 + shadcn/ui
 - **Timesheets** — supplier / equipment / internal tabs with an **HR approve** action; collections `supplier_timesheets` / `equipment_logs` / `internal_timesheets`.
 
 **Decided / done**
-- Auth stays the **custom-hash login** (vs `nexus_users`, SHA-256), not Firebase Auth.
+- Auth uses **real Firebase Email/Password** (username → `username@nexus-erp.app`), matching the
+  vanilla app and the deployed `firestore.rules` (which require `isPasswordAuth()`). Legacy
+  SHA-256 accounts auto-migrate on first login; admin user-creation uses a secondary Firebase app.
+  (Anonymous/custom-hash was denied by the rules — that was the "70% not working" cause.)
 - ✅ **Static export + deploy wiring** — env-gated `output: 'export'` (`NEXT_EXPORT=true`; normal dev/build stay at root). CI builds `next/` → copies `out/` to `./nx`; `firebase.json` ignores the `next/` source so the export serves at **`/nx`** alongside `/app`. (`/nx`, not `/next`, because the source folder is named `next/`.) ⚠️ Needs a real Firebase deploy to validate serving + the `FIREBASE_TOKEN` / `FIREBASE_SERVICE_ACCOUNT` secret.
 
 **Still pending**
