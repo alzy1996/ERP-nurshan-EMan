@@ -7,9 +7,11 @@ import { NoColorSpace, RepeatWrapping, type Group } from "three";
 
 function Earth() {
   const ref = useRef<Group>(null);
+  // Prefix with basePath so textures resolve when the app is served under /nx (static export).
+  const bp = process.env.NEXT_PUBLIC_BASE_PATH || "";
   const [normal, spec] = useTexture([
-    "/textures/earth-normal.jpg",
-    "/textures/earth-specular.jpg",
+    `${bp}/textures/earth-normal.jpg`,
+    `${bp}/textures/earth-specular.jpg`,
   ]);
   // Normal/relief maps must be sampled linearly, and wrap around the sphere seam.
   normal.colorSpace = NoColorSpace;

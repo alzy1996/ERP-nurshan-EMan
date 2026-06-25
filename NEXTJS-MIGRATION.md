@@ -18,9 +18,11 @@ Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4 + shadcn/ui
 - **Services** catalog (code / name / unit / rate) + **Cloudinary** contract-file upload (`src/lib/cloudinary.ts`); collection `services`.
 - **Timesheets** — supplier / equipment / internal tabs with an **HR approve** action; collections `supplier_timesheets` / `equipment_logs` / `internal_timesheets`.
 
-**Pending vs this brief (needs prioritisation)**
-- **Static export** (`output: 'export'`) + serve at `/next` + `firebase.json` rewrite + CI build step. The current app is the default Next build, NOT static-exported yet.
-- Auth: **decided** — stays the custom-hash login (username/password vs `nexus_users`, SHA-256), not Firebase Auth.
+**Decided / done**
+- Auth stays the **custom-hash login** (vs `nexus_users`, SHA-256), not Firebase Auth.
+- ✅ **Static export + deploy wiring** — env-gated `output: 'export'` (`NEXT_EXPORT=true`; normal dev/build stay at root). CI builds `next/` → copies `out/` to `./nx`; `firebase.json` ignores the `next/` source so the export serves at **`/nx`** alongside `/app`. (`/nx`, not `/next`, because the source folder is named `next/`.) ⚠️ Needs a real Firebase deploy to validate serving + the `FIREBASE_TOKEN` / `FIREBASE_SERVICE_ACCOUNT` secret.
+
+**Still pending**
 - **Users** extended with `phone, email, company`.
 - **i18n EN/AR + RTL**; mobile/responsive pass; inline edit/detail views; supplier detail (radar/score); offers→WhatsApp.
 

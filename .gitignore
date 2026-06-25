@@ -1,3 +1,6 @@
 
 # React build output (generated in CI, served at /app)
 /app/
+
+# Next.js static-export output (generated in CI, served at /nx)
+/nx/
