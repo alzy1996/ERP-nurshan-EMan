@@ -21,6 +21,7 @@ export type ModuleKey =
   | "dashboard"
   | "suppliers"
   | "materials"
+  | "services"
   | "offers"
   | "purchase_requests"
   | "purchase_orders"
@@ -28,6 +29,7 @@ export type ModuleKey =
   | "projects"
   | "inspections"
   | "attendance"
+  | "timesheets"
   | "analytics"
   | "notifications"
   | "settings"
@@ -46,8 +48,8 @@ export interface Perm {
 }
 
 export const ALL_MODULES: ModuleKey[] = [
-  "dashboard", "suppliers", "materials", "offers", "purchase_requests",
-  "purchase_orders", "contracts", "projects", "inspections", "attendance",
+  "dashboard", "suppliers", "materials", "services", "offers", "purchase_requests",
+  "purchase_orders", "contracts", "projects", "inspections", "attendance", "timesheets",
   "analytics", "notifications", "settings", "users",
 ];
 
@@ -68,6 +70,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
   suppliers: "Suppliers",
   materials: "Materials",
+  services: "Services",
   offers: "Offers",
   purchase_requests: "Purchase Requests",
   purchase_orders: "Purchase Orders",
@@ -75,6 +78,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   projects: "Projects",
   inspections: "Inspections",
   attendance: "Attendance",
+  timesheets: "Timesheets",
   analytics: "Analytics",
   notifications: "Notifications",
   settings: "Settings",
@@ -104,50 +108,50 @@ function p(code: string): Perm {
 // dashboard + notifications are injected as a "view" baseline for everyone.
 const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
-    suppliers: "full", materials: "full", offers: "full", purchase_requests: "full",
+    suppliers: "full", materials: "full", services: "full", offers: "full", purchase_requests: "full",
     purchase_orders: "full", contracts: "full", projects: "full", inspections: "full",
-    attendance: "full", analytics: "full", settings: "full", users: "full",
+    attendance: "full", timesheets: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
-    suppliers: "view", materials: "view", offers: "view",
+    suppliers: "view", materials: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view",
-    projects: "view", inspections: "view", attendance: "view", analytics: "view",
+    projects: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   procurement_manager: {
-    suppliers: "full", materials: "full", offers: "full",
+    suppliers: "full", materials: "full", services: "full", offers: "full",
     purchase_requests: "full", purchase_orders: "full", contracts: "full",
     projects: "view", inspections: "view", attendance: "view", analytics: "view",
   },
   buyer: {
-    suppliers: "edit", materials: "view", offers: "edit",
+    suppliers: "edit", materials: "view", services: "edit", offers: "edit",
     purchase_requests: "edit", purchase_orders: "edit", contracts: "view",
-    projects: "view", attendance: "edit:own",
+    projects: "view", attendance: "edit:own", timesheets: "edit:own",
   },
   finance: {
-    suppliers: "view", materials: "view", offers: "view",
+    suppliers: "view", materials: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
-    projects: "view", attendance: "view", analytics: "view",
+    projects: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   hr: {
-    attendance: "full", projects: "view", analytics: "view",
+    attendance: "full", timesheets: "full", projects: "view", analytics: "view",
   },
   site_engineer: {
-    suppliers: "view", materials: "view",
+    suppliers: "view", materials: "view", services: "view",
     purchase_requests: "edit:project", purchase_orders: "view", contracts: "view",
-    projects: "edit:project", inspections: "view", attendance: "edit:own", analytics: "view:own",
+    projects: "edit:project", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view:own",
   },
   warehouse: {
-    suppliers: "view", materials: "full",
+    suppliers: "view", materials: "full", services: "view",
     purchase_requests: "view", purchase_orders: "view",
-    projects: "view", inspections: "view", attendance: "edit:own", analytics: "view",
+    projects: "view", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
   inspector: {
     suppliers: "view", materials: "view",
     purchase_requests: "view", purchase_orders: "view",
-    projects: "view", inspections: "full", attendance: "edit:own", analytics: "view",
+    projects: "view", inspections: "full", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
   contractor: {
-    contracts: "view:own", projects: "view:own", attendance: "edit:own",
+    contracts: "view:own", projects: "view:own", attendance: "edit:own", timesheets: "edit:own",
   },
 };
 
@@ -199,6 +203,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   dashboard: "/dashboard",
   suppliers: "/dashboard/suppliers",
   materials: "/dashboard/materials",
+  services: "/dashboard/services",
   offers: "/dashboard/offers",
   purchase_requests: "/dashboard/purchase-requests",
   purchase_orders: "/dashboard/purchase-orders",
@@ -206,6 +211,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   projects: "/dashboard/projects",
   inspections: "/dashboard/inspections",
   attendance: "/dashboard/attendance",
+  timesheets: "/dashboard/timesheets",
   analytics: "/dashboard/analytics",
   notifications: "/dashboard/notifications",
   settings: "/dashboard/settings",
