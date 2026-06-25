@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Archive,
   Box,
+  Check,
   ChevronDown,
   Clock,
   FolderClosed,
@@ -14,6 +15,7 @@ import {
   Image as ImageIcon,
   LayoutDashboard,
   Library,
+  LogOut,
   Plus,
   Search,
   Settings,
@@ -23,8 +25,18 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useApp } from "@/context/app-context";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const rail = [
   { icon: Home, label: "Home", href: "/dashboard" },
@@ -73,8 +85,26 @@ const documents = [
   { name: "Off Grid Servers", count: 5, depth: 1 },
 ];
 
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .map((p) => p[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "U"
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { session, sites, activeSite, isAdmin, switchSite, logout, ALL } = useApp();
+
+  if (!session) return null;
+
+  const activeSiteLabel =
+    activeSite === ALL ? "All sites" : sites.find((s) => s.id === activeSite)?.name || "Select site";
 
   return (
     <aside className="hidden shrink-0 items-stretch gap-3 lg:flex">
@@ -101,13 +131,16 @@ export function Sidebar() {
             );
           })}
         </div>
-        <Link
-          href="#"
-          aria-label="Settings"
-          className="grid size-10 place-items-center rounded-2xl bg-white/10 text-white/80 transition-colors hover:text-white"
-        >
-          <Settings className="size-[18px]" />
-        </Link>
+        <div className="flex flex-col items-center gap-2">
+          <ThemeToggle className="grid size-10 place-items-center rounded-2xl text-white/60 transition-colors hover:text-white" />
+          <Link
+            href="#"
+            aria-label="Settings"
+            className="grid size-10 place-items-center rounded-2xl bg-white/10 text-white/80 transition-colors hover:text-white"
+          >
+            <Settings className="size-[18px]" />
+          </Link>
+        </div>
       </div>
 
       {/* Frosted nav panel */}
@@ -119,20 +152,57 @@ export function Sidebar() {
           <span className="size-2.5 rounded-full bg-[#28c840]" />
         </div>
 
-        {/* profile */}
-        <button className="mb-5 flex items-center gap-3 rounded-2xl p-1 text-left transition-colors hover:bg-foreground/5">
-          <Avatar className="size-10 ring-2 ring-white/60">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-              JD
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1 text-sm font-semibold">
-              John Doe <ChevronDown className="size-3.5 text-muted-foreground" />
-            </div>
-            <div className="truncate text-xs text-muted-foreground">customerpop@gmail.com</div>
-          </div>
-        </button>
+        {/* profile + site switcher + logout */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="mb-5 flex items-center gap-3 rounded-2xl p-1 text-left transition-colors hover:bg-foreground/5">
+              <Avatar className="size-10 ring-2 ring-white/60">
+                <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                  {initials(session.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1 text-sm font-semibold">
+                  <span className="truncate">{session.name}</span>
+                  <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+                </div>
+                <div className="truncate text-xs text-muted-foreground">{activeSiteLabel}</div>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="glass-strong w-60">
+            <DropdownMenuLabel className="flex flex-col">
+              <span>{session.name}</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                @{session.username} · {session.jobType}
+              </span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
+              Active site
+            </DropdownMenuLabel>
+            {isAdmin ? (
+              <DropdownMenuItem onClick={() => switchSite(ALL)}>
+                <Globe className="size-4" /> All sites
+                {activeSite === ALL ? <Check className="ml-auto size-4" /> : null}
+              </DropdownMenuItem>
+            ) : null}
+            {sites.map((s) => (
+              <DropdownMenuItem key={s.id} onClick={() => switchSite(s.id)}>
+                <FolderKanban className="size-4" />
+                <span className="truncate">{s.name || s.id}</span>
+                {activeSite === s.id ? <Check className="ml-auto size-4" /> : null}
+              </DropdownMenuItem>
+            ))}
+            {sites.length === 0 && !isAdmin ? (
+              <DropdownMenuItem disabled>No sites assigned</DropdownMenuItem>
+            ) : null}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={logout}>
+              <LogOut className="size-4" /> Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <ScrollArea className="-mx-1 flex-1 px-1">
           {groups.map((group) => (

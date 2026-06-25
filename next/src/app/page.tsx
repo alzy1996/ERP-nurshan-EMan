@@ -45,7 +45,7 @@ export default function Landing() {
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild variant="glass" size="sm" className="rounded-full">
-              <Link href="/dashboard">Sign in</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <Button asChild variant="glassPrimary" size="sm" className="rounded-full">
               <Link href="/dashboard">

@@ -67,16 +67,19 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
   location, manager, budget OMR, dates). Modelled on the existing `sites` collection (extended),
   reads/writes `nexus_sites`.
 
-> Auth/login isn't ported yet, so these screens use a temporary permissive `demoSession`
-> (`src/lib/session.ts`) — reads all sites, writes unscoped. Replace when login + site scoping land.
+- **Auth** (`/login` + `src/context/app-context.tsx` + `AuthGuard`) — username/password against
+  `nexus_users` (SHA-256), first-run admin bootstrap, localStorage session, site switcher + sign-out
+  in the shell, `/dashboard/*` route guard. Suppliers/Projects now read/write through the real
+  session (site-scoped via `resolveSite()`).
+- **Dark mode** — `next-themes` toggle in the rail; the whole glass system has light + dark tokens.
 
 ## Migration order
 
 1. ✅ **App shell** (glass rail + nav panel) + **3D landing page** + **dashboard** — done
 2. ✅ **Projects** (extends `sites`) — done
 3. ✅ **Suppliers (extended fields)** — done
-4. **Auth/login** + site scoping + per-section permission guards (port from `nexus-core.js` / `react/`) — replaces `demoSession`
-5. Edit existing records, offers/WhatsApp request, supplier detail (radar/score)
+4. ✅ **Auth/login** + session + site switcher + `/dashboard` route guard — done (dark mode too)
+5. Per-section permission gating of nav (using `canSee`), edit existing records, supplier detail (radar/score), offers/WhatsApp request
 6. Materials, Offers, Purchase Requests, Analytics, Notifications, Settings, Contracts, Attendance
 7. Re-point Firebase Hosting at the Next build; retire `/` and `/app`
 

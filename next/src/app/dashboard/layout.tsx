@@ -1,11 +1,13 @@
 import { Maximize2, Sparkles } from "lucide-react";
 
 import { Sidebar } from "@/components/shell/sidebar";
+import { AuthGuard } from "@/components/shell/auth-guard";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen gap-3 p-3">
-      <Sidebar />
+    <AuthGuard>
+      <div className="flex min-h-screen gap-3 p-3">
+        <Sidebar />
       <main className="glass relative min-h-[calc(100vh-1.5rem)] min-w-0 flex-1 overflow-hidden rounded-[26px] p-5 sm:p-7">
         {children}
       </main>
@@ -26,6 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Sparkles className="size-5" />
         </button>
       </div>
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

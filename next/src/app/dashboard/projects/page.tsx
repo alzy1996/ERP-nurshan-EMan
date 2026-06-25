@@ -5,7 +5,7 @@ import { CalendarDays, FolderKanban, Loader2, MapPin, Plus, Search, User } from 
 import { toast } from "sonner";
 
 import { fetchScoped, addScoped } from "@/lib/data";
-import { demoSession } from "@/lib/session";
+import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +65,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const emptyDraft: Draft = { status: "active", currency: "OMR" };
 
 export default function ProjectsPage() {
+  const app = useApp();
   const [rows, setRows] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -76,7 +77,7 @@ export default function ProjectsPage() {
     setLoading(true);
     try {
       // Projects are modelled on the existing `sites` collection (extended).
-      const data = await fetchScoped<Project>("sites", demoSession);
+      const data = await fetchScoped<Project>("sites", app.asSession());
       setRows(data.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
     } catch {
       toast.error("Could not load projects");
@@ -86,8 +87,9 @@ export default function ProjectsPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (app.ready) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.ready, app.activeSite]);
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -106,7 +108,12 @@ export default function ProjectsPage() {
     if (!String(form.name || "").trim()) return toast.error("Enter a project name");
     setSaving(true);
     try {
-      await addScoped("sites", { ...form, currency: form.currency || "OMR" }, demoSession);
+      await addScoped(
+        "sites",
+        { ...form, currency: form.currency || "OMR" },
+        app.asSession(),
+        app.resolveSite()
+      );
       toast.success(`${form.name} added`);
       setOpen(false);
       setForm(emptyDraft);

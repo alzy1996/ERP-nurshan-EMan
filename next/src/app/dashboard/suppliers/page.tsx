@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
-import { demoSession } from "@/lib/session";
+import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -114,6 +114,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const emptyDraft: Draft = { status: "active", rating: "4", preferred: false };
 
 export default function SuppliersPage() {
+  const app = useApp();
   const [rows, setRows] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -124,7 +125,7 @@ export default function SuppliersPage() {
   async function load() {
     setLoading(true);
     try {
-      const data = await fetchScoped<Supplier>("suppliers", demoSession);
+      const data = await fetchScoped<Supplier>("suppliers", app.asSession());
       setRows(data.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
     } catch {
       toast.error("Could not load suppliers");
@@ -134,8 +135,9 @@ export default function SuppliersPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (app.ready) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.ready, app.activeSite]);
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -158,7 +160,8 @@ export default function SuppliersPage() {
       await addScoped(
         "suppliers",
         { ...form, rating: Number(form.rating) || null, score: "B", orders: 0, onTime: 0 },
-        demoSession
+        app.asSession(),
+        app.resolveSite()
       );
       toast.success(`${form.name} added`);
       setOpen(false);
