@@ -72,6 +72,10 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
   in the shell, `/dashboard/*` route guard. Suppliers/Projects now read/write through the real
   session (site-scoped via `resolveSite()`).
 - **Dark mode** — `next-themes` toggle in the rail; the whole glass system has light + dark tokens.
+- **Materials / Offers / Purchase Requests** (`/dashboard/...`) — Materials (stock-level bars),
+  Offers (validity countdown, filter pills, convert-to-PR), Purchase Requests (glass Kanban by
+  stage). Each reads/writes its Firestore collection (`materials` / `offers` / `prs`) via the session.
+- Sidebar nav is **permission-gated** per section via `canSee`.
 
 ## Migration order
 
@@ -79,8 +83,8 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
 2. ✅ **Projects** (extends `sites`) — done
 3. ✅ **Suppliers (extended fields)** — done
 4. ✅ **Auth/login** + session + site switcher + `/dashboard` route guard — done (dark mode too)
-5. Per-section permission gating of nav (using `canSee`), edit existing records, supplier detail (radar/score), offers/WhatsApp request
-6. Materials, Offers, Purchase Requests, Analytics, Notifications, Settings, Contracts, Attendance
+5. ✅ Per-section nav gating (`canSee`) — done. TODO: edit existing records, supplier detail (radar/score), offers/WhatsApp request
+6. ✅ Materials, Offers, Purchase Requests (Kanban) — done. TODO: Analytics, Notifications, Settings, Contracts, Attendance
 7. Re-point Firebase Hosting at the Next build; retire `/` and `/app`
 
 ## Data models (decided)

@@ -7,6 +7,7 @@ import {
   Box,
   Check,
   ChevronDown,
+  ClipboardList,
   Clock,
   FolderClosed,
   FolderKanban,
@@ -14,13 +15,14 @@ import {
   Home,
   Image as ImageIcon,
   LayoutDashboard,
-  Library,
   LogOut,
+  Package,
   Plus,
   Search,
   Settings,
   Share2,
   Sparkles,
+  Tag,
   Users,
 } from "lucide-react";
 
@@ -47,16 +49,29 @@ const rail = [
   { icon: Box, label: "Modules", href: "#" },
 ];
 
-type NavItem = { label: string; href: string; icon: typeof Home; count?: number };
+type NavItem = {
+  label: string;
+  href: string;
+  icon: typeof Home;
+  count?: number;
+  section?: string;
+};
 
 const groups: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "dashboard" },
       { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
-      { label: "Suppliers", href: "/dashboard/suppliers", icon: Users },
-      { label: "Library", href: "#", icon: Library },
+      { label: "Suppliers", href: "/dashboard/suppliers", icon: Users, section: "suppliers" },
+      { label: "Materials", href: "/dashboard/materials", icon: Package, section: "materials" },
+      { label: "Offers", href: "/dashboard/offers", icon: Tag, section: "offers" },
+      {
+        label: "Purchase Requests",
+        href: "/dashboard/purchase-requests",
+        icon: ClipboardList,
+        section: "purchaserequests",
+      },
     ],
   },
   {
@@ -99,7 +114,7 @@ function initials(name: string) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { session, sites, activeSite, isAdmin, switchSite, logout, ALL } = useApp();
+  const { session, sites, activeSite, isAdmin, switchSite, logout, canSee, ALL } = useApp();
 
   if (!session) return null;
 
@@ -211,7 +226,9 @@ export function Sidebar() {
                 {group.label}
               </p>
               <div className="space-y-0.5">
-                {group.items.map((item) => {
+                {group.items
+                  .filter((item) => !item.section || canSee(item.section))
+                  .map((item) => {
                   const active = item.href === pathname;
                   return (
                     <Link
