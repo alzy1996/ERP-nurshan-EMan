@@ -2,28 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addDoc, collection, getDocs, limit, query } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 
-import { db, sha256 } from "@/lib/firebase";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/forms/field";
 import { LanguageSwitcher } from "@/components/shell/language-switcher";
-
-const SECTIONS = [
-  "dashboard",
-  "analytics",
-  "materials",
-  "suppliers",
-  "offers",
-  "purchaserequests",
-  "contracts",
-  "attendance",
-  "notifications",
-  "settings",
-];
 
 export default function LoginPage() {
   const app = useApp();
@@ -40,39 +25,19 @@ export default function LoginPage() {
   }, [app.ready, app.session, router]);
 
   useEffect(() => {
-    // First-run bootstrap: if there are no users, offer to create the admin.
-    getDocs(query(collection(db, "nexus_users"), limit(1)))
-      .then((s) => {
-        if (s.empty) setMode("bootstrap");
-      })
-      .catch(() => {});
-  }, []);
+    // First-run: if no users exist yet, offer to create the first administrator.
+    app.hasAnyUser().then((has) => {
+      if (!has) setMode("bootstrap");
+    });
+  }, [app]);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMsg("");
     setBusy(true);
     try {
-      if (mode === "bootstrap") {
-        const uname = user.trim().toLowerCase();
-        if (!uname || !pass) throw new Error("Enter username and password");
-        const sections = Object.fromEntries(SECTIONS.map((k) => [k, true]));
-        const passwordHash = await sha256(pass);
-        await addDoc(collection(db, "nexus_users"), {
-          username: uname,
-          passwordHash,
-          name,
-          jobType: "Administrator",
-          isAdmin: true,
-          sites: [],
-          sections,
-          status: "Active",
-          createdAt: Date.now(),
-        });
-        await app.login(uname, pass);
-      } else {
-        await app.login(user, pass);
-      }
+      if (mode === "bootstrap") await app.bootstrapAdmin(name, user, pass);
+      else await app.login(user, pass);
       router.replace("/dashboard");
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Sign in failed");

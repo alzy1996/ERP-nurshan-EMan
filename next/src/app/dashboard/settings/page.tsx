@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import {
+  Ban,
   Building2,
   Loader2,
   LogOut,
   Pencil,
-  Plus,
   Shield,
   ShieldCheck,
-  Trash2,
   UserPlus,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { fetchScoped } from "@/lib/data";
-import { db, sha256 } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import {
   SECTIONS,
   ALL_SECTION_IDS,
@@ -312,9 +311,10 @@ function UsersTab() {
 
     setSaving(true);
     try {
-      const base: Record<string, any> = {
+      const draft = {
         username: username.toLowerCase(),
         name,
+        password,
         jobType: isAdmin ? "Administrator" : String(form.jobType || ROLE_NAMES[0]),
         isAdmin,
         sites: isAdmin ? [] : (form.sites as string[]) || [],
@@ -326,41 +326,44 @@ function UsersTab() {
       };
 
       if (editingId) {
-        const update: Record<string, any> = { ...base };
-        if (password) update.passwordHash = await sha256(password);
-        await updateDoc(doc(db, "nexus_users", editingId), update);
+        // Note: a Firebase Auth password can't be changed from the client; edits
+        // update the profile/permissions only.
+        await app.updateUser(editingId, draft);
         toast.success(`${name} updated`);
       } else {
-        const passwordHash = await sha256(password);
-        await addDoc(collection(db, "nexus_users"), {
-          ...base,
-          passwordHash,
-          createdAt: Date.now(),
-        });
+        await app.createUser(draft);
         toast.success(`${name} added`);
       }
       setOpen(false);
       setForm(newDraft());
       setEditingId(null);
       await load();
-    } catch {
-      toast.error("Could not save user");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save user");
     } finally {
       setSaving(false);
     }
   }
 
-  async function remove(u: User) {
-    if (u.id === app.session?.uid) {
-      return toast.error("You can't delete your own account");
-    }
-    if (!window.confirm(`Delete user "${u.name || u.username}"?`)) return;
+  // Firestore rules block deleting user docs, so we suspend/reactivate instead.
+  async function toggleSuspend(u: User) {
+    if (u.id === app.session?.uid) return toast.error("You can't suspend your own account");
+    const next = !u.status || u.status === "Active" ? "Suspended" : "Active";
     try {
-      await deleteDoc(doc(db, "nexus_users", u.id));
-      setRows((r) => r.filter((x) => x.id !== u.id));
-      toast.success("User deleted");
-    } catch {
-      toast.error("Could not delete");
+      await app.updateUser(u.id, {
+        name: u.name,
+        username: u.username,
+        jobType: u.jobType,
+        isAdmin: u.isAdmin,
+        sites: u.sites,
+        sections: u.sections,
+        approvalLevel: u.approvalLevel,
+        status: next,
+      });
+      toast.success(next === "Suspended" ? "User suspended" : "User reactivated");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update user");
     }
   }
 
@@ -449,11 +452,11 @@ function UsersTab() {
                     <Pencil className="size-4" />
                   </button>
                   <button
-                    onClick={() => remove(u)}
-                    aria-label="Delete"
+                    onClick={() => toggleSuspend(u)}
+                    aria-label={activeUser ? "Suspend" : "Reactivate"}
                     className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                   >
-                    <Trash2 className="size-4" />
+                    <Ban className="size-4" />
                   </button>
                 </div>
               </div>
