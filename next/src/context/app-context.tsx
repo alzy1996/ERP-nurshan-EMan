@@ -6,6 +6,7 @@ import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
 import { db, sha256 } from "@/lib/firebase";
 import type { Session } from "@/lib/data";
+import { t as translate, dirFor, type Lang } from "@/lib/i18n";
 
 const ALL = "__ALL__";
 const SESSION_KEY = "nexus_session";
@@ -36,6 +37,9 @@ type AppCtxValue = {
   switchSite: (id: string) => void;
   resolveSite: () => string | null;
   canSee: (navId: string) => boolean;
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: string) => string;
   /** Loose session shape consumed by the data layer (fetchScoped/addScoped). */
   asSession: () => Session;
 };
@@ -61,12 +65,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [ready, setReady] = useState(false);
   const [sites, setSites] = useState<Site[]>([]);
+  const [lang, setLangState] = useState<Lang>("en");
 
   // Hydrate session from localStorage after mount (avoids SSR mismatch).
   useEffect(() => {
     setSession(readSession());
+    try {
+      const l = localStorage.getItem("nexus-lang") as Lang | null;
+      if (l) setLangState(l);
+    } catch {}
     setReady(true);
   }, []);
+
+  // Apply text direction (RTL for Arabic/Persian) + lang attribute.
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.dir = dirFor(lang);
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
 
   // Load the sites this user can see.
   useEffect(() => {
@@ -149,6 +166,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [session]
   );
 
+  const setLang = useCallback((l: Lang) => {
+    if (typeof window !== "undefined") localStorage.setItem("nexus-lang", l);
+    setLangState(l);
+  }, []);
+
+  const t = useCallback((key: string) => translate(key, lang), [lang]);
+
   const asSession = useCallback(
     (): Session =>
       session
@@ -170,9 +194,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       switchSite,
       resolveSite,
       canSee,
+      lang,
+      setLang,
+      t,
       asSession,
     }),
-    [ready, session, sites, activeSite, login, logout, switchSite, resolveSite, canSee, asSession]
+    [ready, session, sites, activeSite, login, logout, switchSite, resolveSite, canSee, lang, setLang, t, asSession]
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
