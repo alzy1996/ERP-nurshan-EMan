@@ -39,6 +39,15 @@ jobs:
           rm -rf ../app/*
           cp -r dist/* ../app/
 
+      - name: Build Next.js app (static export, served at /nx)
+        run: |
+          cd next
+          npm ci
+          NEXT_EXPORT=true npm run build
+          mkdir -p ../nx
+          rm -rf ../nx/*
+          cp -r out/* ../nx/
+
       - name: Write service account key (if provided)
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

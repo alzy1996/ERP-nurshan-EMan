@@ -1,6 +1,48 @@
-# NEXT.JS MIGRATION — HANDOFF BRIEF
+# NEXT.JS MIGRATION — brief + status
 
-> Continue here in a **fresh Claude Code session** (clean context). Everything below is the current truth. **Before designing any UI, ASK the user for their UI/UX examples — they will provide them. Do not design UI blind.**
+> This file combines the **canonical handoff brief** (confirmed requirements, kept intact below)
+> with the **current implementation status** of the `next/` app. The brief is the source of truth
+> for scope; the status section tracks what is built and what is still pending against it.
+
+## Implementation status (`next/` — branch `claude/confident-ptolemy-mamimf`, PR #4)
+
+Builds clean (Turbopack, 16 routes). Runs against the same Firebase project as `/` and `/app`.
+Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4 + shadcn/ui (vendored).
+
+**Built**
+- Liquid-glass design system (frosted glass, specular highlights, inner glow, soft shadows) + light/dark.
+- 3D landing page with a frosted-Earth WebGL globe (react-three-fiber). Dashboard shell (glass rail + frosted nav panel + Executions card).
+- Auth: `/login` (custom username/password vs `nexus_users`, SHA-256, first-run admin bootstrap) + session context + `/dashboard` route guard + site switcher + per-section nav gating (`canSee`).
+- Modules ported from the React app in the glass language: Suppliers (extended — incl. contactPerson, cr/crNumber, vatNumber), Projects (= `sites`, extended), Materials (stock bars), Offers (validity + convert-to-PR), Purchase Requests (Kanban), Contracts, Analytics (CSS/SVG charts), Notifications, Settings (admin console), Attendance (check-in/out).
+- **Purchase Orders** — line-item editor with live **+5% VAT** + totals, print-to-PDF (window.print invoice); collection `purchase_orders`.
+- **Services** catalog (code / name / unit / rate) + **Cloudinary** contract-file upload (`src/lib/cloudinary.ts`); collection `services`.
+- **Timesheets** — supplier / equipment / internal tabs with an **HR approve** action; collections `supplier_timesheets` / `equipment_logs` / `internal_timesheets`.
+
+**Decided / done**
+- Auth stays the **custom-hash login** (vs `nexus_users`, SHA-256), not Firebase Auth.
+- ✅ **Static export + deploy wiring** — env-gated `output: 'export'` (`NEXT_EXPORT=true`; normal dev/build stay at root). CI builds `next/` → copies `out/` to `./nx`; `firebase.json` ignores the `next/` source so the export serves at **`/nx`** alongside `/app`. (`/nx`, not `/next`, because the source folder is named `next/`.) ⚠️ Needs a real Firebase deploy to validate serving + the `FIREBASE_TOKEN` / `FIREBASE_SERVICE_ACCOUNT` secret.
+
+**Still pending**
+- **Users** extended with `phone, email, company`.
+- **i18n EN/AR + RTL**; mobile/responsive pass; inline edit/detail views; supplier detail (radar/score); offers→WhatsApp.
+
+### Data models implemented so far (`next/`)
+- **Projects = extended Sites** (`nexus_sites`): `{ name, code, client, status: planning|active|on-hold|completed, location, manager, budget, currency: "OMR", startDate, endDate }`.
+- **Suppliers** (`nexus_suppliers`): `name, category, website, contactPerson, phone, secondaryPhone, email, address, city, region, country, crNumber, vatNumber, paymentTerms, bankName, bankAccount/IBAN, rating, status, preferred, tags, notes` (+ score/orders/onTime kept for compatibility).
+
+### Dev
+```bash
+cd next
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # Turbopack production build
+```
+
+---
+
+# CANONICAL BRIEF (user-confirmed — source of truth for scope)
+
+> **Before designing any UI, ASK the user for their UI/UX examples — they will provide them. Do not design UI blind.**
 
 ## Repo / live
 - Repo: `alzy1996/ERP-nurshan-EMan` (formerly `New-ofm-system-fleet-managments`), branch **`main`** is canonical + auto-deploys.
@@ -8,7 +50,7 @@
 - Firebase project: **procurement-erp-6e271**. Cloudinary cloud **dlutxjphq**, unsigned preset **nexus_unsigned**.
 
 ## DECISION (user-confirmed)
-- **Migrate everything to Next.js** (App Router). Build it in a new **`next/`** folder on a new branch (e.g. `nextjs-migration`); keep `react/` `/app` + vanilla `/` live until Next.js reaches parity, then cut hosting over.
+- **Migrate everything to Next.js** (App Router). Build it in a new **`next/`** folder on a new branch; keep `react/` `/app` + vanilla `/` live until Next.js reaches parity, then cut hosting over.
 - Recommend **static export** (`output: 'export'`) so it stays on Firebase Hosting (internal authed app → no SSR/SEO needed). Serve at `/next` first (like `/app`), then make it root at cutover.
 - **One codebase going forward** = Next.js. Vanilla + Vite-React become legacy.
 
@@ -45,6 +87,3 @@ Then: CI build step for `next/` → `/next`, then cut hosting root over.
 
 ## DEPLOY
 GitHub Action `.github/workflows/firebase-deploy.yml` triggers on push to `main` (and the old branch); it builds `react/` → `./app`. Add a parallel step to build `next/` → `./next` and a `firebase.json` rewrite `/next/** -> /next/index.html`. Secrets: `FIREBASE_TOKEN` (and/or `FIREBASE_SERVICE_ACCOUNT`).
-
-## HOW TO RESUME
-New session prompt: *"Continue the Next.js migration per NEXTJS-MIGRATION.md. Repo ERP-nurshan-EMan, branch main. Start by scaffolding next/ and ask me for my UI/UX examples before building any screens."*
