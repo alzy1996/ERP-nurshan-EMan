@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ const emptyDraft: Draft = { status: "draft" };
 
 export default function ContractsPage() {
   const app = useApp();
+  const perms = usePermissions();
   const [rows, setRows] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -146,15 +148,17 @@ export default function ContractsPage() {
               className="w-40 bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <ContractSheet
-            open={open}
-            setOpen={setOpen}
-            form={form}
-            setForm={setForm}
-            set={set}
-            saving={saving}
-            onSave={save}
-          />
+          {perms.can("contracts", "create") ? (
+            <ContractSheet
+              open={open}
+              setOpen={setOpen}
+              form={form}
+              setForm={setForm}
+              set={set}
+              saving={saving}
+              onSave={save}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -181,13 +185,15 @@ export default function ContractsPage() {
             const status = STATUS[c.status || "draft"] ?? STATUS.draft;
             return (
               <div key={c.id} className="glass glass-specular group relative rounded-3xl p-5">
-                <button
-                  onClick={() => remove(c)}
-                  aria-label="Delete"
-                  className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                {perms.can("contracts", "delete") ? (
+                  <button
+                    onClick={() => remove(c)}
+                    aria-label="Delete"
+                    className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
 
                 <div className="min-w-0 pr-7">
                   <div className="truncate text-sm font-semibold">{c.title}</div>

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +66,7 @@ function printPO(po: PO) {
 
 export default function PurchaseOrdersPage() {
   const app = useApp();
+  const perms = usePermissions();
   const [rows, setRows] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -210,6 +212,7 @@ export default function PurchaseOrdersPage() {
               className="w-40 bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
+          {perms.can("purchase_orders", "create") ? (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="glassPrimary" className="rounded-full">
@@ -373,6 +376,7 @@ export default function PurchaseOrdersPage() {
               </SheetFooter>
             </SheetContent>
           </Sheet>
+          ) : null}
         </div>
       </div>
 
@@ -399,13 +403,15 @@ export default function PurchaseOrdersPage() {
             const status = STATUS[po.status || "draft"] ?? STATUS.draft;
             return (
               <div key={po.id} className="glass glass-specular group relative rounded-3xl p-5">
-                <button
-                  onClick={() => remove(po)}
-                  aria-label="Delete"
-                  className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                {perms.can("purchase_orders", "delete") ? (
+                  <button
+                    onClick={() => remove(po)}
+                    aria-label="Delete"
+                    className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
 
                 <div className="min-w-0 pr-7">
                   <div className="truncate font-semibold">{po.poNumber || "—"}</div>

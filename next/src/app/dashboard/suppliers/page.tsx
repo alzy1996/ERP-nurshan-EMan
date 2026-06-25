@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -115,6 +116,7 @@ const emptyDraft: Draft = { status: "active", rating: "4", preferred: false };
 
 export default function SuppliersPage() {
   const app = useApp();
+  const perms = usePermissions();
   const [rows, setRows] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -205,15 +207,17 @@ export default function SuppliersPage() {
               className="w-40 bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <SupplierSheet
-            open={open}
-            setOpen={setOpen}
-            form={form}
-            setForm={setForm}
-            set={set}
-            saving={saving}
-            onSave={save}
-          />
+          {perms.can("suppliers", "create") ? (
+            <SupplierSheet
+              open={open}
+              setOpen={setOpen}
+              form={form}
+              setForm={setForm}
+              set={set}
+              saving={saving}
+              onSave={save}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -240,13 +244,15 @@ export default function SuppliersPage() {
             const status = STATUS[s.status || "active"] ?? STATUS.active;
             return (
               <div key={s.id} className="glass glass-specular group relative rounded-3xl p-5">
-                <button
-                  onClick={() => remove(s)}
-                  aria-label="Delete"
-                  className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                {perms.can("suppliers", "delete") ? (
+                  <button
+                    onClick={() => remove(s)}
+                    aria-label="Delete"
+                    className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
                 <div className="flex items-start gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground">
                     {(s.name || "?").slice(0, 2).toUpperCase()}

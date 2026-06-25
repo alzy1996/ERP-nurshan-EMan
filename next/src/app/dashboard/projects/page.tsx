@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { fetchScoped, addScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,7 @@ const emptyDraft: Draft = { status: "active", currency: "OMR" };
 
 export default function ProjectsPage() {
   const app = useApp();
+  const perms = usePermissions();
   const [rows, setRows] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -145,6 +147,7 @@ export default function ProjectsPage() {
             />
           </div>
 
+          {perms.can("projects", "create") ? (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="glassPrimary" className="rounded-full">
@@ -212,6 +215,7 @@ export default function ProjectsPage() {
               </SheetFooter>
             </SheetContent>
           </Sheet>
+          ) : null}
         </div>
       </div>
 
