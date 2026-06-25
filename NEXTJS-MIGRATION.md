@@ -45,13 +45,24 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
 - `src/lib/firebase.ts` — app/db/auth init, `ensureAnonAuth()`, `sha256()` (matches vanilla hashing)
 - `src/lib/data.ts` — site-scoped Firestore helpers (`fetchScoped`, `addScoped`, `removeScoped`,
   `wipeCollection`, `sendWhatsApp`) ported from `react/src/lib/data.js`
-- `src/components/ui/*` — button, card, input, label, badge, avatar, separator, tabs,
-  dropdown-menu, sheet, scroll-area, sonner
-- `src/app/page.tsx` — neutral placeholder status page (not a designed screen)
+- `src/components/ui/*` — button (incl. `glass`/`glassPrimary` variants), card, input, label,
+  badge, avatar, separator, tabs, dropdown-menu, sheet, scroll-area, sonner
+
+### Liquid-glass UI (built — see reference images)
+
+- **Design system** — `globals.css` adds a frosted glass layer (`.glass`, `.glass-strong`,
+  `.glass-subtle`, `.glass-rail`, `.glass-specular`): backdrop-blur, translucency, inner glow,
+  specular highlight and soft shadows, plus a soft airy app background. Neutral palette.
+- **3D landing page** (`src/app/page.tsx`) — WebGL frosted globe via react-three-fiber + drei
+  (procedural Lightformer environment, no network HDR; CSS-sphere fallback), glass nav, hero,
+  liquid-glass CTAs, tilted feature panels, floating actions.
+- **Dashboard shell** (`src/app/dashboard/`) — dark rounded glass rail + frosted nav panel
+  (profile, Projects / Status / History, Documents tree), Executions stat card, tabbed content,
+  floating actions. Matches reference image 1.
 
 ## Migration order
 
-1. **App shell** (sidebar / nav / top bar) — once UI/UX examples land
+1. ✅ **App shell** (glass rail + nav panel) + **3D landing page** + **dashboard** — done
 2. **Projects** — see data model below
 3. **Suppliers (extended fields)** — see data model below
 4. Dashboard, Materials, Offers, Purchase Requests, Analytics, Notifications, Settings, Contracts, Attendance
