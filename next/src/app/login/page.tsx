@@ -10,6 +10,7 @@ import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/forms/field";
+import { LanguageSwitcher } from "@/components/shell/language-switcher";
 
 const SECTIONS = [
   "dashboard",
@@ -81,6 +82,9 @@ export default function LoginPage() {
 
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden p-6">
+      <div className="absolute end-4 top-4 z-10">
+        <LanguageSwitcher className="glass glass-specular grid size-10 place-items-center rounded-xl text-foreground" />
+      </div>
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-1/3 -z-10 size-[36rem] -translate-x-1/2 rounded-full blur-3xl"
@@ -104,7 +108,7 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-xl font-semibold tracking-tight">
-          {mode === "bootstrap" ? "Create administrator" : "Welcome back"}
+          {mode === "bootstrap" ? app.t("Create administrator") : app.t("Welcome back")}
         </h1>
         <p className="mb-6 mt-1 text-sm text-muted-foreground">
           {mode === "bootstrap"
@@ -114,7 +118,7 @@ export default function LoginPage() {
 
         <div className="space-y-4">
           {mode === "bootstrap" ? (
-            <Field label="Full name" htmlFor="name">
+            <Field label={app.t("Full name")} htmlFor="name">
               <Input
                 id="name"
                 value={name}
@@ -123,7 +127,7 @@ export default function LoginPage() {
               />
             </Field>
           ) : null}
-          <Field label="Username" htmlFor="user">
+          <Field label={app.t("Username")} htmlFor="user">
             <Input
               id="user"
               autoComplete="username"
@@ -132,7 +136,7 @@ export default function LoginPage() {
               className="glass-subtle h-11 rounded-xl border-0"
             />
           </Field>
-          <Field label="Password" htmlFor="pass">
+          <Field label={app.t("Password")} htmlFor="pass">
             <Input
               id="pass"
               type="password"
@@ -155,7 +159,7 @@ export default function LoginPage() {
           ) : mode === "bootstrap" ? (
             "Create admin & sign in"
           ) : (
-            "Sign in"
+            app.t("Sign in")
           )}
         </Button>
 
