@@ -4,47 +4,102 @@ import {
   query,
   where,
   addDoc,
+  updateDoc,
   deleteDoc,
   doc,
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { scopeFor, type ModuleKey, type Role } from "./roles";
 
 const ALL = "__ALL__";
 
 export type Session = {
   username?: string;
+  uid?: string;
+  role?: Role | null;
   activeSite?: string;
+  sites?: string[];
   isAdmin?: boolean;
 } | null;
 
-/** Fetch a collection scoped to the active site (all docs for admin "All sites"). */
+/** Map a data-layer short name to its RBAC module key (for scope resolution). */
+const SHORT_TO_MODULE: Record<string, ModuleKey> = {
+  suppliers: "suppliers",
+  materials: "materials",
+  offers: "offers",
+  prs: "purchase_requests",
+  pos: "purchase_orders",
+  purchaseorders: "purchase_orders",
+  contracts: "contracts",
+  sites: "projects",
+  projects: "projects",
+  attendance: "attendance",
+};
+
+/** Current actor's stable id for audit stamps (uid preferred, username fallback). */
+function actor(session: Session): string {
+  return (session && (session.uid || session.username)) || "system";
+}
+
+/**
+ * Fetch a collection, scoped for the current user:
+ *  • admin + "All sites"      → everything
+ *  • RBAC scope "own"         → only docs they created (createdBy == uid)
+ *  • otherwise                → the active site (site / project scope)
+ */
 export async function fetchScoped<T = Record<string, unknown>>(
   shortName: string,
   session: Session
 ): Promise<(T & { id: string })[]> {
   const col = collection(db, "nexus_" + shortName);
   const active = session ? session.activeSite || ALL : ALL;
-  const q =
-    session && session.isAdmin && active === ALL
-      ? col
-      : query(col, where("siteId", "==", active));
+  const isAdmin = !!(session && session.isAdmin);
+  const moduleKey = SHORT_TO_MODULE[shortName];
+  const scope = moduleKey && session?.role ? scopeFor(session.role, moduleKey) : "all";
+
+  let q;
+  if (isAdmin && active === ALL) {
+    q = col;
+  } else if (scope === "own" && session?.uid) {
+    q = query(col, where("createdBy", "==", session.uid));
+  } else {
+    q = query(col, where("siteId", "==", active));
+  }
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as T) }));
 }
 
-/** Add a doc stamped with siteId/author/timestamp. */
+/** Add a doc, stamped with siteId + full audit fields (createdBy/updatedBy/timestamps). */
 export function addScoped(
   shortName: string,
   data: Record<string, unknown>,
   session: Session,
   siteId?: string | null
 ) {
+  const uid = actor(session);
+  const now = Date.now();
   return addDoc(collection(db, "nexus_" + shortName), {
     ...data,
     siteId: data.siteId || siteId || null,
-    createdBy: (session && session.username) || "system",
-    createdAt: Date.now(),
+    createdBy: uid,
+    updatedBy: uid,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+/** Update a doc, stamping updatedBy/updatedAt (audit fields for the security rules). */
+export function updateScoped(
+  shortName: string,
+  id: string,
+  data: Record<string, unknown>,
+  session: Session
+) {
+  return updateDoc(doc(db, "nexus_" + shortName, id), {
+    ...data,
+    updatedBy: actor(session),
+    updatedAt: Date.now(),
   });
 }
 

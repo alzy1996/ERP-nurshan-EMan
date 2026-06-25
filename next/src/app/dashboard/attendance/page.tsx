@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { fetchScoped, addScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -13,6 +14,7 @@ type Entry = { id: string; user?: string; action?: string; at?: number };
 
 export default function AttendancePage() {
   const app = useApp();
+  const perms = usePermissions();
   const [rows, setRows] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkedIn, setCheckedIn] = useState(false);
@@ -94,25 +96,27 @@ export default function AttendancePage() {
               {checkedIn ? "Checked in" : "Checked out"}
             </p>
           </div>
-          <Button
-            variant="glassPrimary"
-            size="lg"
-            className="w-full max-w-xs rounded-full text-base"
-            onClick={punch}
-            disabled={saving}
-          >
-            {saving ? (
-              <Loader2 className="size-5 animate-spin" />
-            ) : checkedIn ? (
-              <>
-                <LogOut className="size-5" /> Check out
-              </>
-            ) : (
-              <>
-                <LogIn className="size-5" /> Check in
-              </>
-            )}
-          </Button>
+          {perms.can("attendance", "create") ? (
+            <Button
+              variant="glassPrimary"
+              size="lg"
+              className="w-full max-w-xs rounded-full text-base"
+              onClick={punch}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : checkedIn ? (
+                <>
+                  <LogOut className="size-5" /> Check out
+                </>
+              ) : (
+                <>
+                  <LogIn className="size-5" /> Check in
+                </>
+              )}
+            </Button>
+          ) : null}
         </div>
       </div>
 

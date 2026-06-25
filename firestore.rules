@@ -60,19 +60,22 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ---- public offer submission (offer-submit.html) --------------------
+    // ---- offers: in-app (staff) + public submission (offer-submit.html) --
     match /nexus_offers/{offerId} {
-      allow read         : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow update, delete: if isPasswordAuth() && inSite(resource.data.siteId);
-      allow create       : if request.auth != null
-                           && request.resource.data.keys().hasOnly([
-                                'siteId','supplierId','supplierName','items','price',
-                                'validity','contact','note','status','source',
-                                'token','createdAt','createdBy'
-                              ])
-                           && request.resource.data.items is string
-                           && request.resource.data.price is number
-                           && request.resource.data.price >= 0;
+      allow read          : if isPasswordAuth() && inSite(resource.data.siteId);
+      allow update, delete : if isPasswordAuth() && inSite(resource.data.siteId);
+      // Signed-in staff create offers from the app (any shape, audit fields OK).
+      allow create        : if (isPasswordAuth() && inSite(request.resource.data.siteId))
+      // Public, anonymous token submission keeps its fixed, validated shape.
+                            || (request.auth != null
+                                && request.resource.data.keys().hasOnly([
+                                     'siteId','supplierId','supplierName','items','price',
+                                     'validity','contact','note','status','source',
+                                     'token','createdAt','createdBy','updatedBy','updatedAt'
+                                   ])
+                                && request.resource.data.items is string
+                                && request.resource.data.price is number
+                                && request.resource.data.price >= 0);
     }
 
     // ---- contract signing (contract-sign.html) --------------------------

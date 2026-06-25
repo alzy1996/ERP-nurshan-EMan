@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import { Clock, HardHat, Loader2, Plus, Trash2, UserCog } from "lucide-react";
 import { toast } from "sonner";
-import { doc, updateDoc } from "firebase/firestore";
 
-import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
-import { db } from "@/lib/firebase";
+import { fetchScoped, addScoped, removeScoped, updateScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -505,10 +503,15 @@ function InternalTab() {
 
   async function approve(r: IntTs) {
     try {
-      await updateDoc(doc(db, "nexus_internal_timesheets", r.id), {
-        status: "approved",
-        approvedByHR: app.session?.name || "HR",
-      });
+      await updateScoped(
+        "internal_timesheets",
+        r.id,
+        {
+          status: "approved",
+          approvedByHR: app.session?.name || "HR",
+        },
+        app.asSession()
+      );
       setRows((x) =>
         x.map((y) =>
           y.id === r.id

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ const fmtOMR = (n?: number) => `${(Number(n) || 0).toFixed(3)} OMR`;
 
 export default function PurchaseRequestsPage() {
   const app = useApp();
+  const perms = usePermissions();
   const [rows, setRows] = useState<Pr[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -142,14 +144,16 @@ export default function PurchaseRequestsPage() {
               className="w-40 bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <PrSheet
-            open={open}
-            setOpen={setOpen}
-            form={form}
-            set={set}
-            saving={saving}
-            onSave={save}
-          />
+          {perms.can("purchase_requests", "create") ? (
+            <PrSheet
+              open={open}
+              setOpen={setOpen}
+              form={form}
+              set={set}
+              saving={saving}
+              onSave={save}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -189,13 +193,15 @@ export default function PurchaseRequestsPage() {
                   <div className="space-y-2">
                     {items.map((p) => (
                       <div key={p.id} className="glass group relative rounded-2xl p-3">
-                        <button
-                          onClick={() => remove(p)}
-                          aria-label="Delete"
-                          className="absolute right-2 top-2 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
+                        {perms.can("purchase_requests", "delete") ? (
+                          <button
+                            onClick={() => remove(p)}
+                            aria-label="Delete"
+                            className="absolute right-2 top-2 grid size-7 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        ) : null}
                         <div className="pr-7 text-sm font-medium leading-snug">
                           {p.desc || "—"}
                         </div>
