@@ -7,6 +7,7 @@ import {
   BarChart3,
   Bell,
   Box,
+  CalendarClock,
   Check,
   ChevronDown,
   ClipboardList,
@@ -21,6 +22,7 @@ import {
   MapPin,
   Package,
   Plus,
+  ReceiptText,
   ScrollText,
   Search,
   Settings,
@@ -28,6 +30,7 @@ import {
   Sparkles,
   Tag,
   Users,
+  Wrench,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -69,6 +72,7 @@ const groups: { label: string; items: NavItem[] }[] = [
       { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
       { label: "Suppliers", href: "/dashboard/suppliers", icon: Users, section: "suppliers" },
       { label: "Materials", href: "/dashboard/materials", icon: Package, section: "materials" },
+      { label: "Services", href: "/dashboard/services", icon: Wrench },
       { label: "Offers", href: "/dashboard/offers", icon: Tag, section: "offers" },
       {
         label: "Purchase Requests",
@@ -76,6 +80,7 @@ const groups: { label: string; items: NavItem[] }[] = [
         icon: ClipboardList,
         section: "purchaserequests",
       },
+      { label: "Purchase Orders", href: "/dashboard/purchase-orders", icon: ReceiptText },
       { label: "Contracts", href: "/dashboard/contracts", icon: ScrollText, section: "contracts" },
     ],
   },
@@ -89,6 +94,7 @@ const groups: { label: string; items: NavItem[] }[] = [
         icon: Bell,
         section: "notifications",
       },
+      { label: "Timesheets", href: "/dashboard/timesheets", icon: CalendarClock },
       { label: "Attendance", href: "/dashboard/attendance", icon: MapPin, section: "attendance" },
     ],
   },

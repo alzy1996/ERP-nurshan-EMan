@@ -14,15 +14,14 @@ Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4 + shadcn/ui
 - 3D landing page with a frosted-Earth WebGL globe (react-three-fiber). Dashboard shell (glass rail + frosted nav panel + Executions card).
 - Auth: `/login` (custom username/password vs `nexus_users`, SHA-256, first-run admin bootstrap) + session context + `/dashboard` route guard + site switcher + per-section nav gating (`canSee`).
 - Modules ported from the React app in the glass language: Suppliers (extended — incl. contactPerson, cr/crNumber, vatNumber), Projects (= `sites`, extended), Materials (stock bars), Offers (validity + convert-to-PR), Purchase Requests (Kanban), Contracts, Analytics (CSS/SVG charts), Notifications, Settings (admin console), Attendance (check-in/out).
+- **Purchase Orders** — line-item editor with live **+5% VAT** + totals, print-to-PDF (window.print invoice); collection `purchase_orders`.
+- **Services** catalog (code / name / unit / rate) + **Cloudinary** contract-file upload (`src/lib/cloudinary.ts`); collection `services`.
+- **Timesheets** — supplier / equipment / internal tabs with an **HR approve** action; collections `supplier_timesheets` / `equipment_logs` / `internal_timesheets`.
 
 **Pending vs this brief (needs prioritisation)**
 - **Static export** (`output: 'export'`) + serve at `/next` + `firebase.json` rewrite + CI build step. The current app is the default Next build, NOT static-exported yet.
-- **Auth choice**: built with the React app's custom-hash login. The brief notes vanilla `/` migrated to **Firebase Auth** (recommended) — confirm which the Next app should use.
-- **Purchase Orders** from approved PRs: line items, **+5% VAT**, totals, payment terms, delivery period, notes, **PDF print**. (Only PR/Kanban exists; PO generation NOT built.)
-- **Services catalog** `{projectId, supplierId, code, name, unit, rate}` + contract file attach.
-- **Timesheets**: supplier (worker timeIn/out/hours, noWorkReason), equipment logs (equipmentCode, meterStart/End), internal staff (date/hours/task) with an **HR approval role**.
+- Auth: **decided** — stays the custom-hash login (username/password vs `nexus_users`, SHA-256), not Firebase Auth.
 - **Users** extended with `phone, email, company`.
-- **Cloudinary** upload (cloud `dlutxjphq`, preset `nexus_unsigned`) for contracts/files.
 - **i18n EN/AR + RTL**; mobile/responsive pass; inline edit/detail views; supplier detail (radar/score); offers→WhatsApp.
 
 ### Data models implemented so far (`next/`)
