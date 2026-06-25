@@ -75,7 +75,11 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
 - **Materials / Offers / Purchase Requests** (`/dashboard/...`) — Materials (stock-level bars),
   Offers (validity countdown, filter pills, convert-to-PR), Purchase Requests (glass Kanban by
   stage). Each reads/writes its Firestore collection (`materials` / `offers` / `prs`) via the session.
-- Sidebar nav is **permission-gated** per section via `canSee`.
+- **Contracts / Analytics / Notifications / Settings / Attendance** — Contracts (glass list + form),
+  Analytics (pure CSS/SVG glass charts + KPI cards aggregated from collections, no chart lib),
+  Notifications (priority inbox + category filter), Settings (tabbed admin: profile / appearance /
+  sites / users / approvals), Attendance (check-in/out + today's log; GPS geofence + map deferred).
+- Sidebar nav is **permission-gated** per section via `canSee` (Workspace + Insights groups).
 
 ## Migration order
 
@@ -83,9 +87,10 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
 2. ✅ **Projects** (extends `sites`) — done
 3. ✅ **Suppliers (extended fields)** — done
 4. ✅ **Auth/login** + session + site switcher + `/dashboard` route guard — done (dark mode too)
-5. ✅ Per-section nav gating (`canSee`) — done. TODO: edit existing records, supplier detail (radar/score), offers/WhatsApp request
-6. ✅ Materials, Offers, Purchase Requests (Kanban) — done. TODO: Analytics, Notifications, Settings, Contracts, Attendance
-7. Re-point Firebase Hosting at the Next build; retire `/` and `/app`
+5. ✅ Per-section nav gating (`canSee`) — done
+6. ✅ **All modules** — Materials, Offers, Purchase Requests, Contracts, Analytics, Notifications, Settings, Attendance — done
+7. **Remaining polish**: edit existing records, supplier detail (radar/score), offers→WhatsApp request, Attendance GPS geofence + map (Leaflet), Settings deep CRUD (user/site/approval editing), i18n (EN/AR + RTL), mobile/responsive pass
+8. Re-point Firebase Hosting at the Next build; retire `/` and `/app`
 
 ## Data models (decided)
 

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Archive,
+  BarChart3,
+  Bell,
   Box,
   Check,
   ChevronDown,
@@ -16,8 +18,10 @@ import {
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
+  MapPin,
   Package,
   Plus,
+  ScrollText,
   Search,
   Settings,
   Share2,
@@ -72,6 +76,20 @@ const groups: { label: string; items: NavItem[] }[] = [
         icon: ClipboardList,
         section: "purchaserequests",
       },
+      { label: "Contracts", href: "/dashboard/contracts", icon: ScrollText, section: "contracts" },
+    ],
+  },
+  {
+    label: "Insights",
+    items: [
+      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, section: "analytics" },
+      {
+        label: "Notifications",
+        href: "/dashboard/notifications",
+        icon: Bell,
+        section: "notifications",
+      },
+      { label: "Attendance", href: "/dashboard/attendance", icon: MapPin, section: "attendance" },
     ],
   },
   {
@@ -149,7 +167,7 @@ export function Sidebar() {
         <div className="flex flex-col items-center gap-2">
           <ThemeToggle className="grid size-10 place-items-center rounded-2xl text-white/60 transition-colors hover:text-white" />
           <Link
-            href="#"
+            href="/dashboard/settings"
             aria-label="Settings"
             className="grid size-10 place-items-center rounded-2xl bg-white/10 text-white/80 transition-colors hover:text-white"
           >
