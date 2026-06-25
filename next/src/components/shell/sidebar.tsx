@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Clock,
   FolderClosed,
+  FolderKanban,
   Globe,
   Home,
   Image as ImageIcon,
@@ -38,11 +39,12 @@ type NavItem = { label: string; href: string; icon: typeof Home; count?: number 
 
 const groups: { label: string; items: NavItem[] }[] = [
   {
-    label: "Projects",
+    label: "Workspace",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, count: 0 },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
+      { label: "Suppliers", href: "/dashboard/suppliers", icon: Users },
       { label: "Library", href: "#", icon: Library },
-      { label: "Shared Projects", href: "#", icon: Share2 },
     ],
   },
   {

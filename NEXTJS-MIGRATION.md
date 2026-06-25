@@ -46,7 +46,8 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
 - `src/lib/data.ts` — site-scoped Firestore helpers (`fetchScoped`, `addScoped`, `removeScoped`,
   `wipeCollection`, `sendWhatsApp`) ported from `react/src/lib/data.js`
 - `src/components/ui/*` — button (incl. `glass`/`glassPrimary` variants), card, input, label,
-  badge, avatar, separator, tabs, dropdown-menu, sheet, scroll-area, sonner
+  badge, avatar, separator, tabs, dropdown-menu, sheet, scroll-area, sonner, switch, checkbox,
+  select, textarea (liquid-glass form controls, reference image 4)
 
 ### Liquid-glass UI (built — see reference images)
 
@@ -59,45 +60,48 @@ clsx, tailwind-merge, lucide) install fine from npm, so the components in
 - **Dashboard shell** (`src/app/dashboard/`) — dark rounded glass rail + frosted nav panel
   (profile, Projects / Status / History, Documents tree), Executions stat card, tabbed content,
   floating actions. Matches reference image 1.
+- **Suppliers** (`/dashboard/suppliers`) — glass card list + slide-in Sheet form with the full
+  extended field set (company, contact, address, compliance/finance, status, rating, preferred
+  toggle, tags, notes). Reads/writes `nexus_suppliers`.
+- **Projects** (`/dashboard/projects`) — glass card list + Sheet form (code, client, status,
+  location, manager, budget OMR, dates). Modelled on the existing `sites` collection (extended),
+  reads/writes `nexus_sites`.
+
+> Auth/login isn't ported yet, so these screens use a temporary permissive `demoSession`
+> (`src/lib/session.ts`) — reads all sites, writes unscoped. Replace when login + site scoping land.
 
 ## Migration order
 
 1. ✅ **App shell** (glass rail + nav panel) + **3D landing page** + **dashboard** — done
-2. **Projects** — see data model below
-3. **Suppliers (extended fields)** — see data model below
-4. Dashboard, Materials, Offers, Purchase Requests, Analytics, Notifications, Settings, Contracts, Attendance
-5. Auth/login + site scoping + per-section permission guards (port from `nexus-core.js` / `react/`)
-6. Re-point Firebase Hosting at the Next build; retire `/` and `/app`
+2. ✅ **Projects** (extends `sites`) — done
+3. ✅ **Suppliers (extended fields)** — done
+4. **Auth/login** + site scoping + per-section permission guards (port from `nexus-core.js` / `react/`) — replaces `demoSession`
+5. Edit existing records, offers/WhatsApp request, supplier detail (radar/score)
+6. Materials, Offers, Purchase Requests, Analytics, Notifications, Settings, Contracts, Attendance
+7. Re-point Firebase Hosting at the Next build; retire `/` and `/app`
 
-## Data model notes (to confirm with the owner before building)
+## Data models (decided)
 
-### Projects (new concept)
+### Projects = extended Sites
 
-Today the data model has no "Projects" collection — the closest concept is
-**sites** (`nexus_sites`, used for multi-site scoping). The reference design
-shows a first-class **Projects** area (Dashboard / Library / Shared Projects).
-Open question: are "Projects" a **new** entity, or a **rename/extension of
-sites**? Proposed `nexus_projects` doc shape (draft):
+Decision: **Projects extend the existing `sites` collection** rather than a new entity.
+The Projects screen reads/writes `nexus_sites` with these added fields:
 
 ```
-{ name, code, client, status, startDate, endDate, location, manager,
-  budget, currency: "OMR", siteId, createdBy, createdAt }
+{ name, code, client, status: "planning|active|on-hold|completed",
+  location, manager, budget, currency: "OMR", startDate, endDate,
+  siteId, createdBy, createdAt }
 ```
 
-### Suppliers — extended fields
+### Suppliers — extended fields (full set)
 
-Current Suppliers doc (from `react/` + `suppliers.html`) is minimal:
-
-```
-{ name, phone, email, score: "A|B|C", orders, onTime, siteId, createdBy, createdAt }
-```
-
-Proposed **extended** fields (draft — confirm which to include):
+Was minimal (`name, phone, email, score, orders, onTime`). Now extended to:
 
 ```
-category / trade, contactPerson, secondaryPhone, website, address, city, region,
-country, crNumber (commercial registration), vatNumber, paymentTerms, bankName,
-bankAccount/IBAN, rating (1–5), status: "active|pending|blacklisted", tags[], notes
+name, category, website, contactPerson, phone, secondaryPhone, email,
+address, city, region, country, crNumber, vatNumber, paymentTerms,
+bankName, bankAccount/IBAN, rating (1–5), status: "active|pending|blacklisted",
+preferred (bool), tags, notes  — plus score/orders/onTime kept for compatibility
 ```
 
 ## Dev
