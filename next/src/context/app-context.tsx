@@ -25,7 +25,7 @@ import {
 
 import { db, auth, firebaseConfig, userEmail, sha256 } from "@/lib/firebase";
 import { t as translate, dirFor, type Lang } from "@/lib/i18n";
-import { ALL_SECTION_IDS } from "@/lib/roles";
+import { DEFAULT_ROLE, isValidRole, legacyRoleFor, ROLE_LABELS, type Role } from "@/lib/roles";
 import type { Session } from "@/lib/data";
 
 const ALL = "__ALL__";
@@ -38,10 +38,9 @@ export type AuthSession = {
   username: string;
   name: string;
   jobType: string;
+  role: Role;
   isAdmin: boolean;
   sites: string[];
-  sections: Record<string, boolean>;
-  approvalLevel: number;
   activeSite: string;
 };
 
@@ -49,11 +48,9 @@ export type UserDraft = {
   username?: string;
   name?: string;
   password?: string;
-  jobType?: string;
+  role?: Role;
   isAdmin?: boolean;
   sites?: string[];
-  sections?: Record<string, boolean>;
-  approvalLevel?: number | string;
   status?: string;
 };
 
@@ -61,10 +58,9 @@ type Profile = Record<string, unknown> & {
   username?: string;
   name?: string;
   jobType?: string;
+  role?: Role;
   isAdmin?: boolean;
   sites?: string[];
-  sections?: Record<string, boolean>;
-  approvalLevel?: number;
   status?: string;
 };
 
@@ -83,7 +79,6 @@ type AppCtxValue = {
   logout: () => void;
   switchSite: (id: string) => void;
   resolveSite: () => string | null;
-  canSee: (navId: string) => boolean;
   lang: Lang;
   setLang: (l: Lang) => void;
   t: (key: string) => string;
@@ -133,15 +128,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         preferredActive && (preferredActive === ALL || u.isAdmin || sitesArr.includes(preferredActive))
           ? preferredActive
           : def;
+      const role: Role = isValidRole(u.role) ? u.role : legacyRoleFor(u.jobType, u.isAdmin);
       return {
         uid,
         username: u.username || "",
         name: u.name || u.username || "",
-        jobType: u.jobType || "User",
+        jobType: u.jobType || ROLE_LABELS[role] || "User",
+        role,
         isAdmin: !!u.isAdmin,
         sites: sitesArr,
-        sections: u.sections || {},
-        approvalLevel: u.approvalLevel || 0,
         activeSite: active,
       };
     },
@@ -226,10 +221,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         username: old.username,
         name: old.name,
         jobType: old.jobType || "User",
+        role: isValidRole(old.role) ? old.role : legacyRoleFor(old.jobType, old.isAdmin),
         isAdmin: !!old.isAdmin,
         sites: old.sites || [],
-        sections: old.sections || {},
-        approvalLevel: old.approvalLevel || 0,
         status: old.status || "Active",
         createdAt: (old.createdAt as number) || Date.now(),
         migratedAt: Date.now(),
@@ -272,18 +266,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const uname = String(username || "").trim().toLowerCase();
       if (!name || !uname || !password) throw new Error("All fields are required");
       const email = userEmail(uname);
-      const sections = Object.fromEntries(ALL_SECTION_IDS.map((id) => [id, true]));
       await signOut(auth).catch(() => {});
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const profile: Profile = {
           username: uname,
           name,
-          jobType: "Administrator",
+          jobType: ROLE_LABELS.admin,
+          role: "admin",
           isAdmin: true,
           sites: [],
-          sections,
-          approvalLevel: 5,
           status: "Active",
           createdAt: Date.now(),
         };
@@ -319,8 +311,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const uname = String(data.username || "").trim().toLowerCase();
       if (!uname || !data.password) throw new Error("Username and password are required");
       const email = userEmail(uname);
-      const sections = { ...(data.sections || {}) };
-      if (data.isAdmin) ALL_SECTION_IDS.forEach((id) => (sections[id] = true));
+      const role: Role =
+        data.isAdmin || data.role === "admin" ? "admin" : isValidRole(data.role) ? data.role : DEFAULT_ROLE;
+      const isAdmin = role === "admin";
       // Secondary app so the admin's own session isn't replaced.
       const sec = initializeApp(firebaseConfig, `nexus_uc_${Date.now()}_${Math.floor(Math.random() * 1e6)}`);
       try {
@@ -328,14 +321,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const profile: Profile = {
           username: uname,
           name: data.name || uname,
-          jobType: data.isAdmin ? "Administrator" : data.jobType || "User",
-          isAdmin: !!data.isAdmin,
-          sites: data.isAdmin ? [] : data.sites || [],
-          sections,
-          approvalLevel: data.isAdmin ? 5 : Number(data.approvalLevel) || 0,
+          jobType: ROLE_LABELS[role],
+          role,
+          isAdmin,
+          sites: isAdmin ? [] : data.sites || [],
           status: data.status || "Active",
           createdAt: Date.now(),
-          createdBy: session.username,
+          createdBy: session.uid,
         };
         await setDoc(doc(db, "nexus_users", cred.user.uid), profile);
         await deleteApp(sec).catch(() => {});
@@ -353,17 +345,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateUser = useCallback(
     async (uid: string, data: UserDraft) => {
       if (!session?.isAdmin) throw new Error("Only administrators can edit users");
-      const sections = { ...(data.sections || {}) };
-      if (data.isAdmin) ALL_SECTION_IDS.forEach((id) => (sections[id] = true));
-      await updateDoc(doc(db, "nexus_users", uid), {
-        name: data.name,
-        jobType: data.isAdmin ? "Administrator" : data.jobType || "User",
-        isAdmin: !!data.isAdmin,
-        sites: data.isAdmin ? [] : data.sites || [],
-        sections,
-        approvalLevel: data.isAdmin ? 5 : Number(data.approvalLevel) || 0,
-        status: data.status || "Active",
-      });
+      // Patch only the fields provided, so a role change never clobbers sites/status.
+      const patch: Record<string, unknown> = { updatedAt: Date.now() };
+      if (data.role !== undefined || data.isAdmin !== undefined) {
+        const role: Role =
+          data.isAdmin || data.role === "admin"
+            ? "admin"
+            : isValidRole(data.role)
+            ? data.role
+            : DEFAULT_ROLE;
+        patch.role = role;
+        patch.isAdmin = role === "admin";
+        patch.jobType = ROLE_LABELS[role];
+        if (role === "admin") patch.sites = [];
+      }
+      if (data.name !== undefined) patch.name = data.name;
+      if (data.sites !== undefined && patch.sites === undefined) patch.sites = data.sites;
+      if (data.status !== undefined) patch.status = data.status;
+      await updateDoc(doc(db, "nexus_users", uid), patch);
     },
     [session]
   );
@@ -391,15 +390,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, [activeSite, sites, session]);
 
-  const canSee = useCallback(
-    (navId: string) => {
-      if (!session) return false;
-      if (session.isAdmin) return true;
-      return !!(session.sections && session.sections[navId] === true);
-    },
-    [session]
-  );
-
   const setLang = useCallback((l: Lang) => {
     if (typeof window !== "undefined") localStorage.setItem("nexus-lang", l);
     setLangState(l);
@@ -410,7 +400,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const asSession = useCallback(
     (): Session =>
       session
-        ? { username: session.username, activeSite: session.activeSite, isAdmin: session.isAdmin }
+        ? {
+            username: session.username,
+            uid: session.uid,
+            role: session.role,
+            activeSite: session.activeSite,
+            sites: session.sites,
+            isAdmin: session.isAdmin,
+          }
         : null,
     [session]
   );
@@ -431,7 +428,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logout,
       switchSite,
       resolveSite,
-      canSee,
       lang,
       setLang,
       t,
@@ -450,7 +446,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logout,
       switchSite,
       resolveSite,
-      canSee,
       lang,
       setLang,
       t,

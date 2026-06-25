@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bell,
-  CalendarClock,
   Check,
   ChevronDown,
   ClipboardList,
@@ -13,6 +12,7 @@ import {
   Globe,
   Home,
   LayoutDashboard,
+  Lock,
   LogOut,
   MapPin,
   Package,
@@ -21,12 +21,15 @@ import {
   Settings,
   Sparkles,
   Tag,
+  UserCog,
   Users,
-  Wrench,
+  type LucideIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/app-context";
+import { usePermissions } from "@/lib/usePermissions";
+import { MODULE_LABELS, MODULE_ROUTES, type ModuleKey } from "@/lib/roles";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { LanguageSwitcher } from "@/components/shell/language-switcher";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,55 +43,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const rail = [
-  { icon: Home, label: "Home", href: "/dashboard" },
-  { icon: FolderKanban, label: "Projects", href: "/dashboard/projects" },
-  { icon: Users, label: "Suppliers", href: "/dashboard/suppliers" },
-  { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-  { icon: Bell, label: "Notifications", href: "/dashboard/notifications" },
-];
+// Icon per RBAC module (only modules with a real page are shown in nav).
+const ICONS: Partial<Record<ModuleKey, LucideIcon>> = {
+  dashboard: LayoutDashboard,
+  projects: FolderKanban,
+  suppliers: Users,
+  materials: Package,
+  offers: Tag,
+  purchase_requests: ClipboardList,
+  purchase_orders: ReceiptText,
+  contracts: ScrollText,
+  analytics: BarChart3,
+  notifications: Bell,
+  attendance: MapPin,
+  users: UserCog,
+};
 
-type NavItem = { label: string; href: string; icon: typeof Home; section?: string };
-
-const groups: { label: string; items: NavItem[] }[] = [
+const GROUPS: { label: string; modules: ModuleKey[] }[] = [
   {
     label: "Workspace",
-    items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "dashboard" },
-      { label: "Projects", href: "/dashboard/projects", icon: FolderKanban, section: "projects" },
-      { label: "Suppliers", href: "/dashboard/suppliers", icon: Users, section: "suppliers" },
-      { label: "Materials", href: "/dashboard/materials", icon: Package, section: "materials" },
-      { label: "Services", href: "/dashboard/services", icon: Wrench, section: "services" },
-      { label: "Offers", href: "/dashboard/offers", icon: Tag, section: "offers" },
-      {
-        label: "Purchase Requests",
-        href: "/dashboard/purchase-requests",
-        icon: ClipboardList,
-        section: "purchaserequests",
-      },
-      {
-        label: "Purchase Orders",
-        href: "/dashboard/purchase-orders",
-        icon: ReceiptText,
-        section: "purchaseorders",
-      },
-      { label: "Contracts", href: "/dashboard/contracts", icon: ScrollText, section: "contracts" },
+    modules: [
+      "dashboard",
+      "projects",
+      "suppliers",
+      "materials",
+      "offers",
+      "purchase_requests",
+      "purchase_orders",
+      "contracts",
     ],
   },
-  {
-    label: "Insights",
-    items: [
-      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, section: "analytics" },
-      {
-        label: "Notifications",
-        href: "/dashboard/notifications",
-        icon: Bell,
-        section: "notifications",
-      },
-      { label: "Timesheets", href: "/dashboard/timesheets", icon: CalendarClock, section: "timesheets" },
-      { label: "Attendance", href: "/dashboard/attendance", icon: MapPin, section: "attendance" },
-    ],
-  },
+  { label: "Insights", modules: ["analytics", "notifications", "attendance"] },
+  { label: "Admin", modules: ["users"] },
+];
+
+const RAIL: { module: ModuleKey; icon: LucideIcon }[] = [
+  { module: "dashboard", icon: Home },
+  { module: "projects", icon: FolderKanban },
+  { module: "suppliers", icon: Users },
+  { module: "analytics", icon: BarChart3 },
+  { module: "notifications", icon: Bell },
 ];
 
 function initials(name: string) {
@@ -105,12 +99,21 @@ function initials(name: string) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { session, sites, activeSite, isAdmin, switchSite, logout, canSee, t, ALL } = useApp();
+  const { session, sites, activeSite, isAdmin, switchSite, logout, t, ALL } = useApp();
+  const perms = usePermissions();
 
   if (!session) return null;
 
   const activeSiteLabel =
     activeSite === ALL ? t("All sites") : sites.find((s) => s.id === activeSite)?.name || "—";
+
+  // Resolve the nav into visible groups (deny-by-default via perms.canSee).
+  const visibleGroups = GROUPS.map((g) => ({
+    label: g.label,
+    modules: g.modules.filter((m) => ICONS[m] && perms.canSee(m)),
+  })).filter((g) => g.modules.length > 0);
+
+  const railItems = RAIL.filter((r) => perms.canSee(r.module));
 
   return (
     <aside className="hidden shrink-0 items-stretch gap-3 lg:flex">
@@ -120,13 +123,14 @@ export function Sidebar() {
           <span className="mb-2 grid size-9 place-items-center rounded-2xl bg-white/10 text-white">
             <Sparkles className="size-4" />
           </span>
-          {rail.map((r) => {
-            const active = r.href === pathname;
+          {railItems.map((r) => {
+            const href = MODULE_ROUTES[r.module];
+            const active = href === pathname;
             return (
               <Link
-                key={r.label}
-                href={r.href}
-                aria-label={r.label}
+                key={r.module}
+                href={href}
+                aria-label={t(MODULE_LABELS[r.module])}
                 className={cn(
                   "grid size-10 place-items-center rounded-2xl text-white/60 transition-colors hover:text-white",
                   active && "bg-white/15 text-white shadow-inner"
@@ -140,13 +144,15 @@ export function Sidebar() {
         <div className="flex flex-col items-center gap-2">
           <LanguageSwitcher className="grid size-10 place-items-center rounded-2xl text-white/60 transition-colors hover:text-white" />
           <ThemeToggle className="grid size-10 place-items-center rounded-2xl text-white/60 transition-colors hover:text-white" />
-          <Link
-            href="/dashboard/settings"
-            aria-label={t("Settings")}
-            className="grid size-10 place-items-center rounded-2xl bg-white/10 text-white/80 transition-colors hover:text-white"
-          >
-            <Settings className="size-[18px]" />
-          </Link>
+          {perms.canSee("settings") ? (
+            <Link
+              href="/dashboard/settings"
+              aria-label={t("Settings")}
+              className="grid size-10 place-items-center rounded-2xl bg-white/10 text-white/80 transition-colors hover:text-white"
+            >
+              <Settings className="size-[18px]" />
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -204,35 +210,41 @@ export function Sidebar() {
         </DropdownMenu>
 
         <ScrollArea className="-mx-1 flex-1 px-1">
-          {groups.map((group) => {
-            const items = group.items.filter((item) => !item.section || canSee(item.section));
-            if (items.length === 0) return null;
-            return (
+          {visibleGroups.length === 0 ? (
+            <div className="glass-subtle mt-6 grid place-items-center rounded-2xl px-4 py-10 text-center">
+              <Lock className="size-5 text-muted-foreground" />
+              <p className="mt-3 text-sm font-medium">{t("No access yet")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("Contact your administrator")}</p>
+            </div>
+          ) : (
+            visibleGroups.map((group) => (
               <div key={group.label} className="mb-4">
                 <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
                   {t(group.label)}
                 </p>
                 <div className="space-y-0.5">
-                  {items.map((item) => {
-                    const active = item.href === pathname;
+                  {group.modules.map((m) => {
+                    const Icon = ICONS[m]!;
+                    const href = MODULE_ROUTES[m];
+                    const active = href === pathname;
                     return (
                       <Link
-                        key={item.label}
-                        href={item.href}
+                        key={m}
+                        href={href}
                         className={cn(
                           "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground",
                           active && "glass-subtle font-medium text-foreground"
                         )}
                       >
-                        <item.icon className="size-4 shrink-0" />
-                        <span className="flex-1 truncate">{t(item.label)}</span>
+                        <Icon className="size-4 shrink-0" />
+                        <span className="flex-1 truncate">{t(MODULE_LABELS[m])}</span>
                       </Link>
                     );
                   })}
                 </div>
               </div>
-            );
-          })}
+            ))
+          )}
         </ScrollArea>
       </div>
     </aside>
