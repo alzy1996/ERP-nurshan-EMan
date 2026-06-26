@@ -1,47 +1,37 @@
-/* ERP Nexus — Service Worker (offline-first PWA) */
-const CACHE = 'nexus-v5';
-const SHELL = [
-  'login.html', 'offer-submit.html', 'nexus-core.js', 'nexus-skin.css',
-  'dashboard.html', 'materials.html', 'suppliers.html', 'offers.html',
-  'purchaserequests.html', 'analytics.html', 'notifications.html', 'settings.html',
-  'contracts.html', 'contract-sign.html', 'attendance.html',
-  'nexus-manifest.json',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
-];
+/*
+ * ERP Nexus — legacy service worker, RETIRED.
+ *
+ * The old vanilla PWA registered a cache-first service worker at the site root,
+ * which could keep serving the OLD app from cache on returning devices (and
+ * required hard refreshes). This replacement unregisters itself and clears all
+ * caches, so any device that used the old PWA loads the new app from the
+ * network. New visitors are unaffected.
+ */
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => Promise.allSettled(SHELL.map((u) => c.add(u)))).then(() => self.skipWaiting())
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch (e) {
+        /* ignore */
+      }
+      try {
+        await self.clients.claim();
+      } catch (e) {
+        /* ignore */
+      }
+      try {
+        await self.registration.unregister();
+      } catch (e) {
+        /* ignore */
+      }
+    })()
   );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (e) => {
-  const url = e.request.url;
-  // Network-first for Firestore API calls
-  if (url.includes('firestore.googleapis.com') || url.includes('firebaseio.com')) {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-    return;
-  }
-  // Cache-first for everything else (shell, fonts, images, libs)
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((resp) => {
-        const clone = resp.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, clone)).catch(() => {});
-        return resp;
-      }).catch(() => caches.match('login.html'));
-    })
-  );
-});
+// No fetch handler — requests go straight to the network (never the old cache).
