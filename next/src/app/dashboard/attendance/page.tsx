@@ -5,12 +5,14 @@ import { Clock, LogIn, LogOut, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { fetchScoped, addScoped } from "@/lib/data";
+import { loadGeofence, getCurrentPosition, distanceMeters, type Geofence } from "@/lib/geo";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
+import { GeofenceManager } from "@/components/attendance/geofence-manager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-type Entry = { id: string; user?: string; action?: string; at?: number };
+type Entry = { id: string; user?: string; action?: string; at?: number; lat?: number; lng?: number };
 
 export default function AttendancePage() {
   const app = useApp();
@@ -19,12 +21,14 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [checkedIn, setCheckedIn] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [myFence, setMyFence] = useState<Geofence | null>(null);
 
   async function load() {
     setLoading(true);
     try {
       const data = await fetchScoped<Entry>("attendance", app.asSession());
       setRows(data);
+      if (app.session?.uid) setMyFence(await loadGeofence(app.session.uid));
     } catch {
       toast.error("Could not load attendance");
     } finally {
@@ -49,12 +53,26 @@ export default function AttendancePage() {
     const action = checkedIn ? "out" : "in";
     setSaving(true);
     try {
+      const extra: Record<string, number> = {};
+      // Geofence enforcement: if a location is assigned, GPS must be within range.
+      if (myFence) {
+        const pos = await getCurrentPosition();
+        const dist = distanceMeters(pos, myFence);
+        if (dist > myFence.radius) {
+          const away = dist >= 1000 ? `${(dist / 1000).toFixed(1)} km` : `${Math.round(dist)} m`;
+          toast.error(`You're ${away} away — check in within ${myFence.radius} m of your location`);
+          return;
+        }
+        extra.lat = pos.lat;
+        extra.lng = pos.lng;
+      }
       await addScoped(
         "attendance",
         {
           user: app.session?.name || app.session?.username,
           action,
           at: Date.now(),
+          ...extra,
         },
         app.asSession(),
         app.resolveSite()
@@ -62,8 +80,8 @@ export default function AttendancePage() {
       setCheckedIn(action === "in");
       toast.success(action === "in" ? "Checked in" : "Checked out");
       await load();
-    } catch {
-      toast.error("Could not save check-in");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save check-in");
     } finally {
       setSaving(false);
     }
@@ -78,7 +96,6 @@ export default function AttendancePage() {
       </div>
 
       {/* Check in / Check out card */}
-      {/* TODO: GPS geofence + map (Leaflet) — deferred */}
       <div className="glass-strong glass-specular rounded-3xl p-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="glass glass-specular grid size-14 place-items-center rounded-2xl">
@@ -96,6 +113,11 @@ export default function AttendancePage() {
               {checkedIn ? "Checked in" : "Checked out"}
             </p>
           </div>
+          {myFence ? (
+            <Badge variant="secondary" className="gap-1 bg-chart-1/15 text-chart-1">
+              <MapPin className="size-3" /> Check in within {myFence.radius} m of your location
+            </Badge>
+          ) : null}
           {perms.can("attendance", "create") ? (
             <Button
               variant="glassPrimary"
@@ -119,6 +141,9 @@ export default function AttendancePage() {
           ) : null}
         </div>
       </div>
+
+      {/* Manage check-in locations (admin / HR only) */}
+      {perms.can("attendance", "delete") ? <GeofenceManager /> : null}
 
       {/* Today's log */}
       <div className="space-y-3">
