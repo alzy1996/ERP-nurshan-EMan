@@ -20,6 +20,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Field } from "@/components/forms/field";
 
 type Service = {
@@ -46,10 +53,10 @@ const FIELDS: { key: keyof Draft; label: string; placeholder?: string; required?
   { key: "name", label: "Service / Equipment", placeholder: "Excavator hire", required: true },
   { key: "unit", label: "Unit", placeholder: "day, hour, m³" },
   { key: "rate", label: "Rate (OMR)", placeholder: "0.000" },
-  { key: "supplier", label: "Supplier", placeholder: "BRIGHT LIGHT Trading", full: true },
 ];
 
 const emptyDraft: Draft = {};
+const NO_SUPPLIER = "__none__";
 
 export default function ServicesPage() {
   const app = useApp();
@@ -60,12 +67,23 @@ export default function ServicesPage() {
   const [uploading, setUploading] = useState(false);
   const [q, setQ] = useState("");
   const [form, setForm] = useState<Draft>(emptyDraft);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
 
   async function load() {
     setLoading(true);
     try {
-      const data = await fetchScoped<Service>("services", app.asSession());
+      const session = app.asSession();
+      const [data, sups] = await Promise.all([
+        fetchScoped<Service>("services", session),
+        fetchScoped<{ name?: string }>("suppliers", session),
+      ]);
       setRows(data.sort((a, b) => (a.code || "").localeCompare(b.code || "")));
+      setSuppliers(
+        sups
+          .map((s) => ({ id: s.id, name: (s.name || "").trim() }))
+          .filter((s) => s.name)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
     } catch {
       toast.error("Could not load services");
     } finally {
@@ -166,6 +184,7 @@ export default function ServicesPage() {
             form={form}
             setForm={setForm}
             set={set}
+            suppliers={suppliers}
             saving={saving}
             uploading={uploading}
             onFile={onFile}
@@ -238,6 +257,7 @@ function ServiceSheet({
   form,
   setForm,
   set,
+  suppliers,
   saving,
   uploading,
   onFile,
@@ -248,6 +268,7 @@ function ServiceSheet({
   form: Draft;
   setForm: React.Dispatch<React.SetStateAction<Draft>>;
   set: (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  suppliers: { id: string; name: string }[];
   saving: boolean;
   uploading: boolean;
   onFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -287,6 +308,41 @@ function ServiceSheet({
                 </Field>
               ))}
             </div>
+
+            {/* Supplier — picked from existing suppliers (optional) */}
+            <Field
+              label="Supplier"
+              hint={
+                suppliers.length === 0
+                  ? "No suppliers yet — you can still add this service"
+                  : "Optional — pick from your suppliers"
+              }
+            >
+              {suppliers.length === 0 ? (
+                <div className="glass-subtle rounded-xl px-3 py-2.5 text-sm text-muted-foreground">
+                  No suppliers available
+                </div>
+              ) : (
+                <Select
+                  value={form.supplier ? form.supplier : NO_SUPPLIER}
+                  onValueChange={(v) =>
+                    setForm((s) => ({ ...s, supplier: v === NO_SUPPLIER ? "" : v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SUPPLIER}>— No supplier —</SelectItem>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.name}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
           </section>
 
           {/* Contract file */}

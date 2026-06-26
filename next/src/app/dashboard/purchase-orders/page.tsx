@@ -21,6 +21,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Field } from "@/components/forms/field";
 
 type POItem = { desc: string; unit: string; qty: number; unitPrice: number; lineTotal: number };
@@ -46,6 +53,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 const fmt = (n: number) => `${(n || 0).toFixed(3)} OMR`;
 const emptyItem = (): POItem => ({ desc: "", unit: "", qty: 0, unitPrice: 0, lineTotal: 0 });
+const NO_SUPPLIER = "__none__";
 
 function printPO(po: PO) {
   const w = window.open("", "_blank", "width=820,height=920");
@@ -80,12 +88,23 @@ export default function PurchaseOrdersPage() {
   const [deliveryPeriod, setDeliveryPeriod] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<POItem[]>([emptyItem()]);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
 
   async function load() {
     setLoading(true);
     try {
-      const data = await fetchScoped<PO>("purchase_orders", app.asSession());
+      const session = app.asSession();
+      const [data, sups] = await Promise.all([
+        fetchScoped<PO>("purchase_orders", session),
+        fetchScoped<{ name?: string }>("suppliers", session),
+      ]);
       setRows(data.sort((a, b) => (b.poNumber || "").localeCompare(a.poNumber || "")));
+      setSuppliers(
+        sups
+          .map((s) => ({ id: s.id, name: (s.name || "").trim() }))
+          .filter((s) => s.name)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
     } catch {
       toast.error("Could not load purchase orders");
     } finally {
@@ -237,14 +256,36 @@ export default function PurchaseOrdersPage() {
                       className="glass-subtle rounded-xl border-0"
                     />
                   </Field>
-                  <Field label="Supplier" htmlFor="supplier">
-                    <Input
-                      id="supplier"
-                      value={supplier}
-                      onChange={(e) => setSupplier(e.target.value)}
-                      placeholder="Supplier name"
-                      className="glass-subtle rounded-xl border-0"
-                    />
+                  <Field
+                    label="Supplier"
+                    hint={
+                      suppliers.length === 0
+                        ? "No suppliers yet — you can still save this PO"
+                        : "Optional — pick from your suppliers"
+                    }
+                  >
+                    {suppliers.length === 0 ? (
+                      <div className="glass-subtle rounded-xl px-3 py-2.5 text-sm text-muted-foreground">
+                        No suppliers available
+                      </div>
+                    ) : (
+                      <Select
+                        value={supplier ? supplier : NO_SUPPLIER}
+                        onValueChange={(v) => setSupplier(v === NO_SUPPLIER ? "" : v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a supplier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NO_SUPPLIER}>— No supplier —</SelectItem>
+                          {suppliers.map((s) => (
+                            <SelectItem key={s.id} value={s.name}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </Field>
                   <Field label="Payment terms" htmlFor="paymentTerms">
                     <Input
