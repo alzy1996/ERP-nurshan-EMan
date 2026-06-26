@@ -87,19 +87,14 @@ service cloud.firestore {
                                  .hasOnly(['status','signature','signedAt','signerName']);
     }
 
+    // ---- master data: company-wide, not site-scoped ---------------------
+    // Suppliers & materials are shared reference data (used by the supplier
+    // dropdowns everywhere), so any signed-in user can read/write them — and
+    // admins with no site selected can still save.
+    match /nexus_suppliers/{doc} { allow read, write: if isPasswordAuth(); }
+    match /nexus_materials/{doc} { allow read, write: if isPasswordAuth(); }
+
     // ---- scoped collections ---------------------------------------------
-    match /nexus_suppliers/{doc} {
-      allow read : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
-                   && request.resource.data.siteId is string
-                   && request.resource.data.siteId.size() > 0;
-    }
-    match /nexus_materials/{doc} {
-      allow read : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
-                   && request.resource.data.siteId is string
-                   && request.resource.data.siteId.size() > 0;
-    }
     match /nexus_prs/{doc} {
       allow read : if isPasswordAuth() && inSite(resource.data.siteId);
       allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
@@ -127,6 +122,14 @@ service cloud.firestore {
     match /nexus_schedules/{doc}        { allow read, write: if isPasswordAuth(); }
     match /nexus_whatsapp_tokens/{doc}  { allow read, write: if isPasswordAuth(); }
     match /nexus_meta/{doc}             { allow read, write: if isPasswordAuth(); }
+
+    // Modules added in the new app (services, purchase orders, the three
+    // timesheet/equipment logs) — these had no rule and were being denied.
+    match /nexus_services/{doc}            { allow read, write: if isPasswordAuth(); }
+    match /nexus_purchase_orders/{doc}     { allow read, write: if isPasswordAuth(); }
+    match /nexus_supplier_timesheets/{doc} { allow read, write: if isPasswordAuth(); }
+    match /nexus_equipment_logs/{doc}      { allow read, write: if isPasswordAuth(); }
+    match /nexus_internal_timesheets/{doc} { allow read, write: if isPasswordAuth(); }
 
     match /{document=**} { allow read, write: if false; }
   }

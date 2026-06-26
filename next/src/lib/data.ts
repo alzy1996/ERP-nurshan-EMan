@@ -37,6 +37,9 @@ const SHORT_TO_MODULE: Record<string, ModuleKey> = {
   attendance: "attendance",
 };
 
+/** Collections that are company-wide master data (never site-filtered). */
+const GLOBAL_COLLECTIONS = new Set(["suppliers", "materials"]);
+
 /** Current actor's stable id for audit stamps (uid preferred, username fallback). */
 function actor(session: Session): string {
   return (session && (session.uid || session.username)) || "system";
@@ -53,6 +56,13 @@ export async function fetchScoped<T = Record<string, unknown>>(
   session: Session
 ): Promise<(T & { id: string })[]> {
   const col = collection(db, "nexus_" + shortName);
+
+  // Company-wide master data (suppliers, materials) — return all, no site filter.
+  if (GLOBAL_COLLECTIONS.has(shortName)) {
+    const snap = await getDocs(col);
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as T) }));
+  }
+
   const active = session ? session.activeSite || ALL : ALL;
   const isAdmin = !!(session && session.isAdmin);
   const moduleKey = SHORT_TO_MODULE[shortName];
