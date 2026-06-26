@@ -77,7 +77,7 @@ export default function LoginPage() {
         </h1>
         <p className="mb-6 mt-1 text-sm text-muted-foreground">
           {mode === "bootstrap"
-            ? "First account — full god-mode access."
+            ? "First account — full administrator access."
             : "Sign in to your workspace."}
         </p>
 

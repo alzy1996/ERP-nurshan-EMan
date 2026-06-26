@@ -63,6 +63,10 @@ export async function fetchScoped<T = Record<string, unknown>>(
     q = col;
   } else if (scope === "own" && session?.uid) {
     q = query(col, where("createdBy", "==", session.uid));
+  } else if (!active || active === ALL) {
+    // Non-admin with no site assigned yet → nothing site-scoped to show (avoids
+    // a rejected "siteId == __ALL__" query that would surface as "can't load").
+    return [];
   } else {
     q = query(col, where("siteId", "==", active));
   }
