@@ -20,6 +20,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Field } from "@/components/forms/field";
 
 type Material = {
@@ -42,10 +49,10 @@ const FIELDS: { key: string; label: string; placeholder?: string; type?: string;
   { key: "price", label: "Price (OMR)", placeholder: "0.000", type: "number" },
   { key: "stock", label: "Stock", placeholder: "0", type: "number" },
   { key: "reorder", label: "Reorder level", placeholder: "0", type: "number" },
-  { key: "supplier", label: "Supplier", placeholder: "BRIGHT LIGHT Trading", full: true },
 ];
 
 const emptyDraft: Draft = { name: "", cat: "", unit: "", price: "", stock: "", reorder: "", supplier: "" };
+const NO_SUPPLIER = "__none__";
 
 type Level = { label: string; barCls: string; badgeCls: string; pct: number };
 
@@ -69,12 +76,23 @@ export default function MaterialsPage() {
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
   const [form, setForm] = useState<Draft>(emptyDraft);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
 
   async function load() {
     setLoading(true);
     try {
-      const data = await fetchScoped<Material>("materials", app.asSession());
-      setRows(data.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
+      const session = app.asSession();
+      const [mats, sups] = await Promise.all([
+        fetchScoped<Material>("materials", session),
+        fetchScoped<{ name?: string }>("suppliers", session),
+      ]);
+      setRows(mats.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
+      setSuppliers(
+        sups
+          .map((s) => ({ id: s.id, name: (s.name || "").trim() }))
+          .filter((s) => s.name)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
     } catch {
       toast.error("Could not load materials");
     } finally {
@@ -163,6 +181,8 @@ export default function MaterialsPage() {
               setOpen={setOpen}
               form={form}
               set={set}
+              setForm={setForm}
+              suppliers={suppliers}
               saving={saving}
               onSave={save}
             />
@@ -251,6 +271,8 @@ function MaterialSheet({
   setOpen,
   form,
   set,
+  setForm,
+  suppliers,
   saving,
   onSave,
 }: {
@@ -258,6 +280,8 @@ function MaterialSheet({
   setOpen: (v: boolean) => void;
   form: Draft;
   set: (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setForm: React.Dispatch<React.SetStateAction<Draft>>;
+  suppliers: { id: string; name: string }[];
   saving: boolean;
   onSave: () => void;
 }) {
@@ -295,6 +319,41 @@ function MaterialSheet({
                 </Field>
               ))}
             </div>
+
+            {/* Supplier — picked from existing suppliers (optional) */}
+            <Field
+              label="Supplier"
+              hint={
+                suppliers.length === 0
+                  ? "No suppliers yet — you can still add this material"
+                  : "Optional — pick from your suppliers"
+              }
+            >
+              {suppliers.length === 0 ? (
+                <div className="glass-subtle rounded-xl px-3 py-2.5 text-sm text-muted-foreground">
+                  No suppliers available
+                </div>
+              ) : (
+                <Select
+                  value={form.supplier ? form.supplier : NO_SUPPLIER}
+                  onValueChange={(v) =>
+                    setForm((s) => ({ ...s, supplier: v === NO_SUPPLIER ? "" : v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SUPPLIER}>— No supplier —</SelectItem>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.name}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
           </section>
         </div>
 
