@@ -39,14 +39,14 @@ jobs:
           rm -rf ../app/*
           cp -r dist/* ../app/
 
-      - name: Build Next.js app (static export, served at /nx)
+      - name: Build Next.js app (static export, served at the site root)
         run: |
           cd next
           npm ci
           NEXT_EXPORT=true npm run build
-          mkdir -p ../nx
-          rm -rf ../nx/*
-          cp -r out/* ../nx/
+          # The new app is now the site homepage — copy the export over the
+          # hosting root (old vanilla *.html pages stay reachable by direct URL).
+          cp -r out/. ../
 
       - name: Write service account key (if provided)
         env:
