@@ -110,6 +110,14 @@ service cloud.firestore {
     // ---- other app collections ------------------------------------------
     match /nexus_psi/{doc}              { allow read, write: if isPasswordAuth(); }
     match /nexus_attendance/{doc}       { allow read, write: if isPasswordAuth(); }
+
+    // Per-user check-in geofence — admin or HR may set it; any signed-in user
+    // may read (to verify their own location when checking in).
+    match /nexus_geofences/{userId} {
+      allow read : if isPasswordAuth();
+      allow write: if isPasswordAuth() && (isAdmin() || callerProfile().role == "hr");
+    }
+
     match /nexus_sites/{doc}            { allow read, write: if isPasswordAuth(); }
     match /nexus_notifications/{doc}    { allow read, write: if isPasswordAuth(); }
     match /nexus_activity/{doc}         { allow read, write: if isPasswordAuth(); }
