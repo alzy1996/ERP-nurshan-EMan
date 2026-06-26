@@ -55,6 +55,7 @@ const fmtOMR = (n?: number) =>
   });
 
 const emptyDraft: Draft = { status: "draft" };
+const NO_SUPPLIER = "__none__";
 
 export default function ContractsPage() {
   const app = useApp();
@@ -65,12 +66,23 @@ export default function ContractsPage() {
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
   const [form, setForm] = useState<Draft>(emptyDraft);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
 
   async function load() {
     setLoading(true);
     try {
-      const data = await fetchScoped<Contract>("contracts", app.asSession());
+      const session = app.asSession();
+      const [data, sups] = await Promise.all([
+        fetchScoped<Contract>("contracts", session),
+        fetchScoped<{ name?: string }>("suppliers", session),
+      ]);
       setRows(data.sort((a, b) => (a.title || "").localeCompare(b.title || "")));
+      setSuppliers(
+        sups
+          .map((s) => ({ id: s.id, name: (s.name || "").trim() }))
+          .filter((s) => s.name)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
     } catch {
       toast.error("Could not load contracts");
     } finally {
@@ -155,6 +167,7 @@ export default function ContractsPage() {
               form={form}
               setForm={setForm}
               set={set}
+              suppliers={suppliers}
               saving={saving}
               onSave={save}
             />
@@ -230,6 +243,7 @@ function ContractSheet({
   form,
   setForm,
   set,
+  suppliers,
   saving,
   onSave,
 }: {
@@ -238,6 +252,7 @@ function ContractSheet({
   form: Draft;
   setForm: React.Dispatch<React.SetStateAction<Draft>>;
   set: (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  suppliers: { id: string; name: string }[];
   saving: boolean;
   onSave: () => void;
 }) {
@@ -266,14 +281,39 @@ function ContractSheet({
                   className="glass-subtle rounded-xl border-0"
                 />
               </Field>
-              <Field label="Supplier" htmlFor="supplier" className="col-span-2">
-                <Input
-                  id="supplier"
-                  value={String(form.supplier ?? "")}
-                  onChange={set("supplier")}
-                  placeholder="BRIGHT LIGHT Trading"
-                  className="glass-subtle rounded-xl border-0"
-                />
+              <Field
+                label="Supplier"
+                className="col-span-2"
+                hint={
+                  suppliers.length === 0
+                    ? "No suppliers yet — you can still add this contract"
+                    : "Optional — pick from your suppliers"
+                }
+              >
+                {suppliers.length === 0 ? (
+                  <div className="glass-subtle rounded-xl px-3 py-2.5 text-sm text-muted-foreground">
+                    No suppliers available
+                  </div>
+                ) : (
+                  <Select
+                    value={form.supplier ? form.supplier : NO_SUPPLIER}
+                    onValueChange={(v) =>
+                      setForm((s) => ({ ...s, supplier: v === NO_SUPPLIER ? "" : v }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_SUPPLIER}>— No supplier —</SelectItem>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.name}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </Field>
               <Field label="Value (OMR)" htmlFor="value">
                 <Input

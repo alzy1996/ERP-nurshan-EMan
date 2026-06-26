@@ -11,6 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Field } from "@/components/forms/field";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -32,6 +39,7 @@ type Draft = Record<string, string>;
 type SupTs = {
   id: string;
   supplier?: string;
+  contract?: string;
   workerName?: string;
   date?: string;
   timeIn?: string;
@@ -67,6 +75,7 @@ type FieldDef = {
   type?: string;
   placeholder?: string;
   full?: boolean;
+  options?: { value: string; label: string }[];
 };
 
 // ---------------------------------------------------------------------------
@@ -128,14 +137,35 @@ function AddSheet({
               htmlFor={f.key}
               className={f.full ? "col-span-2" : ""}
             >
-              <Input
-                id={f.key}
-                type={f.type || "text"}
-                value={form[f.key] ?? ""}
-                onChange={set(f.key)}
-                placeholder={f.placeholder}
-                className="glass-subtle rounded-xl border-0"
-              />
+              {f.type === "select" ? (
+                <Select
+                  value={form[f.key] || "__none__"}
+                  onValueChange={(v) =>
+                    setForm((cur) => ({ ...cur, [f.key]: v === "__none__" ? "" : v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={f.placeholder || "Select"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {(f.options || []).map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id={f.key}
+                  type={f.type || "text"}
+                  value={form[f.key] ?? ""}
+                  onChange={set(f.key)}
+                  placeholder={f.placeholder}
+                  className="glass-subtle rounded-xl border-0"
+                />
+              )}
             </Field>
           ))}
         </div>
@@ -194,14 +224,24 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
 function SupplierTab() {
   const app = useApp();
   const [rows, setRows] = useState<SupTs[]>([]);
+  const [contracts, setContracts] = useState<{ id: string; title: string; supplier: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
-      const data = await fetchScoped<SupTs>("supplier_timesheets", app.asSession());
+      const [data, cons] = await Promise.all([
+        fetchScoped<SupTs>("supplier_timesheets", app.asSession()),
+        fetchScoped<{ title?: string; supplier?: string }>("contracts", app.asSession()),
+      ]);
       setRows(data.sort((a, b) => (b.date || "").localeCompare(a.date || "")));
+      setContracts(
+        cons
+          .map((c) => ({ id: c.id, title: (c.title || "").trim(), supplier: c.supplier || "" }))
+          .filter((c) => c.title)
+          .sort((a, b) => a.title.localeCompare(b.title))
+      );
     } catch {
       toast.error("Could not load supplier timesheets");
     } finally {
@@ -221,9 +261,15 @@ function SupplierTab() {
     }
     setSaving(true);
     try {
+      // Worker logs against a contract; carry the contract's supplier through too.
+      const picked = contracts.find((c) => c.title === form.contract);
       await addScoped(
         "supplier_timesheets",
-        { ...form, hours: Number(form.hours) || 0 },
+        {
+          ...form,
+          supplier: picked?.supplier || form.supplier || "",
+          hours: Number(form.hours) || 0,
+        },
         app.asSession(),
         app.resolveSite()
       );
@@ -254,13 +300,23 @@ function SupplierTab() {
       <div className="flex justify-end">
         <AddSheet
           title="New supplier timesheet"
-          description="Worker hours logged against a supplier."
+          description="Worker hours logged against a contract (and its supplier)."
           triggerLabel="Add"
           saving={saving}
           initial={{}}
           onSave={save}
           fields={[
-            { key: "supplier", label: "Supplier", placeholder: "Supplier name" },
+            {
+              key: "contract",
+              label: "Contract",
+              type: "select",
+              full: true,
+              placeholder: contracts.length ? "Select a contract" : "No contracts yet",
+              options: contracts.map((c) => ({
+                value: c.title,
+                label: c.supplier ? `${c.title} — ${c.supplier}` : c.title,
+              })),
+            },
             { key: "workerName", label: "Worker name", placeholder: "Full name" },
             { key: "date", label: "Date", type: "date" },
             { key: "timeIn", label: "Time in", type: "time" },
