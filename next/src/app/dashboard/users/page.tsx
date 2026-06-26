@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { Ban, Loader2, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Ban, Loader2, MapPin, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { db } from "@/lib/firebase";
@@ -67,6 +67,7 @@ export default function UsersPage() {
   const [rows, setRows] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [editingSites, setEditingSites] = useState<UserRow | null>(null);
 
   async function load() {
     setLoading(true);
@@ -190,6 +191,21 @@ export default function UsersPage() {
                   </SelectContent>
                 </Select>
 
+                {canEdit && !u.isAdmin ? (
+                  <button
+                    onClick={() => setEditingSites(u)}
+                    aria-label="Assign sites"
+                    title={`Assigned sites: ${(u.sites || []).length}`}
+                    className="relative grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground"
+                  >
+                    <MapPin className="size-4" />
+                    {(u.sites || []).length > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground">
+                        {(u.sites || []).length}
+                      </span>
+                    ) : null}
+                  </button>
+                ) : null}
                 {canEdit && !isSelf ? (
                   <button
                     onClick={() => toggleSuspend(u)}
@@ -205,7 +221,93 @@ export default function UsersPage() {
           })}
         </div>
       )}
+
+      <EditSitesSheet
+        user={editingSites}
+        sites={app.sites}
+        onClose={() => setEditingSites(null)}
+        onSaved={(uid, sites) => setRows((r) => r.map((x) => (x.id === uid ? { ...x, sites } : x)))}
+      />
     </div>
+  );
+}
+
+function EditSitesSheet({
+  user,
+  sites,
+  onClose,
+  onSaved,
+}: {
+  user: UserRow | null;
+  sites: { id: string; name?: string }[];
+  onClose: () => void;
+  onSaved: (uid: string, sites: string[]) => void;
+}) {
+  const app = useApp();
+  const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelected(user?.sites || []);
+  }, [user]);
+
+  async function save() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await app.updateUser(user.id, { sites: selected });
+      toast.success(`Sites updated for ${user.name || user.username || "user"}`);
+      onSaved(user.id, selected);
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update sites");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function toggle(id: string, checked: boolean) {
+    setSelected((cur) => (checked ? [...cur, id] : cur.filter((x) => x !== id)));
+  }
+
+  return (
+    <Sheet open={!!user} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="glass-strong w-full gap-0 overflow-y-auto border-l-0 sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Assign sites</SheetTitle>
+          <SheetDescription>
+            {user ? `${user.name || user.username} will see data for the selected site(s).` : ""}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="space-y-2 px-4 pb-4">
+          {sites.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No sites yet — add sites first.</p>
+          ) : (
+            sites.map((s) => (
+              <label key={s.id} className="glass-subtle flex items-center gap-2 rounded-xl px-3 py-2">
+                <Checkbox
+                  checked={selected.includes(s.id)}
+                  onCheckedChange={(v) => toggle(s.id, v === true)}
+                />
+                <span className="text-sm">{s.name || s.id}</span>
+              </label>
+            ))
+          )}
+        </div>
+
+        <SheetFooter className="flex-row gap-2">
+          <SheetClose asChild>
+            <Button variant="glass" className="flex-1 rounded-full" onClick={onClose}>
+              Cancel
+            </Button>
+          </SheetClose>
+          <Button variant="glassPrimary" className="flex-1 rounded-full" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="size-4 animate-spin" /> : "Save sites"}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
