@@ -128,16 +128,20 @@ automatically.
   only approve up to their signing limit; larger amounts show *"above your limit
   — needs <higher role>"* and each request shows *"Needs <role> approval"*. The
   limits are the §3 defaults and are configurable in `next/src/lib/procurement.ts`.
+- ✅ **Goods Receipt** — a PO runs Draft → **Issued** (procurement) → **Received**
+  (Warehouse/Inspector only — the orderer isn't the receiver); receiving closes
+  the source request (PR → Received).
+- ✅ **Invoice + three‑way match + payment** — on a Received PO, Finance records
+  the supplier invoice; if it's within ±2% of the order it's **Matched** (payable)
+  and can be **Paid**, otherwise it's an **Exception** for review (never auto‑paid).
 
-**Build plan (in order):**
-1. **Goods Receipt (GRN)** module — receive against an Issued PO; Inspector QA
-   gate; updates the PO to Received.
-3. **Catalogue enforcement** — flag free‑text PR items as non‑catalogue + extra
+**Build plan (remaining):**
+1. **Catalogue enforcement** — flag free‑text PR items as non‑catalogue + extra
    approval + "add to Materials" prompt.
-4. **Invoices + 3‑way match + Payment** — Finance matches PO=GRN=Invoice with
-   tolerances; exception queue.
-5. **Server enforcement** of the state machine + "not your own approval" in
+2. **Server enforcement** of the state machine + "not your own approval" in
    `firestore.rules` (defence in depth, not just the UI).
+3. **Refinements** — per‑line received quantities, an Inspector QA pass as an
+   explicit gate, and configurable match tolerance.
 
 ## 8. Decisions we need from you
 

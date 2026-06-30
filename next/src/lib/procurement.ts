@@ -39,3 +39,16 @@ export function requiredApproverLabel(amount: number): string {
   if (a <= 100_000) return "Country Manager";
   return "Management";
 }
+
+// ---- Three-way match -------------------------------------------------------
+// Before a supplier invoice is paid, its amount is matched against the order
+// total (the goods-receipt step is the third leg — an invoice is only allowed
+// once the PO is Received). Small variances pass; anything beyond the tolerance
+// is flagged as an exception for Finance to investigate, not paid automatically.
+export const MATCH_TOLERANCE = 0.02; // ±2%
+
+export function matchResult(orderedTotal: number, invoiceAmount: number): "matched" | "exception" {
+  const t = Number(orderedTotal) || 0;
+  if (t <= 0) return "exception";
+  return Math.abs((Number(invoiceAmount) || 0) - t) / t <= MATCH_TOLERANCE ? "matched" : "exception";
+}

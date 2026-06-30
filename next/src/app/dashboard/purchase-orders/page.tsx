@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { fetchScoped, addScoped, updateScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
+import { matchResult, MATCH_TOLERANCE } from "@/lib/procurement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,12 +49,19 @@ type PO = {
   receivedBy?: string;
   receivedAt?: number;
   receivedByName?: string;
+  invoiceAmount?: number;
+  invoiceNumber?: string;
+  invoicedAt?: number;
+  paidAt?: number;
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-muted text-muted-foreground" },
   issued: { label: "Issued", cls: "bg-chart-1/15 text-chart-1" },
   received: { label: "Received", cls: "bg-chart-3/15 text-chart-3" },
+  matched: { label: "Matched", cls: "bg-chart-3/15 text-chart-3" },
+  exception: { label: "Match exception", cls: "bg-destructive/15 text-destructive" },
+  paid: { label: "Paid", cls: "bg-chart-3/25 text-chart-3" },
 };
 
 const fmt = (n: number) => `${(n || 0).toFixed(3)} OMR`;
@@ -86,6 +94,8 @@ export default function PurchaseOrdersPage() {
   // person who orders is not the person who receives — separation of duties).
   const canIssue = perms.can("purchase_orders", "update") || isAdmin;
   const canReceive = isAdmin || role === "warehouse" || role === "inspector";
+  // Finance runs the three-way match and releases payment.
+  const canPay = isAdmin || role === "finance";
   const [rows, setRows] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -244,6 +254,48 @@ export default function PurchaseOrdersPage() {
       toast.success(status === "issued" ? "PO issued to supplier" : "Goods received");
     } catch {
       toast.error("Could not update the purchase order");
+    }
+  }
+
+  // Three-way match: record the supplier invoice against a RECEIVED PO. If the
+  // amount is within tolerance of the order it's "matched" (payable); otherwise
+  // it's flagged as an "exception" for Finance to investigate — never auto-paid.
+  async function recordInvoice(po: PO) {
+    const raw = window.prompt(
+      `Supplier invoice amount (OMR). Order total is ${fmt(po.total || 0)}.`,
+      String(po.total || "")
+    );
+    if (raw == null) return;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0) return toast.error("Enter a valid amount");
+    const result = matchResult(po.total || 0, amount);
+    const extra: Record<string, unknown> = {
+      status: result,
+      invoiceAmount: amount,
+      invoicedAt: Date.now(),
+    };
+    try {
+      await updateScoped("purchase_orders", po.id, extra, app.asSession());
+      setRows((r) => r.map((x) => (x.id === po.id ? { ...x, ...extra } : x)));
+      if (result === "matched") toast.success("Invoice matches the order — ready to pay");
+      else
+        toast.error(
+          `Invoice is outside the ±${Math.round(MATCH_TOLERANCE * 100)}% tolerance — flagged for review`
+        );
+    } catch {
+      toast.error("Could not record the invoice");
+    }
+  }
+
+  async function markPaid(po: PO) {
+    if (!window.confirm(`Mark ${po.poNumber} as paid?`)) return;
+    const extra: Record<string, unknown> = { status: "paid", paidAt: Date.now() };
+    try {
+      await updateScoped("purchase_orders", po.id, extra, app.asSession());
+      setRows((r) => r.map((x) => (x.id === po.id ? { ...x, ...extra } : x)));
+      toast.success("Marked as paid");
+    } catch {
+      toast.error("Could not update");
     }
   }
 
@@ -531,10 +583,40 @@ export default function PurchaseOrdersPage() {
                     Awaiting goods receipt (Warehouse / Inspector)
                   </div>
                 ) : null}
-                {(po.status || "draft") === "received" && po.receivedByName ? (
+                {["received", "matched", "exception", "paid"].includes(po.status || "") &&
+                po.receivedByName ? (
                   <div className="mt-3 text-[11px] text-muted-foreground">
                     Received by {po.receivedByName}
                   </div>
+                ) : null}
+                {(po.status || "") === "received" && canPay ? (
+                  <button
+                    onClick={() => recordInvoice(po)}
+                    className="mt-2 w-full rounded-lg bg-chart-1/15 px-3 py-1.5 text-xs font-semibold text-chart-1 transition hover:bg-chart-1/25"
+                  >
+                    Record supplier invoice
+                  </button>
+                ) : null}
+                {(po.status || "") === "exception" ? (
+                  <div className="mt-2 rounded-lg bg-destructive/10 px-3 py-1.5 text-[11px] font-medium text-destructive">
+                    ⚠ Invoice {fmt(po.invoiceAmount || 0)} doesn&apos;t match the order — Finance to review.
+                    {canPay ? (
+                      <button onClick={() => recordInvoice(po)} className="ml-1 underline">
+                        Re‑enter
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {(po.status || "") === "matched" && canPay ? (
+                  <button
+                    onClick={() => markPaid(po)}
+                    className="mt-2 w-full rounded-lg bg-chart-3/15 px-3 py-1.5 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
+                  >
+                    Mark paid
+                  </button>
+                ) : null}
+                {(po.status || "") === "paid" ? (
+                  <div className="mt-2 text-[11px] font-semibold text-chart-3">Paid ✓</div>
                 ) : null}
 
                 <div className="mt-4 flex items-end justify-between gap-2">
