@@ -112,13 +112,13 @@ function p(code: string): Perm {
 // dashboard + notifications are injected as a "view" baseline for everyone.
 const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
-    suppliers: "full", materials: "full", services: "full", offers: "full", purchase_requests: "full",
-    purchase_orders: "full", contracts: "full", projects: "full", inspections: "full",
+    suppliers: "full", materials: "full", services: "full", offers: "full", purchase_requests: "full+appr",
+    purchase_orders: "full+appr", contracts: "full+appr", projects: "full", inspections: "full",
     attendance: "full", timesheets: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
     suppliers: "view", materials: "view", services: "view", offers: "view",
-    purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view",
+    purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
     projects: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   // Country Manager: senior oversight across the whole country. Sees every
@@ -132,7 +132,7 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   },
   procurement_manager: {
     suppliers: "full", materials: "full", services: "full", offers: "full",
-    purchase_requests: "full+appr", purchase_orders: "full", contracts: "full",
+    purchase_requests: "full+appr", purchase_orders: "full+appr", contracts: "full",
     projects: "view", inspections: "view", attendance: "view", analytics: "view",
   },
   buyer: {
@@ -171,7 +171,7 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   // know what to request. Cannot approve or delete requests.
   documentation_controller: {
     suppliers: "view", materials: "view", services: "view",
-    purchase_requests: "edit:own",
+    purchase_requests: "edit:own", purchase_orders: "view",
     projects: "view", attendance: "edit:own", timesheets: "edit:own",
   },
 };
