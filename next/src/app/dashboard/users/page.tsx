@@ -6,15 +6,16 @@ import { Ban, Loader2, MapPin, ShieldCheck, SlidersHorizontal, UserPlus, Users }
 import { toast } from "sonner";
 
 import { db } from "@/lib/firebase";
-import { useApp } from "@/context/app-context";
+import { useApp, type PermOverrides } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
 import {
   ALL_MODULES,
   MODULE_LABELS,
   ROLE_LABELS,
-  canSeeModule,
+  can as canForRole,
   isValidRole,
   legacyRoleFor,
+  type Capability,
   type ModuleKey,
   type Role,
 } from "@/lib/roles";
@@ -51,8 +52,25 @@ type UserRow = {
   sites?: string[];
   extraModules?: ModuleKey[];
   blockedModules?: ModuleKey[];
+  permOverrides?: PermOverrides;
   status?: string;
 };
+
+const CAPS: { key: Capability; label: string }[] = [
+  { key: "read", label: "View" },
+  { key: "create", label: "Add" },
+  { key: "update", label: "Edit" },
+  { key: "delete", label: "Del" },
+  { key: "approve", label: "Appr" },
+];
+
+function overrideCount(u: UserRow): number {
+  const fromGrid = Object.values(u.permOverrides || {}).reduce(
+    (n, caps) => n + Object.keys(caps || {}).length,
+    0
+  );
+  return fromGrid + (u.extraModules || []).length + (u.blockedModules || []).length;
+}
 
 const ROLE_OPTIONS = Object.keys(ROLE_LABELS) as Role[];
 
@@ -228,9 +246,9 @@ export default function UsersPage() {
                     className="relative grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground"
                   >
                     <SlidersHorizontal className="size-4" />
-                    {((u.extraModules || []).length + (u.blockedModules || []).length) > 0 ? (
+                    {overrideCount(u) > 0 ? (
                       <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-chart-4 px-1 text-[10px] font-semibold leading-none text-white">
-                        {(u.extraModules || []).length + (u.blockedModules || []).length}
+                        {overrideCount(u)}
                       </span>
                     ) : null}
                   </button>
@@ -261,15 +279,17 @@ export default function UsersPage() {
       <EditAccessSheet
         user={editingAccess}
         onClose={() => setEditingAccess(null)}
-        onSaved={(uid, extraModules, blockedModules) =>
-          setRows((r) => r.map((x) => (x.id === uid ? { ...x, extraModules, blockedModules } : x)))
+        onSaved={(uid, permOverrides) =>
+          setRows((r) =>
+            r.map((x) =>
+              x.id === uid ? { ...x, permOverrides, extraModules: [], blockedModules: [] } : x
+            )
+          )
         }
       />
     </div>
   );
 }
-
-type AccessState = "default" | "grant" | "deny";
 
 function EditAccessSheet({
   user,
@@ -278,34 +298,47 @@ function EditAccessSheet({
 }: {
   user: UserRow | null;
   onClose: () => void;
-  onSaved: (uid: string, extraModules: ModuleKey[], blockedModules: ModuleKey[]) => void;
+  onSaved: (uid: string, permOverrides: PermOverrides) => void;
 }) {
   const app = useApp();
   const [saving, setSaving] = useState(false);
-  const [state, setState] = useState<Record<string, AccessState>>({});
+  const [ov, setOv] = useState<PermOverrides>({});
 
   useEffect(() => {
     if (!user) return;
-    const next: Record<string, AccessState> = {};
-    for (const m of OVERRIDE_MODULES) {
-      if ((user.blockedModules || []).includes(m)) next[m] = "deny";
-      else if ((user.extraModules || []).includes(m)) next[m] = "grant";
-      else next[m] = "default";
-    }
-    setState(next);
+    // Start from saved per-capability overrides, then fold in any legacy
+    // module-level grants/denies so existing settings are preserved.
+    const next: PermOverrides = JSON.parse(JSON.stringify(user.permOverrides || {}));
+    for (const m of user.blockedModules || []) next[m] = { read: false, ...(next[m] || {}) };
+    for (const m of user.extraModules || [])
+      next[m] = { read: true, create: true, update: true, ...(next[m] || {}) };
+    setOv(next);
   }, [user]);
 
   const role: Role = user ? roleOf(user) : "buyer";
 
+  function cycle(m: ModuleKey, c: Capability) {
+    setOv((prev) => {
+      const cur = prev[m]?.[c];
+      const nextVal = cur === undefined ? true : cur === true ? false : undefined;
+      const mod: Partial<Record<Capability, boolean>> = { ...(prev[m] || {}) };
+      if (nextVal === undefined) delete mod[c];
+      else mod[c] = nextVal;
+      const out: PermOverrides = { ...prev };
+      if (Object.keys(mod).length === 0) delete out[m];
+      else out[m] = mod;
+      return out;
+    });
+  }
+
   async function save() {
     if (!user) return;
-    const extraModules = OVERRIDE_MODULES.filter((m) => state[m] === "grant");
-    const blockedModules = OVERRIDE_MODULES.filter((m) => state[m] === "deny");
     setSaving(true);
     try {
-      await app.updateUser(user.id, { extraModules, blockedModules });
+      // One source going forward: write the grid, clear the legacy lists.
+      await app.updateUser(user.id, { permOverrides: ov, extraModules: [], blockedModules: [] });
       toast.success(`Access updated for ${user.name || user.username || "user"}`);
-      onSaved(user.id, extraModules, blockedModules);
+      onSaved(user.id, ov);
       onClose();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update access");
@@ -314,49 +347,66 @@ function EditAccessSheet({
     }
   }
 
-  const seg = (m: ModuleKey, value: AccessState, label: string, tone: string) => (
-    <button
-      type="button"
-      onClick={() => setState((s) => ({ ...s, [m]: value }))}
-      className={`rounded-lg px-2 py-1 text-xs font-semibold transition ${
-        state[m] === value ? tone : "text-muted-foreground hover:bg-foreground/5"
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <Sheet open={!!user} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <SheetContent side="right" className="glass-strong w-full gap-0 overflow-y-auto border-l-0 sm:max-w-md">
+      <SheetContent side="right" className="glass-strong w-full gap-0 overflow-y-auto border-l-0 sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Custom access</SheetTitle>
           <SheetDescription>
             {user
-              ? `Fine-tune what ${user.name || user.username} can open, on top of their role (${ROLE_LABELS[role]}). "Default" follows the role.`
+              ? `Per-section access for ${user.name || user.username} (role: ${ROLE_LABELS[role]}). Tap a cell to cycle Default → Allow → Deny.`
               : ""}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-1.5 px-4 pb-4">
-          {OVERRIDE_MODULES.map((m) => {
-            const roleAllows = canSeeModule(role, m);
-            return (
-              <div key={m} className="glass-subtle flex items-center gap-2 rounded-xl px-3 py-2">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{MODULE_LABELS[m]}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    Role default: {roleAllows ? "allowed" : "hidden"}
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-0.5 rounded-xl bg-background/40 p-0.5">
-                  {seg(m, "default", "Default", "bg-foreground/10 text-foreground")}
-                  {seg(m, "grant", "Allow", "bg-chart-3/20 text-chart-3")}
-                  {seg(m, "deny", "Deny", "bg-destructive/15 text-destructive")}
-                </div>
-              </div>
-            );
-          })}
+        <div className="px-4 pb-4">
+          <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-foreground/15" /> Default (role)</span>
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-chart-3/40" /> Allow</span>
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-destructive/40" /> Deny</span>
+          </div>
+          <div className="flex items-center gap-1 px-1 pb-1 text-[10px] font-semibold text-muted-foreground">
+            <div className="flex-1">Section</div>
+            {CAPS.map((c) => (
+              <div key={c.key} className="w-8 text-center">{c.label}</div>
+            ))}
+          </div>
+          {OVERRIDE_MODULES.map((m) => (
+            <div key={m} className="flex items-center gap-1 border-t border-foreground/5 py-1.5">
+              <div className="min-w-0 flex-1 truncate text-xs font-medium">{MODULE_LABELS[m]}</div>
+              {CAPS.map((c) => {
+                const v = ov[m]?.[c.key];
+                const roleHas = canForRole(role, m, c.key);
+                const cls =
+                  v === true
+                    ? "bg-chart-3/30 text-chart-3"
+                    : v === false
+                    ? "bg-destructive/25 text-destructive"
+                    : roleHas
+                    ? "bg-foreground/10 text-foreground/70"
+                    : "text-muted-foreground/40";
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => cycle(m, c.key)}
+                    title={`${MODULE_LABELS[m]} — ${c.label}: ${
+                      v === true
+                        ? "Allowed"
+                        : v === false
+                        ? "Denied"
+                        : roleHas
+                        ? "Default (role allows)"
+                        : "Default (role hides)"
+                    }`}
+                    className={`grid h-7 w-8 place-items-center rounded-md text-[11px] font-bold transition ${cls}`}
+                  >
+                    {v === true ? "✓" : v === false ? "✕" : "·"}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         <SheetFooter className="flex-row gap-2">

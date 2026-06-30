@@ -25,13 +25,25 @@ import {
 
 import { db, auth, firebaseConfig, userEmail, sha256 } from "@/lib/firebase";
 import { t as translate, dirFor, type Lang } from "@/lib/i18n";
-import { DEFAULT_ROLE, isValidRole, legacyRoleFor, ROLE_LABELS, type ModuleKey, type Role } from "@/lib/roles";
+import {
+  DEFAULT_ROLE,
+  isValidRole,
+  legacyRoleFor,
+  ROLE_LABELS,
+  type Capability,
+  type ModuleKey,
+  type Role,
+} from "@/lib/roles";
 import type { Session } from "@/lib/data";
 
 const ALL = "__ALL__";
 const SESSION_KEY = "nexus_session";
 
 export type Site = { id: string; name?: string } & Record<string, unknown>;
+
+/** Per-user, per-section, per-capability overrides (admin-managed). A set value
+ *  wins over the role default; an unset capability follows the role. */
+export type PermOverrides = Partial<Record<ModuleKey, Partial<Record<Capability, boolean>>>>;
 
 export type AuthSession = {
   uid: string;
@@ -44,6 +56,7 @@ export type AuthSession = {
   /** Per-user access overrides on top of the role (admin-managed). */
   extraModules: ModuleKey[];   // granted even if the role doesn't allow them
   blockedModules: ModuleKey[]; // denied even if the role allows them
+  permOverrides: PermOverrides; // fine-grained per-capability overrides
   activeSite: string;
 };
 
@@ -56,6 +69,7 @@ export type UserDraft = {
   sites?: string[];
   extraModules?: ModuleKey[];
   blockedModules?: ModuleKey[];
+  permOverrides?: PermOverrides;
   status?: string;
 };
 
@@ -68,6 +82,7 @@ type Profile = Record<string, unknown> & {
   sites?: string[];
   extraModules?: ModuleKey[];
   blockedModules?: ModuleKey[];
+  permOverrides?: PermOverrides;
   status?: string;
 };
 
@@ -147,6 +162,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Admins are never restricted by overrides.
         extraModules: u.isAdmin ? [] : ((u.extraModules as ModuleKey[]) || []),
         blockedModules: u.isAdmin ? [] : ((u.blockedModules as ModuleKey[]) || []),
+        permOverrides: u.isAdmin ? {} : ((u.permOverrides as PermOverrides) || {}),
         activeSite: active,
       };
     },
@@ -337,6 +353,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           sites: isAdmin ? [] : data.sites || [],
           extraModules: isAdmin ? [] : data.extraModules || [],
           blockedModules: isAdmin ? [] : data.blockedModules || [],
+          permOverrides: isAdmin ? {} : data.permOverrides || {},
           status: data.status || "Active",
           createdAt: Date.now(),
           createdBy: session.uid,
@@ -373,12 +390,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           patch.sites = [];
           patch.extraModules = [];
           patch.blockedModules = [];
+          patch.permOverrides = {};
         }
       }
       if (data.name !== undefined) patch.name = data.name;
       if (data.sites !== undefined && patch.sites === undefined) patch.sites = data.sites;
       if (data.extraModules !== undefined && patch.extraModules === undefined) patch.extraModules = data.extraModules;
       if (data.blockedModules !== undefined && patch.blockedModules === undefined) patch.blockedModules = data.blockedModules;
+      if (data.permOverrides !== undefined && patch.permOverrides === undefined) patch.permOverrides = data.permOverrides;
       if (data.status !== undefined) patch.status = data.status;
       await updateDoc(doc(db, "nexus_users", uid), patch);
     },
