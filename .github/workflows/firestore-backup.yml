@@ -1,19 +1,20 @@
-name: Firestore daily backup
+name: Firestore daily backup (free)
 
-# Automatic, scheduled backup of the entire Firestore database to a Cloud
-# Storage bucket. Combined with Point-in-Time Recovery (a console toggle), this
-# protects against accidental deletes, bad writes, or malicious data loss.
+# Free, automatic daily backup that works on the Spark (no-cost) plan — no Blaze
+# upgrade and no Cloud Storage bucket required. A Node script reads every
+# document with the Admin SDK, the JSON is ENCRYPTED with a passphrase, and the
+# encrypted file is kept as a GitHub Actions artifact. Even if the artifact were
+# exposed, the data stays unreadable without the passphrase.
 #
-# ONE-TIME SETUP (then it runs itself every night):
-#   1. Create a backups bucket (region near your data), e.g.:
-#        gsutil mb -l eu -b on gs://procurement-erp-6e271-backups
-#   2. Give the deploy service account permission to export + write there:
-#        - roles/datastore.importExportAdmin  (project level)
-#        - roles/storage.objectAdmin          (on the bucket)
-#   3. (Recommended) add a lifecycle rule so backups auto-delete after, say,
-#      30 days, to control cost.
+# SECRETS (repo Settings -> Secrets and variables -> Actions):
+#   FIREBASE_SERVICE_ACCOUNT  already set for deploys (must allow Firestore read)
+#   BACKUP_PASSPHRASE         a long random passphrase — KEEP A COPY somewhere safe;
+#                             backups CANNOT be restored without it.
 #
-# Uses the same FIREBASE_SERVICE_ACCOUNT secret already configured for deploys.
+# RESTORE: download the .gpg artifact, then (see scripts/restore-firestore.mjs):
+#   gpg --batch --passphrase "<BACKUP_PASSPHRASE>" -o firestore-backup.json -d <file>.json.gpg
+#   cd scripts && npm install
+#   GOOGLE_APPLICATION_CREDENTIALS=<sa.json> IN=../firestore-backup.json CONFIRM=yes node restore-firestore.mjs
 
 on:
   workflow_dispatch: {}
@@ -22,23 +23,37 @@ on:
 
 env:
   PROJECT_ID: procurement-erp-6e271
-  BACKUP_BUCKET: gs://procurement-erp-6e271-backups
 
 jobs:
-  export:
+  backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          node-version: "20"
 
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Export Firestore
+      - name: Export Firestore and encrypt
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set."; exit 1; fi
+          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::error::BACKUP_PASSPHRASE secret is not set."; exit 1; fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$HOME/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/sa.json"
+          export OUT="$GITHUB_WORKSPACE/firestore-backup.json"
+          ( cd scripts && npm install && node backup-firestore.mjs )
           STAMP="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
-          echo "Exporting Firestore -> $BACKUP_BUCKET/$STAMP"
-          gcloud firestore export "$BACKUP_BUCKET/$STAMP" \
-            --project "$PROJECT_ID"
+          gpg --batch --yes --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 \
+            -o "firestore-backup-$STAMP.json.gpg" "$OUT"
+          rm -f "$OUT" "$HOME/sa.json"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup-${{ env.STAMP }}
+          path: firestore-backup-*.json.gpg
+          retention-days: 90

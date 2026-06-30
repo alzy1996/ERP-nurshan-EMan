@@ -1,0 +1,9 @@
+{
+  "name": "erp-nexus-backup-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Free Firestore backup/restore — runs on the Spark plan, no managed export.",
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
