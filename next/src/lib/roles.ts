@@ -8,6 +8,7 @@
 export type Role =
   | "admin"
   | "management"
+  | "country_manager"
   | "procurement_manager"
   | "buyer"
   | "finance"
@@ -57,6 +58,7 @@ export const ALL_MODULES: ModuleKey[] = [
 export const ROLE_LABELS: Record<Role, string> = {
   admin: "Super Admin",
   management: "Management",
+  country_manager: "Country Manager",
   procurement_manager: "Procurement Manager",
   buyer: "Buyer / Procurement Officer",
   finance: "Finance / Accounts",
@@ -117,6 +119,15 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   management: {
     suppliers: "view", materials: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view",
+    projects: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
+  },
+  // Country Manager: senior oversight across the whole country. Sees every
+  // operational module and signs off (approves) the procurement chain — but
+  // day-to-day data entry stays with the operational roles, and user management
+  // stays with Super Admin.
+  country_manager: {
+    suppliers: "view", materials: "view", services: "view", offers: "view",
+    purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
     projects: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   procurement_manager: {
@@ -246,6 +257,8 @@ export function legacyRoleFor(jobType?: string | null, isAdmin?: boolean): Role 
     case "procurement": return "buyer";
     case "inventory": return "warehouse";
     case "hse": return "inspector";
+    case "country manager":
+    case "country director": return "country_manager";
     case "documentation controller":
     case "document controller":
     case "doc controller": return "documentation_controller";
