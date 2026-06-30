@@ -124,11 +124,13 @@ automatically.
 **Done now:**
 - ✅ Requester **cannot approve their own** request (segregation of duties).
 - ✅ PO can only be created from an **Approved** PR (state gate).
+- ✅ **Value-based approval limits** (delegation of authority) — an approver can
+  only approve up to their signing limit; larger amounts show *"above your limit
+  — needs <higher role>"* and each request shows *"Needs <role> approval"*. The
+  limits are the §3 defaults and are configurable in `next/src/lib/procurement.ts`.
 
 **Build plan (in order):**
-1. **Approval thresholds** — route PRs by value to the right approver(s) (needs
-   your numbers from §3).
-2. **Goods Receipt (GRN)** module — receive against an Issued PO; Inspector QA
+1. **Goods Receipt (GRN)** module — receive against an Issued PO; Inspector QA
    gate; updates the PO to Received.
 3. **Catalogue enforcement** — flag free‑text PR items as non‑catalogue + extra
    approval + "add to Materials" prompt.
