@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { Ban, Loader2, MapPin, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Ban, Loader2, MapPin, ShieldCheck, SlidersHorizontal, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { db } from "@/lib/firebase";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
 import {
+  ALL_MODULES,
+  MODULE_LABELS,
   ROLE_LABELS,
+  canSeeModule,
   isValidRole,
   legacyRoleFor,
+  type ModuleKey,
   type Role,
 } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -45,10 +49,19 @@ type UserRow = {
   role?: Role;
   isAdmin?: boolean;
   sites?: string[];
+  extraModules?: ModuleKey[];
+  blockedModules?: ModuleKey[];
   status?: string;
 };
 
 const ROLE_OPTIONS = Object.keys(ROLE_LABELS) as Role[];
+
+// Sections an admin can grant/deny per user. Dashboard & Notifications are a
+// baseline for everyone; Users & Settings stay admin-only — so none of those
+// four are overridable here.
+const OVERRIDE_MODULES: ModuleKey[] = ALL_MODULES.filter(
+  (m) => !["dashboard", "notifications", "users", "settings"].includes(m)
+);
 
 function roleOf(u: UserRow): Role {
   return isValidRole(u.role) ? u.role : legacyRoleFor(u.jobType, u.isAdmin);
@@ -68,6 +81,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingSites, setEditingSites] = useState<UserRow | null>(null);
+  const [editingAccess, setEditingAccess] = useState<UserRow | null>(null);
 
   async function load() {
     setLoading(true);
@@ -206,6 +220,21 @@ export default function UsersPage() {
                     ) : null}
                   </button>
                 ) : null}
+                {canEdit && !u.isAdmin ? (
+                  <button
+                    onClick={() => setEditingAccess(u)}
+                    aria-label="Custom access"
+                    title="Customise what this user can access"
+                    className="relative grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground"
+                  >
+                    <SlidersHorizontal className="size-4" />
+                    {((u.extraModules || []).length + (u.blockedModules || []).length) > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-chart-4 px-1 text-[10px] font-semibold leading-none text-white">
+                        {(u.extraModules || []).length + (u.blockedModules || []).length}
+                      </span>
+                    ) : null}
+                  </button>
+                ) : null}
                 {canEdit && !isSelf ? (
                   <button
                     onClick={() => toggleSuspend(u)}
@@ -228,7 +257,120 @@ export default function UsersPage() {
         onClose={() => setEditingSites(null)}
         onSaved={(uid, sites) => setRows((r) => r.map((x) => (x.id === uid ? { ...x, sites } : x)))}
       />
+
+      <EditAccessSheet
+        user={editingAccess}
+        onClose={() => setEditingAccess(null)}
+        onSaved={(uid, extraModules, blockedModules) =>
+          setRows((r) => r.map((x) => (x.id === uid ? { ...x, extraModules, blockedModules } : x)))
+        }
+      />
     </div>
+  );
+}
+
+type AccessState = "default" | "grant" | "deny";
+
+function EditAccessSheet({
+  user,
+  onClose,
+  onSaved,
+}: {
+  user: UserRow | null;
+  onClose: () => void;
+  onSaved: (uid: string, extraModules: ModuleKey[], blockedModules: ModuleKey[]) => void;
+}) {
+  const app = useApp();
+  const [saving, setSaving] = useState(false);
+  const [state, setState] = useState<Record<string, AccessState>>({});
+
+  useEffect(() => {
+    if (!user) return;
+    const next: Record<string, AccessState> = {};
+    for (const m of OVERRIDE_MODULES) {
+      if ((user.blockedModules || []).includes(m)) next[m] = "deny";
+      else if ((user.extraModules || []).includes(m)) next[m] = "grant";
+      else next[m] = "default";
+    }
+    setState(next);
+  }, [user]);
+
+  const role: Role = user ? roleOf(user) : "buyer";
+
+  async function save() {
+    if (!user) return;
+    const extraModules = OVERRIDE_MODULES.filter((m) => state[m] === "grant");
+    const blockedModules = OVERRIDE_MODULES.filter((m) => state[m] === "deny");
+    setSaving(true);
+    try {
+      await app.updateUser(user.id, { extraModules, blockedModules });
+      toast.success(`Access updated for ${user.name || user.username || "user"}`);
+      onSaved(user.id, extraModules, blockedModules);
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update access");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const seg = (m: ModuleKey, value: AccessState, label: string, tone: string) => (
+    <button
+      type="button"
+      onClick={() => setState((s) => ({ ...s, [m]: value }))}
+      className={`rounded-lg px-2 py-1 text-xs font-semibold transition ${
+        state[m] === value ? tone : "text-muted-foreground hover:bg-foreground/5"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <Sheet open={!!user} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="glass-strong w-full gap-0 overflow-y-auto border-l-0 sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Custom access</SheetTitle>
+          <SheetDescription>
+            {user
+              ? `Fine-tune what ${user.name || user.username} can open, on top of their role (${ROLE_LABELS[role]}). "Default" follows the role.`
+              : ""}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="space-y-1.5 px-4 pb-4">
+          {OVERRIDE_MODULES.map((m) => {
+            const roleAllows = canSeeModule(role, m);
+            return (
+              <div key={m} className="glass-subtle flex items-center gap-2 rounded-xl px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{MODULE_LABELS[m]}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Role default: {roleAllows ? "allowed" : "hidden"}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-0.5 rounded-xl bg-background/40 p-0.5">
+                  {seg(m, "default", "Default", "bg-foreground/10 text-foreground")}
+                  {seg(m, "grant", "Allow", "bg-chart-3/20 text-chart-3")}
+                  {seg(m, "deny", "Deny", "bg-destructive/15 text-destructive")}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <SheetFooter className="flex-row gap-2">
+          <SheetClose asChild>
+            <Button variant="glass" className="flex-1 rounded-full" onClick={onClose}>
+              Cancel
+            </Button>
+          </SheetClose>
+          <Button variant="glassPrimary" className="flex-1 rounded-full" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="size-4 animate-spin" /> : "Save access"}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 

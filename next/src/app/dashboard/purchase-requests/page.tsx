@@ -27,10 +27,13 @@ type Pr = {
   desc?: string;
   amount?: number;
   requester?: string;
+  materialId?: string;
   stage?: string;
 };
 
-type Draft = { desc: string; amount: string; requester: string };
+type Material = { id: string; name?: string; price?: number };
+
+type Draft = { desc: string; amount: string; requester: string; materialId: string };
 
 const STAGES = ["Submitted", "Approved", "Ordered", "Received", "Rejected"] as const;
 
@@ -42,7 +45,7 @@ const DOT: Record<string, string> = {
   Rejected: "bg-destructive",
 };
 
-const emptyDraft: Draft = { desc: "", amount: "", requester: "" };
+const emptyDraft: Draft = { desc: "", amount: "", requester: "", materialId: "" };
 
 const fmtOMR = (n?: number) => `${(Number(n) || 0).toFixed(3)} OMR`;
 
@@ -50,6 +53,7 @@ export default function PurchaseRequestsPage() {
   const app = useApp();
   const perms = usePermissions();
   const [rows, setRows] = useState<Pr[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -73,6 +77,14 @@ export default function PurchaseRequestsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.ready, app.activeSite]);
 
+  // Materials are a global catalogue — load them so a request can be picked
+  // from the list instead of typed by hand.
+  useEffect(() => {
+    if (!app.ready) return;
+    fetchScoped<Material>("materials", app.asSession()).then(setMaterials).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.ready]);
+
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return rows;
@@ -87,6 +99,18 @@ export default function PurchaseRequestsPage() {
     (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // Picking a material fills the description (and amount, if blank) from the
+  // catalogue, while keeping the link to the material id.
+  function pickMaterial(id: string) {
+    const m = materials.find((x) => x.id === id);
+    setForm((f) => ({
+      ...f,
+      materialId: id,
+      desc: m?.name || f.desc,
+      amount: f.amount || (m?.price != null ? String(m.price) : f.amount),
+    }));
+  }
+
   async function save() {
     if (!form.desc.trim()) return toast.error("Enter a description");
     setSaving(true);
@@ -97,6 +121,7 @@ export default function PurchaseRequestsPage() {
           desc: form.desc.trim(),
           amount: Number(form.amount) || 0,
           requester: form.requester || app.session?.name || "—",
+          materialId: form.materialId || null,
           stage: "Submitted",
         },
         app.asSession(),
@@ -162,6 +187,8 @@ export default function PurchaseRequestsPage() {
               setOpen={setOpen}
               form={form}
               set={set}
+              materials={materials}
+              onPickMaterial={pickMaterial}
               saving={saving}
               onSave={save}
             />
@@ -264,6 +291,8 @@ function PrSheet({
   setOpen,
   form,
   set,
+  materials,
+  onPickMaterial,
   saving,
   onSave,
 }: {
@@ -271,6 +300,8 @@ function PrSheet({
   setOpen: (v: boolean) => void;
   form: Draft;
   set: (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  materials: Material[];
+  onPickMaterial: (id: string) => void;
   saving: boolean;
   onSave: () => void;
 }) {
@@ -288,12 +319,29 @@ function PrSheet({
         </SheetHeader>
 
         <div className="space-y-3 px-4 pb-4">
+          {materials.length > 0 ? (
+            <Field label="Material (pick from list)" htmlFor="material">
+              <select
+                id="material"
+                value={form.materialId}
+                onChange={(e) => onPickMaterial(e.target.value)}
+                className="glass-subtle h-10 w-full rounded-xl border-0 bg-transparent px-3 text-sm outline-none"
+              >
+                <option value="">— Choose a material —</option>
+                {materials.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name || "Unnamed material"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
           <Field label="Description *" htmlFor="desc">
             <Input
               id="desc"
               value={form.desc}
               onChange={set("desc")}
-              placeholder="What needs to be purchased?"
+              placeholder={materials.length > 0 ? "Auto-filled from the material — add quantity / notes" : "What needs to be purchased?"}
               className="glass-subtle rounded-xl border-0"
             />
           </Field>
