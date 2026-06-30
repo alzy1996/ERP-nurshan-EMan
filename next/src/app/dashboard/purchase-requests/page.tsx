@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { fetchScoped, addScoped, updateScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
+import { canApproveAmount, requiredApproverLabel, approvalLimitFor } from "@/lib/procurement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -315,7 +316,12 @@ export default function PurchaseRequestsPage() {
                         <div className="mt-1 text-xs text-muted-foreground">
                           {p.requester || "—"}
                         </div>
-                        {perms.can("purchase_requests", "approve") &&
+                        {(p.stage || "Submitted") === "Submitted" ? (
+                          <div className="mt-1 text-[11px] text-muted-foreground">
+                            Needs {requiredApproverLabel(Number(p.amount) || 0)} approval
+                          </div>
+                        ) : null}
+                        {(perms.can("purchase_requests", "approve") || app.session?.isAdmin) &&
                         (p.stage || "Submitted") === "Submitted" ? (
                           isOwnRequest(p) ? (
                             // Segregation of duties: the person who raised a
@@ -323,7 +329,11 @@ export default function PurchaseRequestsPage() {
                             <div className="mt-2 text-[11px] font-medium text-muted-foreground">
                               You raised this — another approver must sign off
                             </div>
-                          ) : (
+                          ) : canApproveAmount(
+                              app.session?.role,
+                              Number(p.amount) || 0,
+                              !!app.session?.isAdmin
+                            ) ? (
                             <div className="mt-2 flex gap-2">
                               <button
                                 onClick={() => setStage(p, "Approved")}
@@ -337,6 +347,13 @@ export default function PurchaseRequestsPage() {
                               >
                                 Reject
                               </button>
+                            </div>
+                          ) : (
+                            // Delegation of authority: amount exceeds this
+                            // approver's signing limit — route to higher authority.
+                            <div className="mt-2 text-[11px] font-medium text-chart-4">
+                              Above your limit ({approvalLimitFor(app.session?.role).toLocaleString()} OMR) —
+                              needs {requiredApproverLabel(Number(p.amount) || 0)}
                             </div>
                           )
                         ) : null}
