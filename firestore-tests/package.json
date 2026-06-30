@@ -1,0 +1,13 @@
+{
+  "name": "firestore-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Security-rule tests — proves the database stays locked down.",
+  "scripts": {
+    "test": "node rules.test.mjs"
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^10.12.0"
+  }
+}
