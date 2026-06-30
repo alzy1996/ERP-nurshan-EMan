@@ -23,8 +23,8 @@ several gaps and have a clear plan for the rest.
 - **Audit trail** — every record stores who created/changed it and when.
 - **Hardened web responses** — protection against clickjacking, content‑type
   attacks, and forced‑HTTP downgrades (newly added).
-- **Locked‑down file uploads** — only the owner can upload, with size/type
-  limits (newly tightened).
+- **No exposed file storage** — uploads go through a managed image service, so
+  there is no open file‑storage surface to attack.
 
 ## What we just added
 
@@ -32,7 +32,6 @@ several gaps and have a clear plan for the rest.
 |---|---|
 | Automated **daily database backup** | Accidental or malicious data loss |
 | Web **security headers** | Clickjacking, injection, protocol downgrade |
-| Tighter **file‑upload rules** | Abuse / unauthorized uploads |
 | **Automated dependency updates** | Known vulnerabilities in libraries |
 
 ## Two settings to switch on (console — 10 minutes)
