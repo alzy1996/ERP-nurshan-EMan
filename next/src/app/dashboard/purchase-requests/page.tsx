@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Loader2, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
+import { fetchScoped, addScoped, updateScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,18 @@ export default function PurchaseRequestsPage() {
     }
   }
 
+  // Procurement approval: move a submitted request to Approved / Rejected.
+  // Only shown to roles with the "approve" capability on purchase_requests.
+  async function setStage(pr: Pr, stage: string) {
+    try {
+      await updateScoped("prs", pr.id, { stage }, app.asSession());
+      setRows((r) => r.map((x) => (x.id === pr.id ? { ...x, stage } : x)));
+      toast.success(stage === "Approved" ? "Request approved" : "Request rejected");
+    } catch {
+      toast.error("Could not update request");
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
@@ -217,6 +229,23 @@ export default function PurchaseRequestsPage() {
                         <div className="mt-1 text-xs text-muted-foreground">
                           {p.requester || "—"}
                         </div>
+                        {perms.can("purchase_requests", "approve") &&
+                        (p.stage || "Submitted") === "Submitted" ? (
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              onClick={() => setStage(p, "Approved")}
+                              className="rounded-lg bg-chart-3/15 px-2.5 py-1 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => setStage(p, "Rejected")}
+                              className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive transition hover:bg-destructive/20"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
