@@ -15,7 +15,8 @@ export type Role =
   | "site_engineer"
   | "warehouse"
   | "inspector"
-  | "contractor";
+  | "contractor"
+  | "documentation_controller";
 
 export type ModuleKey =
   | "dashboard"
@@ -64,6 +65,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   warehouse: "Warehouse / Store",
   inspector: "Inspector (QA / PSI)",
   contractor: "Contractor (external)",
+  documentation_controller: "Documentation Controller",
 };
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
@@ -119,7 +121,7 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   },
   procurement_manager: {
     suppliers: "full", materials: "full", services: "full", offers: "full",
-    purchase_requests: "full", purchase_orders: "full", contracts: "full",
+    purchase_requests: "full+appr", purchase_orders: "full", contracts: "full",
     projects: "view", inspections: "view", attendance: "view", analytics: "view",
   },
   buyer: {
@@ -152,6 +154,14 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   },
   contractor: {
     contracts: "view:own", projects: "view:own", attendance: "edit:own", timesheets: "edit:own",
+  },
+  // Documentation Controller: raises material requests (purchase requests) for
+  // their site; procurement then approves. Read-only on the catalogues so they
+  // know what to request. Cannot approve or delete requests.
+  documentation_controller: {
+    suppliers: "view", materials: "view", services: "view",
+    purchase_requests: "edit:own",
+    projects: "view", attendance: "edit:own", timesheets: "edit:own",
   },
 };
 
@@ -236,6 +246,9 @@ export function legacyRoleFor(jobType?: string | null, isAdmin?: boolean): Role 
     case "procurement": return "buyer";
     case "inventory": return "warehouse";
     case "hse": return "inspector";
+    case "documentation controller":
+    case "document controller":
+    case "doc controller": return "documentation_controller";
     default: return DEFAULT_ROLE;
   }
 }
