@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { ClipboardList, Loader2, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { fetchScoped, addScoped, updateScoped, removeScoped } from "@/lib/data";
@@ -28,6 +28,8 @@ type Pr = {
   amount?: number;
   requester?: string;
   materialId?: string;
+  siteId?: string;
+  poId?: string;
   stage?: string;
 };
 
@@ -179,6 +181,39 @@ export default function PurchaseRequestsPage() {
     }
   }
 
+  // Close the loop: turn an APPROVED request into a Purchase Order. The PO is
+  // pre-filled from the request and linked back to it (fromPrId), and the
+  // request advances to "Ordered" so the chain PR -> PO is traceable.
+  async function createPo(pr: Pr) {
+    if (pr.poId) return toast.info("A purchase order already exists for this request");
+    const amount = Number(pr.amount) || 0;
+    const vat = Number((amount * 0.05).toFixed(3));
+    try {
+      const ref = await addScoped(
+        "purchase_orders",
+        {
+          poNumber: `PO-${Date.now()}`,
+          supplier: "",
+          fromPrId: pr.id,
+          fromPrDesc: pr.desc || "",
+          materialId: pr.materialId || null,
+          items: [{ desc: pr.desc || "Item", unit: "", qty: 1, unitPrice: amount, lineTotal: amount }],
+          subtotal: amount,
+          vat,
+          total: Number((amount + vat).toFixed(3)),
+          status: "draft",
+        },
+        app.asSession(),
+        pr.siteId || app.resolveSite()
+      );
+      await updateScoped("prs", pr.id, { stage: "Ordered", poId: ref.id }, app.asSession());
+      setRows((r) => r.map((x) => (x.id === pr.id ? { ...x, stage: "Ordered", poId: ref.id } : x)));
+      toast.success("Purchase order created — open Purchase Orders to add the supplier & send");
+    } catch {
+      toast.error("Could not create the purchase order");
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
@@ -291,6 +326,21 @@ export default function PurchaseRequestsPage() {
                             >
                               Reject
                             </button>
+                          </div>
+                        ) : null}
+                        {perms.can("purchase_orders", "create") &&
+                        (p.stage || "") === "Approved" &&
+                        !p.poId ? (
+                          <button
+                            onClick={() => createPo(p)}
+                            className="mt-2 flex items-center gap-1 rounded-lg bg-chart-1/15 px-2.5 py-1 text-xs font-semibold text-chart-1 transition hover:bg-chart-1/25"
+                          >
+                            <ShoppingCart className="size-3.5" /> Create PO
+                          </button>
+                        ) : null}
+                        {p.poId ? (
+                          <div className="mt-2 text-[11px] font-medium text-chart-1">
+                            → Purchase order created
                           </div>
                         ) : null}
                       </div>

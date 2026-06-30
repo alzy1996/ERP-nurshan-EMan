@@ -43,6 +43,8 @@ type PO = {
   subtotal?: number;
   vat?: number;
   total?: number;
+  fromPrId?: string;
+  fromPrDesc?: string;
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -467,6 +469,12 @@ export default function PurchaseOrdersPage() {
                     {(po.items?.length || 0)} item{(po.items?.length || 0) === 1 ? "" : "s"}
                   </span>
                 </div>
+
+                {po.fromPrId ? (
+                  <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-chart-1/10 px-2 py-0.5 text-[11px] font-medium text-chart-1">
+                    From request: {po.fromPrDesc || po.fromPrId}
+                  </div>
+                ) : null}
 
                 <div className="mt-4 flex items-end justify-between gap-2">
                   <span className="text-base font-bold tabular-nums">{fmt(po.total || 0)}</span>
