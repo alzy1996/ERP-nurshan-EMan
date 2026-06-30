@@ -61,6 +61,7 @@ approve).
 |---|---|
 | `admin` | Super Admin |
 | `management` | Management |
+| `country_manager` | Country Manager |
 | `procurement_manager` | Procurement Manager |
 | `buyer` | Buyer / Procurement Officer |
 | `finance` | Finance / Accounts |
@@ -69,6 +70,7 @@ approve).
 | `warehouse` | Warehouse / Store |
 | `inspector` | Inspector (QA / PSI) |
 | `contractor` | Contractor (external) |
+| `documentation_controller` | Documentation Controller |
 
 ### Capabilities & scope
 
@@ -83,6 +85,7 @@ approve).
 |---|---|
 | **Super Admin** | Full access to every module (god mode) |
 | **Management** | View everything; **approve** Purchase Requests & Purchase Orders |
+| **Country Manager** | Country‑wide oversight — view every module; **approve** Purchase Requests, Purchase Orders & Contracts; view Analytics |
 | **Procurement Manager** | Full on Suppliers, Materials, Services, Offers, PRs, POs, Contracts; view Projects/Inspections/Attendance/Analytics |
 | **Buyer / Procurement Officer** | Edit Suppliers, Services, Offers, PRs, POs; view Materials/Contracts/Projects; own Attendance & Timesheets |
 | **Finance / Accounts** | View + **approve** PRs, POs, Contracts; view Suppliers/Materials/Services/Projects/Analytics |
@@ -91,6 +94,7 @@ approve).
 | **Warehouse / Store** | Full **Materials**; view Suppliers/Services/Projects/Inspections; own Attendance/Timesheets |
 | **Inspector (QA/PSI)** | Full **Inspections**; view procurement data; own Attendance/Timesheets |
 | **Contractor (external)** | **Own** Contracts & Projects; own Attendance/Timesheets |
+| **Documentation Controller** | Raise material **Purchase Requests** (own) — **approved by Procurement**; view Suppliers/Materials/Services/Projects; own Attendance/Timesheets |
 
 ### Managing users — `/dashboard/users` (admin)
 
