@@ -33,7 +33,7 @@ type Pr = {
 
 type Material = { id: string; name?: string; price?: number };
 
-type Draft = { desc: string; amount: string; requester: string; materialId: string };
+type Draft = { desc: string; amount: string; requester: string; materialId: string; site: string };
 
 const STAGES = ["Submitted", "Approved", "Ordered", "Received", "Rejected"] as const;
 
@@ -45,7 +45,7 @@ const DOT: Record<string, string> = {
   Rejected: "bg-destructive",
 };
 
-const emptyDraft: Draft = { desc: "", amount: "", requester: "", materialId: "" };
+const emptyDraft: Draft = { desc: "", amount: "", requester: "", materialId: "", site: "" };
 
 const fmtOMR = (n?: number) => `${(Number(n) || 0).toFixed(3)} OMR`;
 
@@ -85,6 +85,16 @@ export default function PurchaseRequestsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.ready]);
 
+  // When the form opens, default the site to the active site (or the only one
+  // available) so a request always has a project to attach to.
+  useEffect(() => {
+    if (open && !form.site) {
+      const def = app.resolveSite() || (app.sites[0]?.id ?? "");
+      if (def) setForm((f) => ({ ...f, site: def }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return rows;
@@ -113,6 +123,14 @@ export default function PurchaseRequestsPage() {
 
   async function save() {
     if (!form.desc.trim()) return toast.error("Enter a description");
+    const siteId = form.site || app.resolveSite();
+    if (!siteId) {
+      return toast.error(
+        app.sites.length === 0
+          ? "Create a site/project first (Projects), then raise the request"
+          : "Pick a site / project for this request"
+      );
+    }
     setSaving(true);
     try {
       await addScoped(
@@ -125,14 +143,14 @@ export default function PurchaseRequestsPage() {
           stage: "Submitted",
         },
         app.asSession(),
-        app.resolveSite()
+        siteId
       );
       toast.success("Request submitted");
       setOpen(false);
       setForm(emptyDraft);
       await load();
     } catch {
-      toast.error("Could not save request");
+      toast.error("Could not save request — check you have access to this site");
     } finally {
       setSaving(false);
     }
@@ -189,6 +207,8 @@ export default function PurchaseRequestsPage() {
               set={set}
               materials={materials}
               onPickMaterial={pickMaterial}
+              sites={app.sites}
+              onSite={(id) => setForm((f) => ({ ...f, site: id }))}
               saving={saving}
               onSave={save}
             />
@@ -293,6 +313,8 @@ function PrSheet({
   set,
   materials,
   onPickMaterial,
+  sites,
+  onSite,
   saving,
   onSave,
 }: {
@@ -302,6 +324,8 @@ function PrSheet({
   set: (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   materials: Material[];
   onPickMaterial: (id: string) => void;
+  sites: { id: string; name?: string }[];
+  onSite: (id: string) => void;
   saving: boolean;
   onSave: () => void;
 }) {
@@ -319,6 +343,27 @@ function PrSheet({
         </SheetHeader>
 
         <div className="space-y-3 px-4 pb-4">
+          <Field label="Site / project *" htmlFor="pr-site">
+            {sites.length === 0 ? (
+              <p className="glass-subtle rounded-xl px-3 py-2 text-xs text-muted-foreground">
+                No sites/projects yet — create one in <span className="font-medium">Projects</span> first.
+              </p>
+            ) : (
+              <select
+                id="pr-site"
+                value={form.site}
+                onChange={(e) => onSite(e.target.value)}
+                className="glass-subtle h-10 w-full rounded-xl border-0 bg-transparent px-3 text-sm outline-none"
+              >
+                <option value="">— Choose a site / project —</option>
+                {sites.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name || s.id}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
           {materials.length > 0 ? (
             <Field label="Material (pick from list)" htmlFor="material">
               <select
