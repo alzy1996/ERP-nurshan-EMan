@@ -25,7 +25,7 @@ import {
 
 import { db, auth, firebaseConfig, userEmail, sha256 } from "@/lib/firebase";
 import { t as translate, dirFor, type Lang } from "@/lib/i18n";
-import { DEFAULT_ROLE, isValidRole, legacyRoleFor, ROLE_LABELS, type Role } from "@/lib/roles";
+import { DEFAULT_ROLE, isValidRole, legacyRoleFor, ROLE_LABELS, type ModuleKey, type Role } from "@/lib/roles";
 import type { Session } from "@/lib/data";
 
 const ALL = "__ALL__";
@@ -41,6 +41,9 @@ export type AuthSession = {
   role: Role;
   isAdmin: boolean;
   sites: string[];
+  /** Per-user access overrides on top of the role (admin-managed). */
+  extraModules: ModuleKey[];   // granted even if the role doesn't allow them
+  blockedModules: ModuleKey[]; // denied even if the role allows them
   activeSite: string;
 };
 
@@ -51,6 +54,8 @@ export type UserDraft = {
   role?: Role;
   isAdmin?: boolean;
   sites?: string[];
+  extraModules?: ModuleKey[];
+  blockedModules?: ModuleKey[];
   status?: string;
 };
 
@@ -61,6 +66,8 @@ type Profile = Record<string, unknown> & {
   role?: Role;
   isAdmin?: boolean;
   sites?: string[];
+  extraModules?: ModuleKey[];
+  blockedModules?: ModuleKey[];
   status?: string;
 };
 
@@ -137,6 +144,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         role,
         isAdmin: !!u.isAdmin,
         sites: sitesArr,
+        // Admins are never restricted by overrides.
+        extraModules: u.isAdmin ? [] : ((u.extraModules as ModuleKey[]) || []),
+        blockedModules: u.isAdmin ? [] : ((u.blockedModules as ModuleKey[]) || []),
         activeSite: active,
       };
     },
@@ -325,6 +335,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           role,
           isAdmin,
           sites: isAdmin ? [] : data.sites || [],
+          extraModules: isAdmin ? [] : data.extraModules || [],
+          blockedModules: isAdmin ? [] : data.blockedModules || [],
           status: data.status || "Active",
           createdAt: Date.now(),
           createdBy: session.uid,
@@ -357,10 +369,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         patch.role = role;
         patch.isAdmin = role === "admin";
         patch.jobType = ROLE_LABELS[role];
-        if (role === "admin") patch.sites = [];
+        if (role === "admin") {
+          patch.sites = [];
+          patch.extraModules = [];
+          patch.blockedModules = [];
+        }
       }
       if (data.name !== undefined) patch.name = data.name;
       if (data.sites !== undefined && patch.sites === undefined) patch.sites = data.sites;
+      if (data.extraModules !== undefined && patch.extraModules === undefined) patch.extraModules = data.extraModules;
+      if (data.blockedModules !== undefined && patch.blockedModules === undefined) patch.blockedModules = data.blockedModules;
       if (data.status !== undefined) patch.status = data.status;
       await updateDoc(doc(db, "nexus_users", uid), patch);
     },
