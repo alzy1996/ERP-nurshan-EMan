@@ -30,6 +30,7 @@ type Pr = {
   materialId?: string;
   siteId?: string;
   poId?: string;
+  createdBy?: string;
   stage?: string;
 };
 
@@ -110,6 +111,9 @@ export default function PurchaseRequestsPage() {
   const set =
     (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // A request's own raiser may not approve it (segregation of duties).
+  const isOwnRequest = (p: Pr) => !!p.createdBy && p.createdBy === app.session?.uid;
 
   // Picking a material fills the description (and amount, if blank) from the
   // catalogue, while keeping the link to the material id.
@@ -313,20 +317,28 @@ export default function PurchaseRequestsPage() {
                         </div>
                         {perms.can("purchase_requests", "approve") &&
                         (p.stage || "Submitted") === "Submitted" ? (
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              onClick={() => setStage(p, "Approved")}
-                              className="rounded-lg bg-chart-3/15 px-2.5 py-1 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => setStage(p, "Rejected")}
-                              className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive transition hover:bg-destructive/20"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          isOwnRequest(p) ? (
+                            // Segregation of duties: the person who raised a
+                            // request must not approve it — another approver does.
+                            <div className="mt-2 text-[11px] font-medium text-muted-foreground">
+                              You raised this — another approver must sign off
+                            </div>
+                          ) : (
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => setStage(p, "Approved")}
+                                className="rounded-lg bg-chart-3/15 px-2.5 py-1 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => setStage(p, "Rejected")}
+                                className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive transition hover:bg-destructive/20"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )
                         ) : null}
                         {perms.can("purchase_orders", "create") &&
                         (p.stage || "") === "Approved" &&
