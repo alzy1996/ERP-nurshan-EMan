@@ -1,0 +1,40 @@
+name: Security scan
+
+# Dependency vulnerability scanning. Checks the libraries each app ships against
+# the public advisory database. Complements Dependabot (which opens update PRs):
+# this surfaces a problem the moment it's known, on every PR and weekly.
+#
+# Design note: this is NOT one of the required pre-deploy gate checks (those live
+# in ci.yml). A brand-new CVE disclosed upstream should be *visible* immediately,
+# but shouldn't hard-block every unrelated merge until a patch exists — Dependabot
+# handles the fix. Make this Required later if you want strict enforcement.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, Monday 04:27 UTC — catch CVEs disclosed since the last change.
+    - cron: "27 4 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  npm-audit:
+    name: npm audit — ${{ matrix.app }} app
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [next, react]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Audit shipped (production) dependencies — fail on high/critical
+        working-directory: ${{ matrix.app }}
+        run: npm audit --omit=dev --audit-level=high
+      - name: Full audit including build tooling — informational, never blocks
+        if: always()
+        working-directory: ${{ matrix.app }}
+        run: npm audit || true
