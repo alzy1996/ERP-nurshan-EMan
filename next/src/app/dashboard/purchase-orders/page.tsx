@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Printer, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { fetchScoped, addScoped, removeScoped } from "@/lib/data";
+import { fetchScoped, addScoped, updateScoped, removeScoped } from "@/lib/data";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,9 @@ type PO = {
   total?: number;
   fromPrId?: string;
   fromPrDesc?: string;
+  receivedBy?: string;
+  receivedAt?: number;
+  receivedByName?: string;
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -77,6 +80,12 @@ function printPO(po: PO) {
 export default function PurchaseOrdersPage() {
   const app = useApp();
   const perms = usePermissions();
+  const isAdmin = !!app.session?.isAdmin;
+  const role = app.session?.role ?? "";
+  // Procurement issues the PO; Warehouse/Inspector receive the goods (so the
+  // person who orders is not the person who receives — separation of duties).
+  const canIssue = perms.can("purchase_orders", "update") || isAdmin;
+  const canReceive = isAdmin || role === "warehouse" || role === "inspector";
   const [rows, setRows] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -210,6 +219,31 @@ export default function PurchaseOrdersPage() {
       toast.success("Purchase order deleted");
     } catch {
       toast.error("Could not delete");
+    }
+  }
+
+  // PO lifecycle: draft -> issued (sent to supplier) -> received (goods in).
+  // Receiving also closes the linked request (PR -> Received).
+  async function setStatus(po: PO, status: string) {
+    const session = app.asSession();
+    const extra: Record<string, unknown> =
+      status === "received"
+        ? {
+            status,
+            receivedBy: app.session?.uid || "",
+            receivedByName: app.session?.name || "",
+            receivedAt: Date.now(),
+          }
+        : { status };
+    try {
+      await updateScoped("purchase_orders", po.id, extra, session);
+      if (status === "received" && po.fromPrId) {
+        await updateScoped("prs", po.fromPrId, { stage: "Received" }, session).catch(() => {});
+      }
+      setRows((r) => r.map((x) => (x.id === po.id ? { ...x, ...extra } : x)));
+      toast.success(status === "issued" ? "PO issued to supplier" : "Goods received");
+    } catch {
+      toast.error("Could not update the purchase order");
     }
   }
 
@@ -473,6 +507,33 @@ export default function PurchaseOrdersPage() {
                 {po.fromPrId ? (
                   <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-chart-1/10 px-2 py-0.5 text-[11px] font-medium text-chart-1">
                     From request: {po.fromPrDesc || po.fromPrId}
+                  </div>
+                ) : null}
+
+                {(po.status || "draft") === "draft" && canIssue ? (
+                  <button
+                    onClick={() => setStatus(po, "issued")}
+                    className="mt-3 w-full rounded-lg bg-chart-1/15 px-3 py-1.5 text-xs font-semibold text-chart-1 transition hover:bg-chart-1/25"
+                  >
+                    Issue to supplier
+                  </button>
+                ) : null}
+                {(po.status || "draft") === "issued" && canReceive ? (
+                  <button
+                    onClick={() => setStatus(po, "received")}
+                    className="mt-3 w-full rounded-lg bg-chart-3/15 px-3 py-1.5 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
+                  >
+                    Receive goods
+                  </button>
+                ) : null}
+                {(po.status || "draft") === "issued" && !canReceive ? (
+                  <div className="mt-3 text-[11px] text-muted-foreground">
+                    Awaiting goods receipt (Warehouse / Inspector)
+                  </div>
+                ) : null}
+                {(po.status || "draft") === "received" && po.receivedByName ? (
+                  <div className="mt-3 text-[11px] text-muted-foreground">
+                    Received by {po.receivedByName}
                   </div>
                 ) : null}
 
