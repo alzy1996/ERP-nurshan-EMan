@@ -1,0 +1,44 @@
+name: Firestore daily backup
+
+# Automatic, scheduled backup of the entire Firestore database to a Cloud
+# Storage bucket. Combined with Point-in-Time Recovery (a console toggle), this
+# protects against accidental deletes, bad writes, or malicious data loss.
+#
+# ONE-TIME SETUP (then it runs itself every night):
+#   1. Create a backups bucket (region near your data), e.g.:
+#        gsutil mb -l eu -b on gs://procurement-erp-6e271-backups
+#   2. Give the deploy service account permission to export + write there:
+#        - roles/datastore.importExportAdmin  (project level)
+#        - roles/storage.objectAdmin          (on the bucket)
+#   3. (Recommended) add a lifecycle rule so backups auto-delete after, say,
+#      30 days, to control cost.
+#
+# Uses the same FIREBASE_SERVICE_ACCOUNT secret already configured for deploys.
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 1 * * *" # 01:17 UTC every day
+
+env:
+  PROJECT_ID: procurement-erp-6e271
+  BACKUP_BUCKET: gs://procurement-erp-6e271-backups
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Export Firestore
+        run: |
+          STAMP="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+          echo "Exporting Firestore -> $BACKUP_BUCKET/$STAMP"
+          gcloud firestore export "$BACKUP_BUCKET/$STAMP" \
+            --project "$PROJECT_ID"
