@@ -8,6 +8,7 @@ import {
   Phone,
   Plus,
   Search,
+  ShieldCheck,
   Star,
   Trash2,
 } from "lucide-react";
@@ -59,6 +60,9 @@ type Supplier = {
   bankName?: string;
   bankAccount?: string;
   rating?: number;
+  qualityScore?: number;
+  onTime?: number;
+  tier?: string;
   status?: string;
   tags?: string;
   notes?: string;
@@ -112,7 +116,15 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   blacklisted: { label: "Blacklisted", cls: "bg-destructive/15 text-destructive" },
 };
 
-const emptyDraft: Draft = { status: "active", rating: "4", preferred: false };
+// Vendor verification tier — the "Verified Gold" style badge from the profile.
+const TIER: Record<string, { label: string; cls: string }> = {
+  gold: { label: "Verified Gold", cls: "bg-chart-4/15 text-chart-4" },
+  silver: { label: "Verified Silver", cls: "bg-foreground/10 text-foreground" },
+  bronze: { label: "Verified Bronze", cls: "bg-chart-1/15 text-chart-1" },
+  unverified: { label: "Unverified", cls: "bg-muted text-muted-foreground" },
+};
+
+const emptyDraft: Draft = { status: "active", rating: "4", tier: "unverified", preferred: false };
 
 export default function SuppliersPage() {
   const app = useApp();
@@ -161,7 +173,13 @@ export default function SuppliersPage() {
     try {
       await addScoped(
         "suppliers",
-        { ...form, rating: Number(form.rating) || null, score: "B", orders: 0, onTime: 0 },
+        {
+          ...form,
+          rating: Number(form.rating) || null,
+          qualityScore: Number(form.qualityScore) || null,
+          onTime: Number(form.onTime) || null,
+          tier: String(form.tier || "unverified"),
+        },
         app.asSession(),
         app.resolveSite()
       );
@@ -242,6 +260,9 @@ export default function SuppliersPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((s) => {
             const status = STATUS[s.status || "active"] ?? STATUS.active;
+            const tier = TIER[s.tier || "unverified"] ?? TIER.unverified;
+            const quality = Number(s.qualityScore) || 0;
+            const onTime = Number(s.onTime) || 0;
             return (
               <div key={s.id} className="glass glass-specular group relative rounded-3xl p-5">
                 {perms.can("suppliers", "delete") ? (
@@ -274,6 +295,11 @@ export default function SuppliersPage() {
                       <Star className="size-3 fill-chart-4 text-chart-4" /> Preferred
                     </Badge>
                   ) : null}
+                  {s.tier && s.tier !== "unverified" ? (
+                    <Badge variant="secondary" className={`gap-1 ${tier.cls}`}>
+                      <ShieldCheck className="size-3" /> {tier.label}
+                    </Badge>
+                  ) : null}
                   <span className="ml-auto flex items-center gap-0.5 text-xs text-muted-foreground">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
@@ -287,6 +313,19 @@ export default function SuppliersPage() {
                     ))}
                   </span>
                 </div>
+
+                {quality > 0 || onTime > 0 ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="glass-subtle rounded-xl px-2.5 py-1.5">
+                      <div className="text-[10px] text-muted-foreground">Quality</div>
+                      <div className="text-sm font-semibold">{quality}%</div>
+                    </div>
+                    <div className="glass-subtle rounded-xl px-2.5 py-1.5">
+                      <div className="text-[10px] text-muted-foreground">On-time</div>
+                      <div className="text-sm font-semibold">{onTime}%</div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
@@ -399,6 +438,40 @@ function SupplierSheet({
                     ))}
                   </SelectContent>
                 </Select>
+              </Field>
+              <Field label="Verified tier">
+                <Select
+                  value={String(form.tier || "unverified")}
+                  onValueChange={(v) => setForm((s) => ({ ...s, tier: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unverified">Unverified</SelectItem>
+                    <SelectItem value="bronze">Verified Bronze</SelectItem>
+                    <SelectItem value="silver">Verified Silver</SelectItem>
+                    <SelectItem value="gold">Verified Gold</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Quality score (%)">
+                <Input
+                  type="number"
+                  value={String(form.qualityScore ?? "")}
+                  onChange={set("qualityScore")}
+                  placeholder="0–100"
+                  className="glass-subtle rounded-xl border-0"
+                />
+              </Field>
+              <Field label="On-time delivery (%)">
+                <Input
+                  type="number"
+                  value={String(form.onTime ?? "")}
+                  onChange={set("onTime")}
+                  placeholder="0–100"
+                  className="glass-subtle rounded-xl border-0"
+                />
               </Field>
               <Field label="Tags" className="col-span-2" hint="Comma-separated">
                 <Input
