@@ -1,7 +1,8 @@
-import { Maximize2, Sparkles } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 
 import { Sidebar } from "@/components/shell/sidebar";
 import { AuthGuard } from "@/components/shell/auth-guard";
+import { AssistantLauncher } from "@/components/assistant/assistant-launcher";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,13 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <Maximize2 className="size-5" />
         </button>
-        <button
-          aria-label="AI assistant"
-          className="glass-specular grid size-12 place-items-center rounded-2xl text-white shadow-lg transition-transform hover:-translate-y-0.5"
-          style={{ background: "linear-gradient(135deg, oklch(0.62 0.19 260), oklch(0.6 0.16 300))" }}
-        >
-          <Sparkles className="size-5" />
-        </button>
+        <AssistantLauncher />
       </div>
       </div>
     </AuthGuard>
