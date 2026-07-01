@@ -29,6 +29,7 @@ export type ModuleKey =
   | "purchase_requests"
   | "purchase_orders"
   | "approvals"
+  | "deliveries"
   | "contracts"
   | "projects"
   | "site_logs"
@@ -56,7 +57,7 @@ export interface Perm {
 
 export const ALL_MODULES: ModuleKey[] = [
   "dashboard", "suppliers", "materials", "inventory", "services", "offers", "purchase_requests",
-  "purchase_orders", "approvals", "contracts", "projects", "site_logs", "inspections", "attendance",
+  "purchase_orders", "approvals", "deliveries", "contracts", "projects", "site_logs", "inspections", "attendance",
   "timesheets", "workforce", "equipment", "analytics", "notifications", "settings", "users",
 ];
 
@@ -85,6 +86,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   purchase_requests: "Purchase Requests",
   purchase_orders: "Purchase Orders",
   approvals: "Approvals",
+  deliveries: "Deliveries",
   contracts: "Contracts",
   projects: "Projects",
   site_logs: "Site Log",
@@ -123,7 +125,7 @@ function p(code: string): Perm {
 const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
     suppliers: "full", materials: "full", inventory: "full", services: "full", offers: "full", purchase_requests: "full+appr",
-    purchase_orders: "full+appr", approvals: "view", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
+    purchase_orders: "full+appr", approvals: "view", deliveries: "full", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
     attendance: "full", timesheets: "full", workforce: "full", equipment: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
@@ -142,12 +144,12 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   },
   procurement_manager: {
     suppliers: "full", materials: "full", inventory: "view", services: "full", offers: "full",
-    purchase_requests: "full+appr", purchase_orders: "full+appr", approvals: "view", contracts: "full",
+    purchase_requests: "full+appr", purchase_orders: "full+appr", approvals: "view", deliveries: "edit", contracts: "full",
     projects: "view", inspections: "view", attendance: "view", analytics: "view",
   },
   buyer: {
     suppliers: "edit", materials: "view", inventory: "view", services: "edit", offers: "edit",
-    purchase_requests: "edit", purchase_orders: "edit", contracts: "view",
+    purchase_requests: "edit", purchase_orders: "edit", deliveries: "edit", contracts: "view",
     projects: "view", attendance: "edit:own", timesheets: "edit:own",
   },
   finance: {
@@ -160,17 +162,17 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   },
   site_engineer: {
     suppliers: "view", materials: "view", inventory: "view", services: "view",
-    purchase_requests: "edit:project", purchase_orders: "view", contracts: "view",
+    purchase_requests: "edit:project", purchase_orders: "view", deliveries: "view", contracts: "view",
     projects: "edit:project", site_logs: "edit:project", inspections: "view", attendance: "edit:own", timesheets: "edit:own", workforce: "edit:project", equipment: "edit:project", analytics: "view:own",
   },
   warehouse: {
     suppliers: "view", materials: "full", inventory: "full", equipment: "full", services: "view",
-    purchase_requests: "view", purchase_orders: "view",
+    purchase_requests: "view", purchase_orders: "view", deliveries: "full",
     projects: "view", site_logs: "view", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
   inspector: {
     suppliers: "view", materials: "view",
-    purchase_requests: "view", purchase_orders: "view",
+    purchase_requests: "view", purchase_orders: "view", deliveries: "view",
     projects: "view", site_logs: "view", inspections: "full", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
   contractor: {
@@ -240,6 +242,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   purchase_requests: "/dashboard/purchase-requests",
   purchase_orders: "/dashboard/purchase-orders",
   approvals: "/dashboard/approvals",
+  deliveries: "/dashboard/deliveries",
   contracts: "/dashboard/contracts",
   projects: "/dashboard/projects",
   site_logs: "/dashboard/site-logs",
