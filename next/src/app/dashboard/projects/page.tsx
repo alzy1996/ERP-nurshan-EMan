@@ -38,12 +38,19 @@ type Project = {
   location?: string;
   manager?: string;
   budget?: string | number;
+  spent?: string | number;
+  progress?: string | number;
   currency?: string;
   startDate?: string;
   endDate?: string;
 };
 
 type Draft = Record<string, string>;
+
+// Budget figures may be typed with thousands separators ("2,500,000"), so pull
+// the number out before doing any maths on them.
+const num = (v: unknown) => Number(String(v ?? "").replace(/[^0-9.]/g, "")) || 0;
+const clampPct = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
 const FIELDS: { key: string; label: string; placeholder?: string; required?: boolean; full?: boolean; type?: string }[] = [
   { key: "name", label: "Project name", placeholder: "Hadbin Road & Infrastructure", required: true, full: true },
@@ -52,8 +59,10 @@ const FIELDS: { key: string; label: string; placeholder?: string; required?: boo
   { key: "location", label: "Location", placeholder: "Muscat, Oman", full: true },
   { key: "manager", label: "Project manager", placeholder: "Salim Al-Hinai" },
   { key: "budget", label: "Budget (OMR)", placeholder: "2,500,000" },
+  { key: "spent", label: "Spent to date (OMR)", placeholder: "0" },
   { key: "startDate", label: "Start date", type: "date" },
   { key: "endDate", label: "End date", type: "date" },
+  { key: "progress", label: "Progress %", placeholder: "0", type: "number" },
 ];
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -239,6 +248,13 @@ export default function ProjectsPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {filtered.map((p) => {
             const status = STATUS[p.status || "active"] ?? STATUS.active;
+            const budgetN = num(p.budget);
+            const spentN = num(p.spent);
+            const remaining = Math.max(budgetN - spentN, 0);
+            const consumedPct = budgetN > 0 ? clampPct((spentN / budgetN) * 100) : 0;
+            const cur = p.currency || "OMR";
+            const hasProgress = p.progress != null && String(p.progress).trim() !== "";
+            const progressPct = clampPct(num(p.progress));
             return (
               <div key={p.id} className="glass glass-specular rounded-3xl p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -266,6 +282,44 @@ export default function ProjectsPage() {
                     {p.budget ? `${p.budget} ${p.currency || "OMR"}` : "—"}
                   </span>
                 </div>
+                {budgetN > 0 ? (
+                  <div className="mt-4 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Budget consumed</span>
+                      <span className="font-medium">{consumedPct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full ${
+                          consumedPct >= 90
+                            ? "bg-destructive"
+                            : consumedPct >= 70
+                              ? "bg-chart-4"
+                              : "bg-chart-3"
+                        }`}
+                        style={{ width: `${consumedPct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Spent {spentN.toLocaleString()} {cur}</span>
+                      <span>Left {remaining.toLocaleString()} {cur}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {hasProgress ? (
+                  <div className="mt-3 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Site progress</span>
+                      <span className="font-medium">{progressPct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-chart-1"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
             );
           })}
