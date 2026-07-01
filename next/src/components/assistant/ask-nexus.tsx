@@ -10,7 +10,7 @@
 // ============================================================================
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, RefreshCw, Send, Settings2, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Mic, RefreshCw, Send, Settings2, Sparkles, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/app-context";
@@ -24,6 +24,20 @@ const CARROT = "#ac3509";
 const CARROT_LIGHT = "#ff7043";
 const NEON = "#00e3fd";
 const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif';
+
+// Speak-to-it (browser speech recognition). Language follows the app language.
+const SPEECH_LANG: Record<string, string> = { en: "en-US", ar: "ar-SA", tr: "tr-TR", fa: "fa-IR" };
+interface SpeechRec {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  stop(): void;
+  onresult: ((e: { results: { length: number; [i: number]: { 0: { transcript: string } } } }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+}
+type SpeechRecCtor = new () => SpeechRec;
 
 type Msg = {
   id: string;
@@ -62,6 +76,51 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
   const [source, setSource] = useState("Free mode");
   const scrollRef = useRef<HTMLDivElement>(null);
   const counter = useRef(0);
+  const [listening, setListening] = useState(false);
+  const [micOK, setMicOK] = useState(false);
+  const recogRef = useRef<SpeechRec | null>(null);
+
+  // Detect speech-recognition support; stop it if the panel closes.
+  useEffect(() => {
+    const W = window as unknown as { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor };
+    setMicOK(!!(W.SpeechRecognition || W.webkitSpeechRecognition));
+    return () => {
+      try {
+        recogRef.current?.stop();
+      } catch {}
+    };
+  }, []);
+
+  function toggleMic() {
+    if (listening) {
+      try {
+        recogRef.current?.stop();
+      } catch {}
+      setListening(false);
+      return;
+    }
+    const W = window as unknown as { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor };
+    const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
+    if (!Ctor) return;
+    const r = new Ctor();
+    r.lang = SPEECH_LANG[app.lang] || "en-US";
+    r.continuous = false;
+    r.interimResults = true;
+    r.onresult = (e) => {
+      let t = "";
+      for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      setInput(t);
+    };
+    r.onend = () => setListening(false);
+    r.onerror = () => setListening(false);
+    recogRef.current = r;
+    try {
+      r.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+    }
+  }
 
   // Load the Plus Jakarta Sans font once (Neon Kinetic type).
   useEffect(() => {
@@ -231,6 +290,21 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
         <div
           className="glass-subtle flex items-end gap-2 rounded-2xl p-1.5 transition-shadow focus-within:shadow-[0_0_0_2px_rgba(0,229,255,0.45)]"
         >
+          {micOK ? (
+            <button
+              onClick={toggleMic}
+              aria-label={listening ? "Stop listening" : "Speak"}
+              title={listening ? "Stop" : "Speak in any language"}
+              className="grid size-9 shrink-0 place-items-center rounded-xl transition-colors"
+              style={
+                listening
+                  ? { background: "#ef4444", color: "#fff", animation: "orb-breathe 1s ease-in-out infinite" }
+                  : { color: NEON }
+              }
+            >
+              <Mic className="size-4" />
+            </button>
+          ) : null}
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
