@@ -391,12 +391,17 @@ export async function runTool(name: string, args: Record<string, unknown>, ctx: 
   }
 }
 
-/** OpenAI-style tool schema for the AI brain. */
+/** OpenAI-style tool schema (Kimi / DeepSeek / proxy). */
 export function toolSchemas() {
   return TOOLS.map((t) => ({
     type: "function" as const,
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }));
+}
+
+/** Anthropic (Claude) tool schema — different shape from OpenAI. */
+export function anthropicToolSchemas() {
+  return TOOLS.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters }));
 }
 
 /** A cached loader bound to a session (one instance per ask). */

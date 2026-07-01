@@ -55,14 +55,16 @@ export default {
     }
 
     const upstream = env.UPSTREAM || DEFAULT_UPSTREAM;
+    // Anthropic (Claude) uses a different auth header than OpenAI-style APIs.
+    const isAnthropic = /anthropic\.com/i.test(upstream);
+    const authHeaders = isAnthropic
+      ? { "x-api-key": env.API_KEY, "anthropic-version": "2023-06-01" }
+      : { Authorization: `Bearer ${env.API_KEY}` };
     let resp;
     try {
       resp = await fetch(upstream, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${env.API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body,
       });
     } catch {

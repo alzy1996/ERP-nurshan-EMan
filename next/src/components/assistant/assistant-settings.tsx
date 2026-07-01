@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AssistantMascot } from "@/components/assistant/assistant-mascot";
 
-const PROVIDER_ORDER: AssistantProvider[] = ["kimi", "deepseek", "gatekeeper", "custom"];
+const PROVIDER_ORDER: AssistantProvider[] = ["grok", "kimi", "claude", "deepseek", "gatekeeper", "custom"];
 
 export function AssistantSettings() {
   const [cfg, setCfg] = useState<AssistantConfig>(() => getConfig());
@@ -217,6 +217,12 @@ export function AssistantSettings() {
           the browser may block the direct call (a rule called CORS). If that happens, deploy the free gatekeeper
           proxy (see <span className="text-foreground">/gatekeeper</span> in the project) and choose the “Gatekeeper”
           provider with its URL — that works on web, desktop and phone, and can hold one key for the whole company.
+        </p>
+        <p className="mt-2">
+          <span className="text-foreground">Claude (Anthropic)</span> is the strongest option and often works on the
+          website too, but it&apos;s <span className="text-foreground">paid per use</span> — and a Claude.ai Pro/Max
+          subscription is <span className="text-foreground">not</span> the same as an API key. Get an API key (with
+          its own billing) from the Anthropic console, or stay on free Kimi.
         </p>
       </div>
     </div>

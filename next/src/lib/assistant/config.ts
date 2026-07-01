@@ -13,7 +13,7 @@
 // ============================================================================
 
 export type AssistantMode = "free" | "ai";
-export type AssistantProvider = "kimi" | "deepseek" | "gatekeeper" | "custom";
+export type AssistantProvider = "grok" | "kimi" | "claude" | "deepseek" | "gatekeeper" | "custom";
 
 export type AssistantConfig = {
   mode: AssistantMode;
@@ -27,12 +27,26 @@ export const PROVIDERS: Record<
   AssistantProvider,
   { label: string; endpoint: string; model: string; needsKey: boolean; note: string }
 > = {
+  grok: {
+    label: "Grok (xAI)",
+    endpoint: "https://api.x.ai/v1/chat/completions",
+    model: "grok-4",
+    needsKey: true,
+    note: "OpenAI-compatible. Paid per use. Works in the desktop & phone apps; on the website use the gatekeeper (CORS). Change the model if grok-4 isn't on your plan (e.g. grok-3).",
+  },
   kimi: {
     label: "Kimi (Moonshot)",
     endpoint: "https://api.moonshot.ai/v1/chat/completions",
     model: "moonshot-v1-8k",
     needsKey: true,
-    note: "Works in the desktop & phone apps. On the website the browser may block it (CORS) — use the gatekeeper there.",
+    note: "Free tier. Works in the desktop & phone apps. On the website the browser may block it (CORS) — use the gatekeeper there.",
+  },
+  claude: {
+    label: "Claude (Anthropic)",
+    endpoint: "https://api.anthropic.com/v1/messages",
+    model: "claude-opus-4-8",
+    needsKey: true,
+    note: "The strongest model, but paid (cheapest is claude-haiku-4-5). Works in the apps and often on the website too (Claude allows browser calls).",
   },
   deepseek: {
     label: "DeepSeek",
@@ -61,9 +75,9 @@ const KEY = "nexus_assistant_cfg";
 
 const DEFAULT: AssistantConfig = {
   mode: "free",
-  provider: "kimi",
-  endpoint: PROVIDERS.kimi.endpoint,
-  model: PROVIDERS.kimi.model,
+  provider: "grok",
+  endpoint: PROVIDERS.grok.endpoint,
+  model: PROVIDERS.grok.model,
   apiKey: "",
 };
 
@@ -98,4 +112,9 @@ export function isAIReady(cfg: AssistantConfig): boolean {
 /** Friendly source label for the panel badge. */
 export function sourceLabel(cfg: AssistantConfig): string {
   return isAIReady(cfg) ? PROVIDERS[cfg.provider]?.label || "AI" : "Free mode";
+}
+
+/** Claude uses the Anthropic Messages API shape, not the OpenAI one. */
+export function isAnthropic(cfg: AssistantConfig): boolean {
+  return cfg.provider === "claude" || /anthropic\.com/i.test(cfg.endpoint);
 }

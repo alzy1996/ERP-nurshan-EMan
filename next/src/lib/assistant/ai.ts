@@ -7,7 +7,8 @@
 // AssistantError so the caller can fall back to the free brain.
 // ============================================================================
 import type { AssistantConfig } from "./config";
-import { runTool, toolSchemas, type ToolCtx } from "./tools";
+import { isAnthropic } from "./config";
+import { runTool, toolSchemas, anthropicToolSchemas, type ToolCtx } from "./tools";
 
 export class AssistantError extends Error {}
 
@@ -70,8 +71,148 @@ async function callModel(cfg: AssistantConfig, messages: ApiMsg[]): Promise<ApiM
   return msg;
 }
 
+// ---------------------------------------------------------------------------
+// Claude (Anthropic Messages API) — a different wire shape from OpenAI.
+// ---------------------------------------------------------------------------
+type AntBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  | { type: string; [k: string]: unknown };
+type AntMsg = { role: "user" | "assistant"; content: string | AntBlock[] };
+
+function antHeaders(cfg: AssistantConfig): Record<string, string> {
+  return {
+    "content-type": "application/json",
+    "anthropic-version": "2023-06-01",
+    ...(cfg.apiKey
+      ? { "x-api-key": cfg.apiKey, "anthropic-dangerous-direct-browser-access": "true" }
+      : {}),
+  };
+}
+
+async function callAnthropic(
+  cfg: AssistantConfig,
+  system: string,
+  messages: AntMsg[]
+): Promise<{ content: AntBlock[]; stop_reason: string }> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(cfg.endpoint, {
+      method: "POST",
+      headers: antHeaders(cfg),
+      body: JSON.stringify({
+        model: cfg.model,
+        max_tokens: 1024,
+        system,
+        messages,
+        tools: anthropicToolSchemas(),
+        tool_choice: { type: "auto" },
+      }),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    throw new AssistantError(
+      (e as Error)?.name === "AbortError"
+        ? "Claude took too long to answer."
+        : "Couldn't reach Claude (on the website this can be a CORS block — see Settings → Assistant)."
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    if (res.status === 401 || res.status === 403) throw new AssistantError("The Claude key was rejected — check it in Settings → Assistant.");
+    if (res.status === 429) throw new AssistantError("Claude is rate-limited or out of credit right now.");
+    throw new AssistantError(`Claude returned an error (${res.status}). ${body.slice(0, 140)}`);
+  }
+  const data = (await res.json().catch(() => null)) as { content?: AntBlock[]; stop_reason?: string } | null;
+  if (!data?.content) throw new AssistantError("Claude returned an unexpected response.");
+  return { content: data.content, stop_reason: data.stop_reason || "end_turn" };
+}
+
+function antText(content: AntBlock[]): string {
+  return content
+    .filter((b) => b.type === "text")
+    .map((b) => (b as { text?: string }).text || "")
+    .join("")
+    .trim();
+}
+
+async function anthropicAsk(
+  system: string,
+  history: ChatMsg[],
+  question: string,
+  cfg: AssistantConfig,
+  ctx: ToolCtx
+): Promise<{ text: string; usedTools: string[] }> {
+  const messages: AntMsg[] = [
+    ...history.slice(-8).map((h) => ({ role: h.role, content: h.content } as AntMsg)),
+    { role: "user", content: question },
+  ];
+  const used: string[] = [];
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const { content, stop_reason } = await callAnthropic(cfg, system, messages);
+    const toolUses = content.filter((b) => b.type === "tool_use") as {
+      type: "tool_use";
+      id: string;
+      name: string;
+      input: Record<string, unknown>;
+    }[];
+    if (stop_reason !== "tool_use" || !toolUses.length) {
+      return { text: antText(content) || "…", usedTools: used };
+    }
+    messages.push({ role: "assistant", content });
+    const results: AntBlock[] = [];
+    for (const tu of toolUses) {
+      used.push(tu.name);
+      const r = await runTool(tu.name, tu.input || {}, ctx);
+      results.push({
+        type: "tool_result",
+        tool_use_id: tu.id,
+        content: `${r.title ? r.title + "\n" : ""}${r.text}`,
+      } as AntBlock);
+    }
+    messages.push({ role: "user", content: results });
+  }
+  const final = await callAnthropic(cfg, system, [
+    ...messages,
+    { role: "user", content: "Please give me your best final answer now, in plain words." },
+  ]);
+  return { text: antText(final.content) || "…", usedTools: used };
+}
+
 /** One-shot connectivity check for Settings → Assistant. Throws AssistantError. */
 export async function testAI(cfg: AssistantConfig): Promise<string> {
+  if (isAnthropic(cfg)) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20_000);
+    try {
+      const res = await fetch(cfg.endpoint, {
+        method: "POST",
+        headers: antHeaders(cfg),
+        body: JSON.stringify({ model: cfg.model, max_tokens: 16, messages: [{ role: "user", content: "Reply with the single word: ready" }] }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) throw new AssistantError("Key rejected (401/403). Check the Claude API key.");
+        if (res.status === 429) throw new AssistantError("Rate-limited or out of credit (429).");
+        throw new AssistantError(`Endpoint returned ${res.status}.`);
+      }
+      const data = (await res.json().catch(() => null)) as { content?: { type: string; text?: string }[] } | null;
+      return data?.content?.find((b) => b.type === "text")?.text?.trim() || "Connected.";
+    } catch (e) {
+      if (e instanceof AssistantError) throw e;
+      throw new AssistantError(
+        (e as Error)?.name === "AbortError"
+          ? "Timed out reaching Claude."
+          : "Couldn't reach Claude. On the website this may be a CORS block — try the desktop/phone app or the gatekeeper."
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 20_000);
   try {
@@ -116,6 +257,8 @@ export async function aiAsk(
   cfg: AssistantConfig,
   ctx: ToolCtx
 ): Promise<{ text: string; usedTools: string[] }> {
+  if (isAnthropic(cfg)) return anthropicAsk(system, history, question, cfg, ctx);
+
   const messages: ApiMsg[] = [
     { role: "system", content: system },
     ...history.slice(-8).map((h) => ({ role: h.role, content: h.content } as ApiMsg)),

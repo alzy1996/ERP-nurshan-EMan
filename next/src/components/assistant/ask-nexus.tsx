@@ -2,10 +2,11 @@
 
 // components/assistant/ask-nexus.tsx
 // ============================================================================
-// The Ask Nexus chat panel. This is the SKIN — kept simple on purpose so the
-// custom UI + animated robot can drop in later. The engine (knowledge, tools,
-// Kimi/DeepSeek wiring, free fallback) lives in lib/assistant and does not
-// change when the look changes.
+// The Ask Nexus chat panel — "Neon Kinetic" design system.
+// Glassmorphism surfaces, carrot-orange user bubbles, neon-blue AI accents,
+// pill-shaped suggested prompts, a pulsing status dot, and the live robot
+// mascot in the header. The engine (knowledge, tools, Kimi/Claude/DeepSeek
+// wiring, free fallback) lives in lib/assistant and doesn't change with the skin.
 // ============================================================================
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -17,6 +18,12 @@ import { usePermissions } from "@/lib/usePermissions";
 import { askNexus, getConfig, sourceLabel, SUGGESTIONS, type ChatMsg } from "@/lib/assistant";
 import { AssistantMascot } from "@/components/assistant/assistant-mascot";
 import { Textarea } from "@/components/ui/textarea";
+
+// Neon Kinetic palette
+const CARROT = "#ac3509";
+const CARROT_LIGHT = "#ff7043";
+const NEON = "#00e3fd";
+const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif';
 
 type Msg = {
   id: string;
@@ -55,6 +62,18 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
   const [source, setSource] = useState("Free mode");
   const scrollRef = useRef<HTMLDivElement>(null);
   const counter = useRef(0);
+
+  // Load the Plus Jakarta Sans font once (Neon Kinetic type).
+  useEffect(() => {
+    const id = "nexus-font-jakarta";
+    if (typeof document !== "undefined" && !document.getElementById(id)) {
+      const l = document.createElement("link");
+      l.id = id;
+      l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap";
+      document.head.appendChild(l);
+    }
+  }, []);
 
   useEffect(() => setSource(sourceLabel(getConfig())), []);
   useEffect(() => {
@@ -113,14 +132,19 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Ask Nexus assistant"
-      className="glass-strong animate-panel-in fixed bottom-24 right-6 z-50 flex h-[min(70vh,560px)] w-[min(92vw,384px)] flex-col overflow-hidden rounded-[26px] shadow-2xl"
+      className="glass-strong animate-panel-in fixed bottom-24 right-6 z-50 flex h-[min(72vh,580px)] w-[min(93vw,392px)] flex-col overflow-hidden rounded-[28px]"
+      style={{ fontFamily: FONT, boxShadow: "0 24px 70px rgba(0,229,255,0.12), 0 10px 34px rgba(20,20,40,0.28)" }}
     >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
-        <AssistantMascot size={38} thinking={busy} />
+        <AssistantMascot size={40} thinking={busy} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">Ask Nexus</div>
-          <div className="truncate text-[11px] text-muted-foreground">
+          <div className="truncate text-sm font-semibold tracking-tight">Ask Nexus</div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span
+              className="inline-block size-1.5 rounded-full"
+              style={{ background: NEON, boxShadow: `0 0 6px ${NEON}`, animation: "orb-breathe 1.6s ease-in-out infinite" }}
+            />
             {busy ? "Thinking…" : source}
           </div>
         </div>
@@ -146,8 +170,8 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.length === 0 ? (
           <div className="space-y-4">
-            <div className="glass-subtle flex items-start gap-2.5 rounded-2xl p-3 text-sm">
-              <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div className="glass-subtle flex items-start gap-2.5 rounded-2xl rounded-bl-md p-3 text-sm" style={{ borderColor: "rgba(0,229,255,0.22)" }}>
+              <Sparkles className="mt-0.5 size-4 shrink-0" style={{ color: NEON }} />
               <p className="text-muted-foreground">{greeting}</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -155,7 +179,8 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="glass-subtle rounded-full px-3 py-1.5 text-xs text-foreground transition-transform hover:-translate-y-px"
+                  className="glass-subtle rounded-full px-3 py-1.5 text-xs font-medium transition-transform hover:-translate-y-px"
+                  style={{ color: NEON, border: "1px solid rgba(0,229,255,0.35)" }}
                 >
                   {s}
                 </button>
@@ -167,15 +192,18 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
             <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-                  m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "glass-subtle text-foreground"
+                  "max-w-[86%] whitespace-pre-wrap px-3.5 py-2 text-sm leading-relaxed",
+                  m.role === "user" ? "rounded-2xl rounded-br-md text-white" : "glass-subtle rounded-2xl rounded-bl-md text-foreground"
                 )}
+                style={
+                  m.role === "user"
+                    ? { background: `linear-gradient(135deg, ${CARROT_LIGHT}, ${CARROT})`, boxShadow: "0 6px 18px rgba(172,53,9,0.28)" }
+                    : { borderColor: "rgba(0,229,255,0.20)" }
+                }
               >
                 {m.pending ? (
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
-                    <RefreshCw className="size-3.5 animate-spin" /> thinking…
+                    <RefreshCw className="size-3.5 animate-spin" style={{ color: NEON }} /> thinking…
                   </span>
                 ) : (
                   <Rich text={m.text} />
@@ -193,7 +221,9 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
 
       {/* Composer */}
       <div className="border-t border-white/10 p-3">
-        <div className="glass-subtle flex items-end gap-2 rounded-2xl p-1.5">
+        <div
+          className="glass-subtle flex items-end gap-2 rounded-2xl p-1.5 transition-shadow focus-within:shadow-[0_0_0_2px_rgba(0,229,255,0.45)]"
+        >
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -206,19 +236,20 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
             rows={1}
             placeholder="Ask about the system or your data…"
             className="max-h-28 min-h-9 flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+            style={{ fontFamily: FONT }}
           />
           <button
             onClick={() => send(input)}
             disabled={busy || !input.trim()}
             aria-label="Send"
             className="grid size-9 shrink-0 place-items-center rounded-xl text-white transition-transform hover:-translate-y-px disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, oklch(0.62 0.19 260), oklch(0.6 0.16 300))" }}
+            style={{ background: `linear-gradient(135deg, ${CARROT_LIGHT}, ${CARROT})` }}
           >
             <Send className="size-4" />
           </button>
         </div>
         <p className="mt-1.5 px-1 text-center text-[10px] text-muted-foreground">
-          Ask Nexus can read data you already have access to. It doesn&apos;t change anything.
+          Ask Nexus reads only data you can already access. It doesn&apos;t change anything.
         </p>
       </div>
     </div>

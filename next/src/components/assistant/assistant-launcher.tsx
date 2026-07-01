@@ -32,10 +32,10 @@ export function AssistantLauncher() {
         aria-label="Ask Nexus assistant"
         aria-expanded={open}
         title="Ask Nexus"
-        className="glass-specular grid size-12 place-items-center rounded-2xl text-white shadow-lg transition-transform hover:-translate-y-0.5"
-        style={{ background: "linear-gradient(135deg, oklch(0.62 0.19 260), oklch(0.6 0.16 300))" }}
+        className="glass glass-specular grid size-12 place-items-center rounded-2xl transition-transform hover:-translate-y-0.5"
+        style={{ boxShadow: "0 0 0 1.5px rgba(0,229,255,0.4), 0 8px 22px rgba(0,150,220,0.28)" }}
       >
-        <AssistantMascot size={30} thinking={open} />
+        <AssistantMascot size={34} thinking={open} />
       </button>
       {open ? <AskNexus onClose={() => setOpen(false)} /> : null}
     </>
