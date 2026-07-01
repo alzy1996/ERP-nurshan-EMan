@@ -1,5 +1,3 @@
-import { Maximize2 } from "lucide-react";
-
 import { Sidebar } from "@/components/shell/sidebar";
 import { AuthGuard } from "@/components/shell/auth-guard";
 import { AssistantLauncher } from "@/components/assistant/assistant-launcher";
@@ -22,16 +20,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      {/* Floating actions (reference images 1 & 3) */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-        <button
-          aria-label="Expand"
-          className="glass glass-specular grid size-12 place-items-center rounded-2xl text-foreground transition-transform hover:-translate-y-0.5"
-        >
-          <Maximize2 className="size-5" />
-        </button>
-        <AssistantLauncher />
-      </div>
+      {/* Draggable Ask Nexus button (self-positioning). */}
+      <AssistantLauncher />
       </div>
     </AuthGuard>
   );
