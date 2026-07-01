@@ -12,6 +12,7 @@ import {
   ClipboardList,
   FolderKanban,
   Globe,
+  HardHat,
   Home,
   Inbox,
   LayoutDashboard,
@@ -70,6 +71,7 @@ const ICONS: Partial<Record<ModuleKey, LucideIcon>> = {
   notifications: Bell,
   timesheets: CalendarClock,
   attendance: MapPin,
+  workforce: HardHat,
   users: UserCog,
 };
 
@@ -91,7 +93,7 @@ const GROUPS: { label: string; modules: ModuleKey[] }[] = [
       "contracts",
     ],
   },
-  { label: "Insights", modules: ["analytics", "notifications", "timesheets", "attendance"] },
+  { label: "Insights", modules: ["analytics", "notifications", "timesheets", "attendance", "workforce"] },
   { label: "Admin", modules: ["users"] },
 ];
 

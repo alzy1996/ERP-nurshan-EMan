@@ -36,6 +36,7 @@ const SHORT_TO_MODULE: Record<string, ModuleKey> = {
   sites: "projects",
   projects: "projects",
   site_logs: "site_logs",
+  workforce: "workforce",
   attendance: "attendance",
 };
 
