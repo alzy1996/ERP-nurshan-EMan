@@ -8,6 +8,14 @@ name: Build Android app (APK)
 # runs the exact same app and data as the web and desktop.
 on:
   workflow_dispatch: {}
+  # Also build when the mobile shell (or this workflow) changes on main. Push
+  # events run the workflow from the pushed commit, so this works regardless of
+  # which branch is the repo default.
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/android-build.yml"
 
 jobs:
   build:
