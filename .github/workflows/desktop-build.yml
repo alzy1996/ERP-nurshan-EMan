@@ -5,6 +5,14 @@ name: Build desktop app (EXE / DMG / AppImage)
 # download the installer from the run's Artifacts.
 on:
   workflow_dispatch: {}
+  # Also build when the desktop shell (or this workflow) changes on main. Push
+  # events run the workflow from the pushed commit, so this works regardless of
+  # which branch is the repo default.
+  push:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-build.yml"
 
 jobs:
   build:
