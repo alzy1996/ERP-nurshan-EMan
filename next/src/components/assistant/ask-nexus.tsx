@@ -53,7 +53,7 @@ function Rich({ text }: { text: string }) {
   );
 }
 
-export function AskNexus({ onClose }: { onClose: () => void }) {
+export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: number; top: number } }) {
   const app = useApp();
   const perms = usePermissions();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -132,8 +132,15 @@ export function AskNexus({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Ask Nexus assistant"
-      className="glass-strong animate-panel-in fixed bottom-24 right-6 z-50 flex h-[min(72vh,580px)] w-[min(93vw,392px)] flex-col overflow-hidden rounded-[28px]"
-      style={{ fontFamily: FONT, boxShadow: "0 24px 70px rgba(0,229,255,0.12), 0 10px 34px rgba(20,20,40,0.28)" }}
+      className={cn(
+        "glass-strong animate-panel-in fixed z-50 flex h-[min(72vh,580px)] w-[min(93vw,392px)] flex-col overflow-hidden rounded-[28px]",
+        !pos && "bottom-24 right-6"
+      )}
+      style={{
+        fontFamily: FONT,
+        boxShadow: "0 24px 70px rgba(0,229,255,0.12), 0 10px 34px rgba(20,20,40,0.28)",
+        ...(pos ? { left: pos.left, top: pos.top } : {}),
+      }}
     >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
