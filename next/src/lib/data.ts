@@ -32,6 +32,7 @@ const SHORT_TO_MODULE: Record<string, ModuleKey> = {
   prs: "purchase_requests",
   pos: "purchase_orders",
   purchaseorders: "purchase_orders",
+  deliveries: "deliveries",
   contracts: "contracts",
   sites: "projects",
   projects: "projects",
