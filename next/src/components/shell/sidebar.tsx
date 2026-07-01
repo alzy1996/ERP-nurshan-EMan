@@ -19,6 +19,7 @@ import {
   Lock,
   LogOut,
   MapPin,
+  MessagesSquare,
   NotebookPen,
   Package,
   PackageCheck,
@@ -76,6 +77,7 @@ const ICONS: Partial<Record<ModuleKey, LucideIcon>> = {
   contracts: ScrollText,
   analytics: BarChart3,
   notifications: Bell,
+  messages: MessagesSquare,
   timesheets: CalendarClock,
   attendance: MapPin,
   workforce: HardHat,
@@ -104,7 +106,7 @@ const GROUPS: { label: string; modules: ModuleKey[] }[] = [
       "contracts",
     ],
   },
-  { label: "Insights", modules: ["analytics", "notifications", "timesheets", "attendance", "workforce", "equipment"] },
+  { label: "Insights", modules: ["analytics", "notifications", "messages", "timesheets", "attendance", "workforce", "equipment"] },
   { label: "Admin", modules: ["users"] },
 ];
 
