@@ -96,10 +96,14 @@ service cloud.firestore {
 
     // ---- scoped collections ---------------------------------------------
     match /nexus_prs/{doc} {
-      allow read : if isPasswordAuth() && inSite(resource.data.siteId);
-      allow write: if isPasswordAuth() && inSite(request.resource.data.siteId)
-                   && request.resource.data.siteId is string
-                   && request.resource.data.siteId.size() > 0;
+      allow read           : if isPasswordAuth() && inSite(resource.data.siteId);
+      // Create/update validate the incoming site; delete checks the EXISTING
+      // doc's site (a delete carries no request.resource, so validating it there
+      // is what silently blocked deletes).
+      allow create, update : if isPasswordAuth() && inSite(request.resource.data.siteId)
+                             && request.resource.data.siteId is string
+                             && request.resource.data.siteId.size() > 0;
+      allow delete         : if isPasswordAuth() && inSite(resource.data.siteId);
     }
 
     // ---- other app collections ------------------------------------------
