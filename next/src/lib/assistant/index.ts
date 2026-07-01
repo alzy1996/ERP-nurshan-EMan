@@ -28,6 +28,7 @@ export type AskInput = {
   sites: string[];
   visibleModules: ModuleKey[];
   canSee: (m: ModuleKey) => boolean;
+  navigate?: (route: string) => void;
   lang?: string;
 };
 
@@ -47,6 +48,7 @@ export async function askNexus(input: AskInput): Promise<AskResult> {
     isAdmin: input.isAdmin,
     sites: input.sites,
     canSee: input.canSee,
+    navigate: input.navigate,
     load: makeLoader(input.session),
   };
 

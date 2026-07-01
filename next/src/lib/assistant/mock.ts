@@ -26,6 +26,7 @@ function help(): string {
     "• “how many purchase orders?” or “list recent requests”",
     "• “what's pending approval?” · “show low stock” · “spend summary”",
     "• “search for <supplier/material>”",
+    "• “open suppliers” · “go to purchase orders” (I'll open the screen)",
     "• “give me an overview report”",
     "• “what is a PO?” · “how does approval work?” · “are the apps synced?”",
   ].join("\n");
@@ -53,6 +54,10 @@ export async function mockAsk(question: string, ctx: ToolCtx): Promise<{ text: s
   // Intent: capabilities
   if (/(what can you do|help|how do you work|who are you|what are you)/.test(low)) {
     return { text: help(), usedTools: used };
+  }
+  // Intent: navigate / open a screen
+  if (/\b(open|go ?to|navigate|take me to|bring up|jump to)\b/.test(low)) {
+    return { text: await run("navigate", { module: low }), usedTools: used };
   }
   // Intent: reports
   if (/\breport\b|summary of everything|overview/.test(low)) {
