@@ -89,7 +89,7 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
   const scrollRef = useRef<HTMLDivElement>(null);
   const counter = useRef(0);
   const [listening, setListening] = useState(false);
-  const [micOK, setMicOK] = useState(false);
+  const [micHint, setMicHint] = useState("");
   const recogRef = useRef<SpeechRec | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
 
@@ -122,10 +122,8 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
     []
   );
 
-  // Detect speech-recognition support; stop it if the panel closes.
+  // Stop recognition if the panel closes.
   useEffect(() => {
-    const W = window as unknown as { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor };
-    setMicOK(!!(W.SpeechRecognition || W.webkitSpeechRecognition));
     return () => {
       try {
         recogRef.current?.stop();
@@ -134,6 +132,7 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
   }, []);
 
   function toggleMic() {
+    setMicHint("");
     if (listening) {
       try {
         recogRef.current?.stop();
@@ -143,8 +142,17 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
     }
     const W = window as unknown as { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor };
     const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
-    if (!Ctor) return;
-    const r = new Ctor();
+    if (!Ctor) {
+      setMicHint("Voice needs Google Chrome — open the website in Chrome to talk. (The desktop/phone app may not support it yet.)");
+      return;
+    }
+    let r: SpeechRec;
+    try {
+      r = new Ctor();
+    } catch {
+      setMicHint("Voice couldn't start on this device.");
+      return;
+    }
     r.lang = SPEECH_LANG[app.lang] || "en-US";
     r.continuous = false;
     r.interimResults = true;
@@ -154,13 +162,17 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
       setInput(t);
     };
     r.onend = () => setListening(false);
-    r.onerror = () => setListening(false);
+    r.onerror = () => {
+      setListening(false);
+      setMicHint("Couldn't hear you — allow the microphone (tap the 🔒 in the address bar → Microphone → Allow), then try again.");
+    };
     recogRef.current = r;
     try {
       r.start();
       setListening(true);
     } catch {
       setListening(false);
+      setMicHint("Couldn't start the microphone — check its permission and try again.");
     }
   }
 
@@ -423,21 +435,19 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
           className="glass-subtle flex items-end gap-2 rounded-2xl p-1.5 transition-shadow"
           style={focused ? { boxShadow: `0 0 0 2px ${ring}` } : {}}
         >
-          {micOK ? (
-            <button
-              onClick={toggleMic}
-              aria-label={listening ? "Stop listening" : "Speak"}
-              title={listening ? "Stop" : "Speak in any language"}
-              className="grid size-9 shrink-0 place-items-center rounded-xl transition-colors"
-              style={
-                listening
-                  ? { background: "#ef4444", color: "#fff", animation: "orb-breathe 1s ease-in-out infinite" }
-                  : { color: accent }
-              }
-            >
-              <Mic className="size-4" />
-            </button>
-          ) : null}
+          <button
+            onClick={toggleMic}
+            aria-label={listening ? "Stop listening" : "Speak"}
+            title={listening ? "Stop" : "Speak in any language"}
+            className="grid size-9 shrink-0 place-items-center rounded-xl transition-colors"
+            style={
+              listening
+                ? { background: "#ef4444", color: "#fff", animation: "orb-breathe 1s ease-in-out infinite" }
+                : { color: accent }
+            }
+          >
+            <Mic className="size-4" />
+          </button>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -464,9 +474,13 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
             <Send className="size-4" />
           </button>
         </div>
-        <p className="mt-1.5 px-1 text-center text-[10px] text-muted-foreground">
-          Ask Nexus reads your data, opens screens, and always asks before it saves.
-        </p>
+        {micHint ? (
+          <p className="mt-1.5 px-1 text-center text-[10px] text-amber-500">{micHint}</p>
+        ) : (
+          <p className="mt-1.5 px-1 text-center text-[10px] text-muted-foreground">
+            Ask Nexus reads your data, opens screens, and always asks before it saves.
+          </p>
+        )}
       </div>
     </div>
   );
