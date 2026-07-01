@@ -7,6 +7,7 @@
 // ============================================================================
 import { knowledgeAnswer } from "./knowledge";
 import { runTool, resolveModule, type ToolCtx } from "./tools";
+import type { PendingAction } from "./actions";
 
 const GREETING = /^(hi|hey|hello|salam|salaam|marhaba|مرحبا|السلام|selam|merhaba|سلام)\b/i;
 
@@ -27,12 +28,16 @@ function help(): string {
     "• “what's pending approval?” · “show low stock” · “spend summary”",
     "• “search for <supplier/material>”",
     "• “open suppliers” · “go to purchase orders” (I'll open the screen)",
+    "• “add a supplier called BuildCo” (I'll ask you to confirm before saving)",
     "• “give me an overview report”",
     "• “what is a PO?” · “how does approval work?” · “are the apps synced?”",
   ].join("\n");
 }
 
-export async function mockAsk(question: string, ctx: ToolCtx): Promise<{ text: string; usedTools: string[] }> {
+export async function mockAsk(
+  question: string,
+  ctx: ToolCtx
+): Promise<{ text: string; usedTools: string[]; action?: PendingAction }> {
   const q = question.trim();
   const low = q.toLowerCase();
   const used: string[] = [];
@@ -54,6 +59,28 @@ export async function mockAsk(question: string, ctx: ToolCtx): Promise<{ text: s
   // Intent: capabilities
   if (/(what can you do|help|how do you work|who are you|what are you)/.test(low)) {
     return { text: help(), usedTools: used };
+  }
+  // Intent: create / add a record (proposes; the user confirms before it saves)
+  if (/\b(add|create|new|register)\b/.test(low) && !/\breport\b/.test(low)) {
+    const mod =
+      /supplier|vendor/.test(low) ? "suppliers"
+      : /material|item|catalogue|catalog/.test(low) ? "materials"
+      : /request|requisition|\bpr\b/.test(low) ? "purchase_requests"
+      : null;
+    if (mod) {
+      const nameM = q.match(/["'“”]([^"'“”]+)["'“”]/) || q.match(/\b(?:called|named|for|:)\s+(.+)$/i);
+      const name = nameM ? nameM[1].trim().replace(/[.?!]+$/, "") : "";
+      if (!name) {
+        return {
+          text: `Sure — what should the new ${mod === "purchase_requests" ? "request" : mod.slice(0, -1)} be called?`,
+          usedTools: used,
+        };
+      }
+      const field = mod === "purchase_requests" ? "title" : "name";
+      used.push("create_record");
+      const r = await runTool("create_record", { module: mod, fields: { [field]: name } }, ctx);
+      return { text: r.title ? `${r.title}\n${r.text}` : r.text, usedTools: used, action: r.action };
+    }
   }
   // Intent: navigate / open a screen
   if (/\b(open|go ?to|navigate|take me to|bring up|jump to)\b/.test(low)) {

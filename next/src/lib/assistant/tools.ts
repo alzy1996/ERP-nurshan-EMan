@@ -14,10 +14,12 @@ import {
   MODULE_LABELS,
   MODULE_ROUTES,
   ALL_MODULES,
+  type Capability,
   type ModuleKey,
   type Role,
 } from "@/lib/roles";
 import { approvalLimitFor, requiredApproverLabel } from "@/lib/procurement";
+import { buildProposal, resolveCreatable, type PendingAction } from "./actions";
 
 export type Rec = Record<string, unknown> & { id: string };
 
@@ -28,13 +30,14 @@ export type ToolCtx = {
   isAdmin: boolean;
   sites: string[];
   canSee: (m: ModuleKey) => boolean;
+  can: (m: ModuleKey, cap: Capability) => boolean;
   /** Cached loader — returns the site-scoped rows for a module's collection. */
   load: (m: ModuleKey) => Promise<Rec[]>;
   /** Navigate the app to a route (provided by the chat panel). */
   navigate?: (route: string) => void;
 };
 
-export type ToolResult = { ok: boolean; title: string; text: string };
+export type ToolResult = { ok: boolean; title: string; text: string; action?: PendingAction };
 
 /** ModuleKey → Firestore short name used by lib/data.fetchScoped. */
 export const MODULE_SHORT: Partial<Record<ModuleKey, string>> = {
@@ -252,6 +255,37 @@ export const TOOLS: Tool[] = [
       if (!ctx.navigate) return { ok: false, title: "Open", text: `Go to ${MODULE_LABELS[m]} from the menu.` };
       ctx.navigate(MODULE_ROUTES[m]);
       return { ok: true, title: "Opened", text: `Opening ${MODULE_LABELS[m]} for you.` };
+    },
+  },
+  {
+    name: "create_record",
+    description:
+      "Propose creating a new record — a supplier, material, or purchase request. This does NOT save immediately; the user must confirm it. Use when the user asks to add or create one. Put the details in fields.",
+    parameters: {
+      type: "object",
+      properties: {
+        module: { type: "string", description: "suppliers | materials | purchase_requests" },
+        fields: {
+          type: "object",
+          description:
+            'The values, e.g. {"name":"BuildCo","email":"a@b.com"} for a supplier, or {"title":"Cement","quantity":100} for a request.',
+        },
+      },
+      required: ["module", "fields"],
+    },
+    run: async (args, ctx) => {
+      const m = resolveCreatable(str(args.module), ctx.can);
+      if (!m) {
+        return {
+          ok: false,
+          title: "Add",
+          text: "I can only add suppliers, materials or purchase requests right now — and only if your role allows it.",
+        };
+      }
+      const fields = (args.fields && typeof args.fields === "object" ? args.fields : {}) as Record<string, unknown>;
+      const { action, error } = buildProposal(m, fields, ctx.can);
+      if (error || !action) return { ok: false, title: "Add", text: error || "I couldn't prepare that." };
+      return { ok: true, title: "Confirm", text: `Ready to ${action.summary}. Confirm below to save it.`, action };
     },
   },
   {
