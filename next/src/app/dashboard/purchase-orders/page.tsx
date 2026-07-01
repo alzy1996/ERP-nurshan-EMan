@@ -29,6 +29,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/components/forms/field";
+import {
+  RangeChips,
+  ViewToggle,
+  loadView,
+  saveView,
+  type ViewMode,
+} from "@/components/shell/collection-controls";
+import { inRange, fmtDay } from "@/lib/recency";
 
 type POItem = { desc: string; unit: string; qty: number; unitPrice: number; lineTotal: number };
 type PO = {
@@ -43,6 +51,7 @@ type PO = {
   subtotal?: number;
   vat?: number;
   total?: number;
+  createdAt?: number;
   fromPrId?: string;
   fromPrDesc?: string;
   receivedBy?: string;
@@ -91,6 +100,8 @@ export default function PurchaseOrdersPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [range, setRange] = useState("all");
 
   // Sheet form state
   const [poNumber, setPoNumber] = useState(`PO-${Date.now()}`);
@@ -109,7 +120,11 @@ export default function PurchaseOrdersPage() {
         fetchScoped<PO>("purchase_orders", session),
         fetchScoped<{ name?: string }>("suppliers", session),
       ]);
-      setRows(data.sort((a, b) => (b.poNumber || "").localeCompare(a.poNumber || "")));
+      setRows(
+        data.sort(
+          (a, b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.poNumber || "").localeCompare(a.poNumber || "")
+        )
+      );
       setSuppliers(
         sups
           .map((s) => ({ id: s.id, name: (s.name || "").trim() }))
@@ -128,15 +143,18 @@ export default function PurchaseOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.ready, app.activeSite]);
 
+  useEffect(() => {
+    setView(loadView("nexus_view_pos", "grid"));
+  }, []);
+
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return rows;
-    return rows.filter((r) =>
-      [r.poNumber, r.supplier]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(t))
-    );
-  }, [rows, q]);
+    return rows.filter((r) => {
+      if (!inRange(r.createdAt, range)) return false;
+      if (!t) return true;
+      return [r.poNumber, r.supplier].filter(Boolean).some((v) => String(v).toLowerCase().includes(t));
+    });
+  }, [rows, q, range]);
 
   const computed = useMemo(
     () => items.map((it) => ({ ...it, lineTotal: (it.qty || 0) * (it.unitPrice || 0) })),
@@ -257,7 +275,7 @@ export default function PurchaseOrdersPage() {
             {rows.length} PO{rows.length === 1 ? "" : "s"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="glass-subtle flex items-center gap-2 rounded-full px-3.5 py-2 text-sm">
             <Search className="size-4 text-muted-foreground" />
             <input
@@ -267,6 +285,14 @@ export default function PurchaseOrdersPage() {
               className="w-40 bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
+          <RangeChips value={range} onChange={setRange} />
+          <ViewToggle
+            value={view}
+            onChange={(v) => {
+              setView(v);
+              saveView("nexus_view_pos", v);
+            }}
+          />
           {perms.can("purchase_orders", "create") ? (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -474,6 +500,67 @@ export default function PurchaseOrdersPage() {
             </p>
           </div>
         </div>
+      ) : view === "list" ? (
+        <div className="space-y-2">
+          {filtered.map((po) => {
+            const status = STATUS[po.status || "draft"] ?? STATUS.draft;
+            const st = po.status || "draft";
+            return (
+              <div
+                key={po.id}
+                className="glass glass-specular flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-4 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-semibold">{po.poNumber || "—"}</span>
+                    <Badge className={status.cls} variant="secondary">
+                      {status.label}
+                    </Badge>
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {po.supplier || "—"} · {fmtDay(po.createdAt)} · {po.items?.length || 0} item
+                    {(po.items?.length || 0) === 1 ? "" : "s"}
+                    {po.fromPrId ? " · from request" : ""}
+                  </div>
+                </div>
+                <span className="text-sm font-bold tabular-nums">{fmt(po.total || 0)}</span>
+                {st === "draft" && canIssue ? (
+                  <button
+                    onClick={() => setStatus(po, "issued")}
+                    className="rounded-lg bg-chart-1/15 px-2.5 py-1 text-xs font-semibold text-chart-1 transition hover:bg-chart-1/25"
+                  >
+                    Issue
+                  </button>
+                ) : null}
+                {st === "issued" && canReceive ? (
+                  <button
+                    onClick={() => setStatus(po, "received")}
+                    className="rounded-lg bg-chart-3/15 px-2.5 py-1 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
+                  >
+                    Receive
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => printPO(po)}
+                  aria-label="Print"
+                  title="Print"
+                  className="grid size-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground"
+                >
+                  <Printer className="size-4" />
+                </button>
+                {perms.can("purchase_orders", "delete") ? (
+                  <button
+                    onClick={() => remove(po)}
+                    aria-label="Delete"
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((po) => {
@@ -495,12 +582,12 @@ export default function PurchaseOrdersPage() {
                   <div className="truncate text-xs text-muted-foreground">{po.supplier || "—"}</div>
                 </div>
 
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Badge className={status.cls} variant="secondary">
                     {status.label}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {(po.items?.length || 0)} item{(po.items?.length || 0) === 1 ? "" : "s"}
+                    {(po.items?.length || 0)} item{(po.items?.length || 0) === 1 ? "" : "s"} · {fmtDay(po.createdAt)}
                   </span>
                 </div>
 

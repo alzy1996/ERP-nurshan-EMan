@@ -23,6 +23,14 @@ import {
 } from "@/components/ui/sheet";
 import { Field } from "@/components/forms/field";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  RangeChips,
+  ViewToggle,
+  loadView,
+  saveView,
+  type ViewMode,
+} from "@/components/shell/collection-controls";
+import { inRange, fmtDay } from "@/lib/recency";
 
 type Pr = {
   id: string;
@@ -41,6 +49,7 @@ type Pr = {
   unit?: string;
   requiredBy?: string;
   notes?: string;
+  createdAt?: number;
 };
 
 type Material = { id: string; name?: string; price?: number };
@@ -95,13 +104,15 @@ export default function PurchaseRequestsPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [range, setRange] = useState("all");
   const [form, setForm] = useState<Draft>(emptyDraft);
 
   async function load() {
     setLoading(true);
     try {
       const data = await fetchScoped<Pr>("prs", app.asSession());
-      setRows(data);
+      setRows(data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
     } catch {
       toast.error("Could not load purchase requests");
     } finally {
@@ -113,6 +124,10 @@ export default function PurchaseRequestsPage() {
     if (app.ready) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.ready, app.activeSite]);
+
+  useEffect(() => {
+    setView(loadView("nexus_view_prs", "grid"));
+  }, []);
 
   // Materials are a global catalogue — load them so a request can be picked
   // from the list instead of typed by hand.
@@ -134,13 +149,12 @@ export default function PurchaseRequestsPage() {
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return rows;
-    return rows.filter((r) =>
-      [r.desc, r.requester]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(t))
-    );
-  }, [rows, q]);
+    return rows.filter((r) => {
+      if (!inRange(r.createdAt, range)) return false;
+      if (!t) return true;
+      return [r.desc, r.requester].filter(Boolean).some((v) => String(v).toLowerCase().includes(t));
+    });
+  }, [rows, q, range]);
 
   const set =
     (key: keyof Draft) =>
@@ -270,7 +284,7 @@ export default function PurchaseRequestsPage() {
             {rows.length} request{rows.length === 1 ? "" : "s"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="glass-subtle flex items-center gap-2 rounded-full px-3.5 py-2 text-sm">
             <Search className="size-4 text-muted-foreground" />
             <input
@@ -280,6 +294,15 @@ export default function PurchaseRequestsPage() {
               className="w-40 bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
+          <RangeChips value={range} onChange={setRange} />
+          <ViewToggle
+            value={view}
+            onChange={(v) => {
+              setView(v);
+              saveView("nexus_view_prs", v);
+            }}
+            gridLabel="Board"
+          />
           {perms.can("purchase_requests", "create") ? (
             <PrSheet
               open={open}
@@ -303,23 +326,81 @@ export default function PurchaseRequestsPage() {
         <div className="grid place-items-center py-24 text-muted-foreground">
           <Loader2 className="size-6 animate-spin" />
         </div>
-      ) : (
-        <>
-          {rows.length === 0 ? (
-            <div className="glass-subtle grid place-items-center rounded-3xl px-6 py-16 text-center">
-              <div className="max-w-xs">
-                <div className="glass glass-specular mx-auto grid size-12 place-items-center rounded-2xl">
-                  <ClipboardList className="size-5" />
-                </div>
-                <p className="mt-4 text-sm font-medium">No purchase requests yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Create your first request to start the approval flow.
-                </p>
-              </div>
+      ) : rows.length === 0 ? (
+        <div className="glass-subtle grid place-items-center rounded-3xl px-6 py-16 text-center">
+          <div className="max-w-xs">
+            <div className="glass glass-specular mx-auto grid size-12 place-items-center rounded-2xl">
+              <ClipboardList className="size-5" />
             </div>
-          ) : null}
-
-          <div className="flex gap-3 overflow-x-auto pb-2">
+            <p className="mt-4 text-sm font-medium">No purchase requests yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Create your first request to start the approval flow.
+            </p>
+          </div>
+        </div>
+      ) : view === "list" ? (
+        <div className="space-y-2">
+          {filtered.map((p) => {
+            const stage = p.stage || "Submitted";
+            const amount = Number(p.amount) || 0;
+            const canAppr =
+              (perms.can("purchase_requests", "approve") || app.session?.isAdmin) && stage === "Submitted";
+            return (
+              <div
+                key={p.id}
+                className="glass glass-specular flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-4 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`size-2 shrink-0 rounded-full ${DOT[stage] ?? "bg-muted"}`} />
+                    <span className="truncate text-sm font-medium">{p.desc || "—"}</span>
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {stage} · {fmtOMR(amount)} · {p.requester || "—"} · {fmtDay(p.createdAt)}
+                  </div>
+                </div>
+                {canAppr &&
+                !isOwnRequest(p) &&
+                canApproveAmount(app.session?.role, amount, !!app.session?.isAdmin) ? (
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => setStage(p, "Approved")}
+                      className="rounded-lg bg-chart-3/15 px-2.5 py-1 text-xs font-semibold text-chart-3 transition hover:bg-chart-3/25"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => setStage(p, "Rejected")}
+                      className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive transition hover:bg-destructive/20"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                ) : null}
+                {perms.can("purchase_orders", "create") && stage === "Approved" && !p.poId ? (
+                  <button
+                    onClick={() => createPo(p)}
+                    className="flex items-center gap-1 rounded-lg bg-chart-1/15 px-2.5 py-1 text-xs font-semibold text-chart-1 transition hover:bg-chart-1/25"
+                  >
+                    <ShoppingCart className="size-3.5" /> PO
+                  </button>
+                ) : null}
+                {p.poId ? <span className="text-[11px] font-medium text-chart-1">→ PO</span> : null}
+                {perms.can("purchase_requests", "delete") ? (
+                  <button
+                    onClick={() => remove(p)}
+                    aria-label="Delete"
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex gap-3 overflow-x-auto pb-2">
             {STAGES.map((stage) => {
               const items = filtered.filter((p) => (p.stage || "Submitted") === stage);
               return (
@@ -421,7 +502,6 @@ export default function PurchaseRequestsPage() {
               );
             })}
           </div>
-        </>
       )}
     </div>
   );
