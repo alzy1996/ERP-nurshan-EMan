@@ -28,6 +28,7 @@ import {
   Settings,
   Sparkles,
   Tag,
+  Truck,
   UserCog,
   Users,
   Wrench,
@@ -72,6 +73,7 @@ const ICONS: Partial<Record<ModuleKey, LucideIcon>> = {
   timesheets: CalendarClock,
   attendance: MapPin,
   workforce: HardHat,
+  equipment: Truck,
   users: UserCog,
 };
 
@@ -93,7 +95,7 @@ const GROUPS: { label: string; modules: ModuleKey[] }[] = [
       "contracts",
     ],
   },
-  { label: "Insights", modules: ["analytics", "notifications", "timesheets", "attendance", "workforce"] },
+  { label: "Insights", modules: ["analytics", "notifications", "timesheets", "attendance", "workforce", "equipment"] },
   { label: "Admin", modules: ["users"] },
 ];
 
