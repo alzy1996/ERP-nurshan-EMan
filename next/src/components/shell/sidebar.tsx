@@ -16,6 +16,7 @@ import {
   Lock,
   LogOut,
   MapPin,
+  NotebookPen,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
@@ -53,6 +54,7 @@ const COLLAPSE_KEY = "nexus_sidebar_collapsed";
 const ICONS: Partial<Record<ModuleKey, LucideIcon>> = {
   dashboard: LayoutDashboard,
   projects: FolderKanban,
+  site_logs: NotebookPen,
   suppliers: Users,
   materials: Package,
   services: Wrench,
@@ -73,6 +75,7 @@ const GROUPS: { label: string; modules: ModuleKey[] }[] = [
     modules: [
       "dashboard",
       "projects",
+      "site_logs",
       "suppliers",
       "materials",
       "services",
