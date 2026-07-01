@@ -42,6 +42,7 @@ export type ModuleKey =
   | "equipment"
   | "analytics"
   | "notifications"
+  | "messages"
   | "settings"
   | "users";
 
@@ -60,7 +61,7 @@ export interface Perm {
 export const ALL_MODULES: ModuleKey[] = [
   "dashboard", "suppliers", "materials", "inventory", "material_usage", "services", "offers", "purchase_requests",
   "purchase_orders", "approvals", "deliveries", "contracts", "projects", "site_logs", "safety", "inspections", "attendance",
-  "timesheets", "workforce", "equipment", "analytics", "notifications", "settings", "users",
+  "timesheets", "workforce", "equipment", "analytics", "notifications", "messages", "settings", "users",
 ];
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -101,6 +102,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   equipment: "Equipment",
   analytics: "Analytics",
   notifications: "Notifications",
+  messages: "Messages",
   settings: "Settings",
   users: "Users",
 };
@@ -199,6 +201,7 @@ function build(): Record<Role, Record<ModuleKey, Perm>> {
     ALL_MODULES.forEach((m) => { row[m] = p("none"); });
     row.dashboard = p("view");        // baseline for everyone
     row.notifications = p("view");    // baseline for everyone
+    row.messages = p("edit");         // team messaging — everyone reads + posts
     const def = RAW[role];
     (Object.keys(def) as ModuleKey[]).forEach((m) => { row[m] = p(def[m] as string); });
     out[role] = row;
@@ -259,6 +262,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   equipment: "/dashboard/equipment",
   analytics: "/dashboard/analytics",
   notifications: "/dashboard/notifications",
+  messages: "/dashboard/messages",
   settings: "/dashboard/settings",
   users: "/dashboard/users",
 };
