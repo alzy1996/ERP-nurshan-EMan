@@ -402,9 +402,9 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
               <button
                 onClick={confirmPending}
                 className="flex-1 rounded-xl py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-px"
-                style={{ background: userBg }}
+                style={{ background: pending.verb === "delete" ? "#ef4444" : userBg }}
               >
-                Confirm &amp; save
+                {pending.verb === "delete" ? "Confirm delete" : pending.verb === "approve" ? "Confirm approve" : "Confirm & save"}
               </button>
               <button
                 onClick={cancelPending}
