@@ -1,0 +1,33 @@
+{
+  "name": "erp-nexus-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ERP Nexus desktop app — a secure Electron shell around the live web system, so desktop, web and phone run the exact same app and data.",
+  "author": "Eman Works",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist:linux": "electron-builder --linux AppImage"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.emanworks.erpnexus",
+    "productName": "ERP Nexus",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js"],
+    "win": { "target": ["nsis"] },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": { "target": ["dmg"], "category": "public.app-category.business" },
+    "linux": { "target": ["AppImage"], "category": "Office" }
+  }
+}

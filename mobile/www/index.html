@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ERP Nexus</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid; place-items: center;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: #0e0f1a; color: #ece9ff;
+      }
+      .box { text-align: center; }
+      .dot {
+        width: 44px; height: 44px; margin: 0 auto 16px;
+        border-radius: 14px; background: #6d5af7;
+      }
+      h1 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+      p { font-size: 13px; color: #a7a2d6; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <!-- Fallback screen shown only if the live app can't be reached (offline).
+         Normally the app loads the live ERP Nexus system from server.url. -->
+    <div class="box">
+      <div class="dot"></div>
+      <h1>ERP Nexus</h1>
+      <p>Connecting to your workspace…</p>
+    </div>
+  </body>
+</html>

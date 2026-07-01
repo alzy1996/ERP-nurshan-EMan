@@ -1,0 +1,48 @@
+name: Build Android app (APK)
+
+# Produces an installable ERP Nexus Android app (.apk). Run it from the Actions
+# tab → "Build Android app" → Run workflow, then download the APK from the
+# run's Artifacts and sideload it onto a phone.
+#
+# The APK loads the live web system (capacitor server.url), so the phone always
+# runs the exact same app and data as the web and desktop.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Install Capacitor
+        working-directory: mobile
+        run: npm install
+
+      - name: Generate the native Android project
+        working-directory: mobile
+        run: |
+          npx cap add android || true
+          npx cap sync android
+
+      - name: Build debug APK
+        working-directory: mobile/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-nexus-apk
+          path: mobile/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

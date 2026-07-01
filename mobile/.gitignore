@@ -1,0 +1,3 @@
+node_modules/
+# The native Android project is generated in CI by `npx cap add android`.
+android/
