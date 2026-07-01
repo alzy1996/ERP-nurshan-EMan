@@ -12,6 +12,8 @@ import { fetchScoped, type Session } from "@/lib/data";
 import {
   ROLE_LABELS,
   MODULE_LABELS,
+  MODULE_ROUTES,
+  ALL_MODULES,
   type ModuleKey,
   type Role,
 } from "@/lib/roles";
@@ -28,6 +30,8 @@ export type ToolCtx = {
   canSee: (m: ModuleKey) => boolean;
   /** Cached loader — returns the site-scoped rows for a module's collection. */
   load: (m: ModuleKey) => Promise<Rec[]>;
+  /** Navigate the app to a route (provided by the chat panel). */
+  navigate?: (route: string) => void;
 };
 
 export type ToolResult = { ok: boolean; title: string; text: string };
@@ -110,6 +114,36 @@ function createdOf(r: Rec): number {
 }
 export function fmtOMR(n: number): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: 3 }) + " OMR";
+}
+
+// Synonyms for EVERY navigable screen (superset of SYNONYMS above).
+const NAV_SYN: Partial<Record<ModuleKey, string[]>> = {
+  ...SYNONYMS,
+  dashboard: ["dashboard", "home", "overview", "main screen"],
+  analytics: ["analytics", "reports", "report", "charts", "insights", "statistics", "stats"],
+  notifications: ["notifications", "notification", "alerts"],
+  settings: ["settings", "preferences", "setting"],
+  users: ["users", "user management", "accounts", "team", "staff"],
+  timesheets: ["timesheets", "timesheet"],
+  attendance: ["attendance", "check-in"],
+  inspections: ["inspections", "inspection", "qa", "qc"],
+  contracts: ["contracts", "contract"],
+  approvals: ["approvals", "approval", "approval queue"],
+};
+
+/** Resolve free text to any navigable screen the user can open, or null. */
+export function resolveNav(text: string, ctx: ToolCtx): ModuleKey | null {
+  const t = text.toLowerCase();
+  const pairs: { m: ModuleKey; syn: string }[] = [];
+  ALL_MODULES.forEach((m) => {
+    if (!MODULE_ROUTES[m]) return;
+    (NAV_SYN[m] || [MODULE_LABELS[m].toLowerCase()]).forEach((syn) => pairs.push({ m, syn }));
+  });
+  pairs.sort((a, b) => b.syn.length - a.syn.length);
+  for (const { m, syn } of pairs) {
+    if (t.includes(syn) && ctx.canSee(m)) return m;
+  }
+  return null;
 }
 
 /** Resolve free text to a module the user can see, or null. */
@@ -201,6 +235,23 @@ export const TOOLS: Tool[] = [
         `You can open: ${mods.join(", ") || "no modules yet"}.`,
       ];
       return { ok: true, title: "Your access", text: lines.join("\n") };
+    },
+  },
+  {
+    name: "navigate",
+    description:
+      "Open / go to a screen in the app for the user (e.g. suppliers, purchase orders, dashboard, reports, settings). Use whenever the user asks to open, go to, take them to, or bring up a section.",
+    parameters: {
+      type: "object",
+      properties: { module: { type: "string", description: "The screen to open, e.g. suppliers, purchase orders, dashboard." } },
+      required: ["module"],
+    },
+    run: async (args, ctx) => {
+      const m = resolveNav(str(args.module), ctx);
+      if (!m) return { ok: false, title: "Open", text: "I couldn't find that screen, or you don't have access to it." };
+      if (!ctx.navigate) return { ok: false, title: "Open", text: `Go to ${MODULE_LABELS[m]} from the menu.` };
+      ctx.navigate(MODULE_ROUTES[m]);
+      return { ok: true, title: "Opened", text: `Opening ${MODULE_LABELS[m]} for you.` };
     },
   },
   {
