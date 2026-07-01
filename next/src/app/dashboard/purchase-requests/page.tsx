@@ -22,6 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Field } from "@/components/forms/field";
+import { Textarea } from "@/components/ui/textarea";
 
 type Pr = {
   id: string;
@@ -33,11 +34,34 @@ type Pr = {
   poId?: string;
   createdBy?: string;
   stage?: string;
+  procType?: string;
+  priority?: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  requiredBy?: string;
+  notes?: string;
 };
 
 type Material = { id: string; name?: string; price?: number };
 
-type Draft = { desc: string; amount: string; requester: string; materialId: string; site: string };
+type Draft = {
+  desc: string;
+  amount: string;
+  requester: string;
+  materialId: string;
+  site: string;
+  procType: string;
+  priority: string;
+  category: string;
+  quantity: string;
+  unit: string;
+  requiredBy: string;
+  notes: string;
+};
+
+const PRIORITIES = ["Low", "Medium", "High"] as const;
+const PROC_TYPES = ["Material", "Service"] as const;
 
 const STAGES = ["Submitted", "Approved", "Ordered", "Received", "Rejected"] as const;
 
@@ -49,7 +73,16 @@ const DOT: Record<string, string> = {
   Rejected: "bg-destructive",
 };
 
-const emptyDraft: Draft = { desc: "", amount: "", requester: "", materialId: "", site: "" };
+const emptyDraft: Draft = {
+  desc: "", amount: "", requester: "", materialId: "", site: "",
+  procType: "Material", priority: "Medium", category: "", quantity: "", unit: "", requiredBy: "", notes: "",
+};
+
+const PRIORITY_CLS: Record<string, string> = {
+  Low: "bg-muted text-muted-foreground",
+  Medium: "bg-chart-1/15 text-chart-1",
+  High: "bg-destructive/15 text-destructive",
+};
 
 const fmtOMR = (n?: number) => `${(Number(n) || 0).toFixed(3)} OMR`;
 
@@ -110,7 +143,8 @@ export default function PurchaseRequestsPage() {
   }, [rows, q]);
 
   const set =
-    (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    (key: keyof Draft) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
   // A request's own raiser may not approve it (segregation of duties).
@@ -147,6 +181,13 @@ export default function PurchaseRequestsPage() {
           amount: Number(form.amount) || 0,
           requester: form.requester || app.session?.name || "—",
           materialId: form.materialId || null,
+          procType: form.procType,
+          priority: form.priority,
+          category: form.category.trim() || null,
+          quantity: Number(form.quantity) || null,
+          unit: form.unit.trim() || null,
+          requiredBy: form.requiredBy || null,
+          notes: form.notes.trim() || null,
           stage: "Submitted",
         },
         app.asSession(),
@@ -249,6 +290,7 @@ export default function PurchaseRequestsPage() {
               onPickMaterial={pickMaterial}
               sites={app.sites}
               onSite={(id) => setForm((f) => ({ ...f, site: id }))}
+              onField={(k, v) => setForm((f) => ({ ...f, [k]: v }))}
               saving={saving}
               onSave={save}
             />
@@ -394,17 +436,21 @@ function PrSheet({
   onPickMaterial,
   sites,
   onSite,
+  onField,
   saving,
   onSave,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
   form: Draft;
-  set: (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  set: (
+    key: keyof Draft
+  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   materials: Material[];
   onPickMaterial: (id: string) => void;
   sites: { id: string; name?: string }[];
   onSite: (id: string) => void;
+  onField: (key: keyof Draft, value: string) => void;
   saving: boolean;
   onSave: () => void;
 }) {
@@ -443,6 +489,24 @@ function PrSheet({
               </select>
             )}
           </Field>
+          <Field label="Procurement type">
+            <div className="glass-subtle flex gap-1 rounded-xl p-1">
+              {PROC_TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => onField("procType", t)}
+                  className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    form.procType === t
+                      ? "glass glass-specular text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </Field>
           {materials.length > 0 ? (
             <Field label="Material (pick from list)" htmlFor="material">
               <select
@@ -469,6 +533,36 @@ function PrSheet({
               className="glass-subtle rounded-xl border-0"
             />
           </Field>
+          <Field label="Category" htmlFor="category">
+            <Input
+              id="category"
+              value={form.category}
+              onChange={set("category")}
+              placeholder="e.g. Concrete & Foundation, Electrical, HVAC"
+              className="glass-subtle rounded-xl border-0"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Quantity" htmlFor="quantity">
+              <Input
+                id="quantity"
+                type="number"
+                value={form.quantity}
+                onChange={set("quantity")}
+                placeholder="0"
+                className="glass-subtle rounded-xl border-0"
+              />
+            </Field>
+            <Field label="Unit" htmlFor="unit">
+              <Input
+                id="unit"
+                value={form.unit}
+                onChange={set("unit")}
+                placeholder="pcs, m³, ton…"
+                className="glass-subtle rounded-xl border-0"
+              />
+            </Field>
+          </div>
           <Field label="Amount (OMR)" htmlFor="amount">
             <Input
               id="amount"
@@ -479,6 +573,35 @@ function PrSheet({
               className="glass-subtle rounded-xl border-0"
             />
           </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Priority">
+              <div className="glass-subtle flex gap-1 rounded-xl p-1">
+                {PRIORITIES.map((pr) => (
+                  <button
+                    key={pr}
+                    type="button"
+                    onClick={() => onField("priority", pr)}
+                    className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
+                      form.priority === pr
+                        ? `glass glass-specular ${PRIORITY_CLS[pr]}`
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {pr}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <Field label="Required by" htmlFor="requiredBy">
+              <Input
+                id="requiredBy"
+                type="date"
+                value={form.requiredBy}
+                onChange={set("requiredBy")}
+                className="glass-subtle rounded-xl border-0"
+              />
+            </Field>
+          </div>
           <Field label="Requester" htmlFor="requester">
             <Input
               id="requester"
@@ -486,6 +609,15 @@ function PrSheet({
               onChange={set("requester")}
               placeholder="defaults to you"
               className="glass-subtle rounded-xl border-0"
+            />
+          </Field>
+          <Field label="Notes" htmlFor="notes">
+            <Textarea
+              id="notes"
+              value={form.notes}
+              onChange={set("notes")}
+              placeholder="Any extra detail for the approver or vendor"
+              className="glass-subtle min-h-20 rounded-xl border-0"
             />
           </Field>
         </div>
