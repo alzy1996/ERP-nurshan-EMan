@@ -59,6 +59,17 @@ type PO = {
   receivedByName?: string;
 };
 
+// An approved request the user can optionally base a new PO on.
+type LinkablePr = {
+  id: string;
+  desc?: string;
+  amount?: number;
+  siteId?: string;
+  stage?: string;
+  poId?: string;
+  createdAt?: number;
+};
+
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-muted text-muted-foreground" },
   issued: { label: "Issued", cls: "bg-chart-1/15 text-chart-1" },
@@ -68,6 +79,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const fmt = (n: number) => `${(n || 0).toFixed(3)} OMR`;
 const emptyItem = (): POItem => ({ desc: "", unit: "", qty: 0, unitPrice: 0, lineTotal: 0 });
 const NO_SUPPLIER = "__none__";
+const NO_PR = "__no_pr__";
 
 function printPO(po: PO) {
   const w = window.open("", "_blank", "width=820,height=920");
@@ -111,14 +123,18 @@ export default function PurchaseOrdersPage() {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<POItem[]>([emptyItem()]);
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
+  // Approved requests you can optionally link this PO back to.
+  const [approvedPrs, setApprovedPrs] = useState<LinkablePr[]>([]);
+  const [fromPrId, setFromPrId] = useState("");
 
   async function load() {
     setLoading(true);
     try {
       const session = app.asSession();
-      const [data, sups] = await Promise.all([
+      const [data, sups, prData] = await Promise.all([
         fetchScoped<PO>("purchase_orders", session),
         fetchScoped<{ name?: string }>("suppliers", session),
+        fetchScoped<LinkablePr>("prs", session),
       ]);
       setRows(
         data.sort(
@@ -130,6 +146,12 @@ export default function PurchaseOrdersPage() {
           .map((s) => ({ id: s.id, name: (s.name || "").trim() }))
           .filter((s) => s.name)
           .sort((a, b) => a.name.localeCompare(b.name))
+      );
+      // Only approved requests that haven't been turned into a PO yet.
+      setApprovedPrs(
+        prData
+          .filter((p) => p.stage === "Approved" && !p.poId)
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       );
     } catch {
       toast.error("Could not load purchase orders");
@@ -193,6 +215,21 @@ export default function PurchaseOrdersPage() {
     setDeliveryPeriod("");
     setNotes("");
     setItems([emptyItem()]);
+    setFromPrId("");
+  }
+
+  // Optionally base this PO on an approved request: link it and pull its item in.
+  function pickPr(v: string) {
+    if (v === NO_PR) {
+      setFromPrId("");
+      return;
+    }
+    setFromPrId(v);
+    const pr = approvedPrs.find((p) => p.id === v);
+    if (pr) {
+      const amount = Number(pr.amount) || 0;
+      setItems([{ desc: pr.desc || "Item", unit: "", qty: 1, unitPrice: amount, lineTotal: amount }]);
+    }
   }
 
   async function save() {
@@ -201,7 +238,9 @@ export default function PurchaseOrdersPage() {
     if (validItems.length === 0) return toast.error("Add at least one line item with a description");
     setSaving(true);
     try {
-      await addScoped(
+      const session = app.asSession();
+      const linkedPr = fromPrId ? approvedPrs.find((p) => p.id === fromPrId) : null;
+      const ref = await addScoped(
         "purchase_orders",
         {
           poNumber,
@@ -214,11 +253,17 @@ export default function PurchaseOrdersPage() {
           subtotal,
           vat,
           total,
+          ...(linkedPr ? { fromPrId: linkedPr.id, fromPrDesc: linkedPr.desc || "" } : {}),
         },
-        app.asSession(),
-        app.resolveSite()
+        session,
+        linkedPr?.siteId || app.resolveSite()
       );
-      toast.success(`${poNumber} saved`);
+      // Keep the link two-way so the PR advances to "Ordered" and receiving the
+      // PO later closes the request (PR -> Received). Mirrors "Create PO" on a PR.
+      if (linkedPr) {
+        await updateScoped("prs", linkedPr.id, { stage: "Ordered", poId: ref.id }, session).catch(() => {});
+      }
+      toast.success(linkedPr ? `${poNumber} saved & linked to request` : `${poNumber} saved`);
       setOpen(false);
       resetForm();
       await load();
@@ -309,6 +354,35 @@ export default function PurchaseOrdersPage() {
               <div className="space-y-6 px-4 pb-4">
                 {/* Header fields */}
                 <section className="grid grid-cols-2 gap-3">
+                  <Field
+                    label="From request"
+                    className="col-span-2"
+                    hint={
+                      approvedPrs.length === 0
+                        ? "No approved requests waiting — this will be a direct PO"
+                        : "Optional — link an approved request and pull in its item"
+                    }
+                  >
+                    {approvedPrs.length === 0 ? (
+                      <div className="glass-subtle rounded-xl px-3 py-2.5 text-sm text-muted-foreground">
+                        No approved requests to link
+                      </div>
+                    ) : (
+                      <Select value={fromPrId ? fromPrId : NO_PR} onValueChange={pickPr}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an approved request" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NO_PR}>— No request (direct PO) —</SelectItem>
+                          {approvedPrs.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {(p.desc || "Request").slice(0, 48)} · {fmt(p.amount || 0)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </Field>
                   <Field label="PO number *" htmlFor="poNumber">
                     <Input
                       id="poNumber"
