@@ -34,6 +34,19 @@ function help(): string {
   ].join("\n");
 }
 
+// Strip command/filler words to get the record name a user meant.
+const FILLER = new Set([
+  "the", "a", "an", "request", "requests", "purchase", "supplier", "suppliers", "vendor",
+  "material", "materials", "item", "project", "site", "called", "named", "delete", "remove",
+  "erase", "approve", "please", "record", "for", "named", "to",
+]);
+function extractName(q: string, _low: string): string {
+  const quoted = q.match(/["'“”]([^"'“”]+)["'“”]/);
+  if (quoted) return quoted[1].trim();
+  const words = q.trim().replace(/[.?!]+$/, "").split(/\s+/);
+  return words.filter((w) => !FILLER.has(w.toLowerCase())).join(" ").trim();
+}
+
 export async function mockAsk(
   question: string,
   ctx: ToolCtx
@@ -81,6 +94,35 @@ export async function mockAsk(
       const r = await runTool("create_record", { module: mod, fields: { [field]: name } }, ctx);
       return { text: r.title ? `${r.title}\n${r.text}` : r.text, usedTools: used, action: r.action };
     }
+  }
+  // Intent: what changed (recent activity by timestamp)
+  if (/(what.*(chang|new|happen)|since yesterday|today.*(activ|chang|new|happen)|recent activit|whats new|what's new)/.test(low)) {
+    const days = /week/.test(low) ? 7 : /yesterday/.test(low) ? 2 : 1;
+    return { text: await run("recent_activity", { days }), usedTools: used };
+  }
+  // Intent: delete / remove a record (proposes; user confirms)
+  if (/\b(delete|remove|erase)\b/.test(low)) {
+    const mod =
+      /supplier|vendor/.test(low) ? "suppliers"
+      : /material|item/.test(low) ? "materials"
+      : /request|requisition|\bpr\b/.test(low) ? "purchase_requests"
+      : /project|site/.test(low) ? "projects"
+      : null;
+    if (mod) {
+      const name = extractName(q, low);
+      if (name) {
+        used.push("delete_record");
+        const r = await runTool("delete_record", { module: mod, name }, ctx);
+        return { text: r.title ? `${r.title}\n${r.text}` : r.text, usedTools: used, action: r.action };
+      }
+    }
+  }
+  // Intent: approve a purchase request
+  if (/\bapprove\b/.test(low)) {
+    const name = extractName(q, low);
+    used.push("approve_request");
+    const r = await runTool("approve_request", { name }, ctx);
+    return { text: r.title ? `${r.title}\n${r.text}` : r.text, usedTools: used, action: r.action };
   }
   // Intent: navigate / open a screen
   if (/\b(open|go ?to|navigate|take me to|bring up|jump to)\b/.test(low)) {

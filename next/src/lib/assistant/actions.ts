@@ -6,10 +6,10 @@
 // call commitAction(). Every write is gated by the user's role (can create) and
 // stamped with createdBy/updatedBy by the data layer (built-in audit).
 // ============================================================================
-import { addScoped, type Session } from "@/lib/data";
+import { addScoped, updateScoped, removeScoped, type Session } from "@/lib/data";
 import { MODULE_LABELS, type Capability, type ModuleKey } from "@/lib/roles";
 
-export type ActionVerb = "create";
+export type ActionVerb = "create" | "update" | "delete" | "approve";
 
 export type PendingAction = {
   verb: ActionVerb;
@@ -17,6 +17,7 @@ export type PendingAction = {
   short: string; // Firestore short collection name
   fields: Record<string, unknown>;
   summary: string; // human-readable, e.g. Create Supplier "BuildCo"
+  id?: string; // for update / delete / approve
 };
 
 type CreateSpec = {
@@ -110,9 +111,21 @@ export async function commitAction(
       const ref = (await addScoped(action.short, action.fields, session)) as { id?: string };
       return { ok: true, id: ref?.id, message: `Done — ${action.summary.replace(/^Create /, "created ")}.` };
     }
+    if (action.verb === "update" && action.id) {
+      await updateScoped(action.short, action.id, action.fields, session);
+      return { ok: true, id: action.id, message: `Done — ${action.summary.replace(/^Update /, "updated ")}.` };
+    }
+    if (action.verb === "approve" && action.id) {
+      await updateScoped(action.short, action.id, { status: "Approved", approvedAt: Date.now(), ...action.fields }, session);
+      return { ok: true, id: action.id, message: `Done — ${action.summary.replace(/^Approve /, "approved ")}.` };
+    }
+    if (action.verb === "delete" && action.id) {
+      await removeScoped(action.short, action.id);
+      return { ok: true, id: action.id, message: `Done — ${action.summary.replace(/^Delete /, "deleted ")}.` };
+    }
     return { ok: false, message: "That action isn't supported." };
   } catch {
-    return { ok: false, message: "I couldn't save that. Please try from the screen." };
+    return { ok: false, message: "I couldn't complete that. Please try from the screen." };
   }
 }
 

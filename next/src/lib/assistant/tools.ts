@@ -18,7 +18,7 @@ import {
   type ModuleKey,
   type Role,
 } from "@/lib/roles";
-import { approvalLimitFor, requiredApproverLabel } from "@/lib/procurement";
+import { approvalLimitFor, canApproveAmount, requiredApproverLabel } from "@/lib/procurement";
 import { buildProposal, resolveCreatable, type PendingAction } from "./actions";
 
 export type Rec = Record<string, unknown> & { id: string };
@@ -162,6 +162,14 @@ export function resolveModule(text: string, ctx: ToolCtx): ModuleKey | null {
   return null;
 }
 
+/** Find records in a module whose label contains `name` (case-insensitive). */
+async function findByName(m: ModuleKey, name: string, ctx: ToolCtx): Promise<Rec[]> {
+  const q = name.toLowerCase().trim();
+  if (!q) return [];
+  const rows = await ctx.load(m).catch(() => []);
+  return rows.filter((r) => labelOf(r).toLowerCase().includes(q));
+}
+
 // ---- shared compute (used by tools AND by report) --------------------------
 async function computeCounts(ctx: ToolCtx): Promise<{ m: ModuleKey; n: number }[]> {
   const mods = DATA_MODULES.filter((m) => ctx.canSee(m));
@@ -286,6 +294,109 @@ export const TOOLS: Tool[] = [
       const { action, error } = buildProposal(m, fields, ctx.can);
       if (error || !action) return { ok: false, title: "Add", text: error || "I couldn't prepare that." };
       return { ok: true, title: "Confirm", text: `Ready to ${action.summary}. Confirm below to save it.`, action };
+    },
+  },
+  {
+    name: "delete_record",
+    description:
+      "Propose DELETING a record by name (e.g. a supplier or material). Does NOT delete — the user must confirm. Use when asked to delete/remove something.",
+    parameters: {
+      type: "object",
+      properties: { module: { type: "string" }, name: { type: "string" } },
+      required: ["module", "name"],
+    },
+    run: async (args, ctx) => {
+      const m = resolveModule(str(args.module), ctx);
+      if (!m) return { ok: false, title: "Delete", text: "I couldn't find that section, or you don't have access." };
+      if (!ctx.can(m, "delete")) return { ok: false, title: "Delete", text: `You don't have permission to delete ${MODULE_LABELS[m]}.` };
+      const matches = await findByName(m, str(args.name), ctx);
+      if (!matches.length) return { ok: false, title: "Delete", text: `I couldn't find "${str(args.name)}" in ${MODULE_LABELS[m]}.` };
+      if (matches.length > 1)
+        return { ok: false, title: "Delete", text: `I found ${matches.length}: ${matches.slice(0, 6).map(labelOf).join(", ")}. Which one exactly?` };
+      const r = matches[0];
+      return {
+        ok: true,
+        title: "Confirm",
+        text: `This permanently deletes "${labelOf(r)}".`,
+        action: { verb: "delete", module: m, short: MODULE_SHORT[m]!, id: r.id, fields: {}, summary: `Delete ${MODULE_LABELS[m]} "${labelOf(r)}"` },
+      };
+    },
+  },
+  {
+    name: "update_record",
+    description: "Propose UPDATING a record found by name — set new field values. Does NOT save until the user confirms.",
+    parameters: {
+      type: "object",
+      properties: {
+        module: { type: "string" },
+        name: { type: "string" },
+        fields: { type: "object", description: 'The fields to change, e.g. {"price":5}.' },
+      },
+      required: ["module", "name", "fields"],
+    },
+    run: async (args, ctx) => {
+      const m = resolveModule(str(args.module), ctx);
+      if (!m) return { ok: false, title: "Update", text: "I couldn't find that section, or you don't have access." };
+      if (!ctx.can(m, "update")) return { ok: false, title: "Update", text: `You don't have permission to change ${MODULE_LABELS[m]}.` };
+      const matches = await findByName(m, str(args.name), ctx);
+      if (!matches.length) return { ok: false, title: "Update", text: `I couldn't find "${str(args.name)}" in ${MODULE_LABELS[m]}.` };
+      if (matches.length > 1)
+        return { ok: false, title: "Update", text: `I found ${matches.length}: ${matches.slice(0, 6).map(labelOf).join(", ")}. Which one?` };
+      const fields = (args.fields && typeof args.fields === "object" ? args.fields : {}) as Record<string, unknown>;
+      const keys = Object.keys(fields).filter((k) => !["id", "createdBy", "createdAt"].includes(k));
+      if (!keys.length) return { ok: false, title: "Update", text: "What should I change?" };
+      const r = matches[0];
+      const patch: Record<string, unknown> = {};
+      keys.forEach((k) => (patch[k] = fields[k]));
+      return {
+        ok: true,
+        title: "Confirm",
+        text: `Update "${labelOf(r)}" — ${keys.map((k) => `${k} → ${String(fields[k])}`).join(", ")}.`,
+        action: { verb: "update", module: m, short: MODULE_SHORT[m]!, id: r.id, fields: patch, summary: `Update ${MODULE_LABELS[m]} "${labelOf(r)}"` },
+      };
+    },
+  },
+  {
+    name: "approve_request",
+    description: "Propose APPROVING a purchase request found by name. Requires approval authority and the amount within the user's limit.",
+    parameters: { type: "object", properties: { name: { type: "string" } }, required: ["name"] },
+    run: async (args, ctx) => {
+      const m: ModuleKey = "purchase_requests";
+      if (!ctx.can(m, "approve")) return { ok: false, title: "Approve", text: "You don't have approval authority for requests." };
+      const matches = await findByName(m, str(args.name), ctx);
+      if (!matches.length) return { ok: false, title: "Approve", text: `I couldn't find a request matching "${str(args.name)}".` };
+      if (matches.length > 1)
+        return { ok: false, title: "Approve", text: `I found ${matches.length}: ${matches.slice(0, 6).map(labelOf).join(", ")}. Which one?` };
+      const r = matches[0];
+      const amt = amountOf(r);
+      if (!canApproveAmount(ctx.role, amt, ctx.isAdmin))
+        return { ok: false, title: "Approve", text: `That request is ${fmtOMR(amt)} — above your limit. It needs ${requiredApproverLabel(amt)}.` };
+      return {
+        ok: true,
+        title: "Confirm",
+        text: `Approve "${labelOf(r)}"${amt ? ` (${fmtOMR(amt)})` : ""}?`,
+        action: { verb: "approve", module: m, short: "prs", id: r.id, fields: {}, summary: `Approve "${labelOf(r)}"${amt ? ` (${fmtOMR(amt)})` : ""}` },
+      };
+    },
+  },
+  {
+    name: "recent_activity",
+    description:
+      "What changed recently — records created or updated in the last N days (default 1 = today). Use for 'what changed today', 'since yesterday', 'what's new'.",
+    parameters: { type: "object", properties: { days: { type: "number", description: "How many days back (default 1)." } } },
+    run: async (args, ctx) => {
+      const days = Math.max(1, Math.min(30, num(args.days) || 1));
+      const since = Date.now() - days * 86400000;
+      const lines: string[] = [];
+      for (const m of DATA_MODULES.filter((x) => ctx.canSee(x))) {
+        const rows = await ctx.load(m).catch(() => []);
+        const created = rows.filter((r) => createdOf(r) >= since).length;
+        const updated = rows.filter((r) => num(r.updatedAt) >= since && createdOf(r) < since).length;
+        if (created || updated) lines.push(`• ${MODULE_LABELS[m]}: ${created} new${updated ? `, ${updated} updated` : ""}`);
+      }
+      return lines.length
+        ? { ok: true, title: `Changes in the last ${days} day(s)`, text: lines.join("\n") }
+        : { ok: true, title: "Changes", text: `Nothing new or updated in the last ${days} day(s).` };
     },
   },
   {
