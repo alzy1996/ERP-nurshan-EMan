@@ -24,6 +24,7 @@ export type ModuleKey =
   | "suppliers"
   | "materials"
   | "inventory"
+  | "material_usage"
   | "services"
   | "offers"
   | "purchase_requests"
@@ -56,7 +57,7 @@ export interface Perm {
 }
 
 export const ALL_MODULES: ModuleKey[] = [
-  "dashboard", "suppliers", "materials", "inventory", "services", "offers", "purchase_requests",
+  "dashboard", "suppliers", "materials", "inventory", "material_usage", "services", "offers", "purchase_requests",
   "purchase_orders", "approvals", "deliveries", "contracts", "projects", "site_logs", "inspections", "attendance",
   "timesheets", "workforce", "equipment", "analytics", "notifications", "settings", "users",
 ];
@@ -81,6 +82,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   suppliers: "Suppliers",
   materials: "Materials",
   inventory: "Inventory",
+  material_usage: "Material Usage",
   services: "Services",
   offers: "Offers",
   purchase_requests: "Purchase Requests",
@@ -124,14 +126,14 @@ function p(code: string): Perm {
 // dashboard + notifications are injected as a "view" baseline for everyone.
 const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
-    suppliers: "full", materials: "full", inventory: "full", services: "full", offers: "full", purchase_requests: "full+appr",
+    suppliers: "full", materials: "full", inventory: "full", material_usage: "full", services: "full", offers: "full", purchase_requests: "full+appr",
     purchase_orders: "full+appr", approvals: "view", deliveries: "full", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
     attendance: "full", timesheets: "full", workforce: "full", equipment: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
     suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
-    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", equipment: "view", analytics: "view",
+    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", equipment: "view", material_usage: "view", analytics: "view",
   },
   // Country Manager: senior oversight across the whole country. Sees every
   // operational module and signs off (approves) the procurement chain — but
@@ -140,7 +142,7 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   country_manager: {
     suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
-    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", equipment: "view", analytics: "view",
+    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", equipment: "view", material_usage: "view", analytics: "view",
   },
   procurement_manager: {
     suppliers: "full", materials: "full", inventory: "view", services: "full", offers: "full",
@@ -161,12 +163,12 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
     attendance: "full", timesheets: "full", workforce: "full", projects: "view", analytics: "view",
   },
   site_engineer: {
-    suppliers: "view", materials: "view", inventory: "view", services: "view",
+    suppliers: "view", materials: "view", inventory: "view", material_usage: "edit:project", services: "view",
     purchase_requests: "edit:project", purchase_orders: "view", deliveries: "view", contracts: "view",
     projects: "edit:project", site_logs: "edit:project", inspections: "view", attendance: "edit:own", timesheets: "edit:own", workforce: "edit:project", equipment: "edit:project", analytics: "view:own",
   },
   warehouse: {
-    suppliers: "view", materials: "full", inventory: "full", equipment: "full", services: "view",
+    suppliers: "view", materials: "full", inventory: "full", material_usage: "full", equipment: "full", services: "view",
     purchase_requests: "view", purchase_orders: "view", deliveries: "full",
     projects: "view", site_logs: "view", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
@@ -237,6 +239,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   suppliers: "/dashboard/suppliers",
   materials: "/dashboard/materials",
   inventory: "/dashboard/inventory",
+  material_usage: "/dashboard/material-usage",
   services: "/dashboard/services",
   offers: "/dashboard/offers",
   purchase_requests: "/dashboard/purchase-requests",
