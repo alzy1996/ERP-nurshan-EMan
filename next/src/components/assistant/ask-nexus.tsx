@@ -43,11 +43,32 @@ interface SpeechRec {
   interimResults: boolean;
   start(): void;
   stop(): void;
+  onstart: (() => void) | null;
   onresult: ((e: { results: { length: number; [i: number]: { 0: { transcript: string } } } }) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
 }
 type SpeechRecCtor = new () => SpeechRec;
+
+function micError(code?: string): string {
+  switch (code) {
+    case "not-allowed":
+    case "service-not-allowed":
+      return "Microphone is blocked. Tap the 🔒 in the address bar → Microphone → Allow, then reload the page.";
+    case "audio-capture":
+      return "No microphone found — check a mic is connected and enabled.";
+    case "network":
+      return "The speech service couldn't be reached. Use official Google Chrome (Brave/Chromium don't support it), or another network.";
+    case "no-speech":
+      return "I didn't hear anything — tap the mic and speak a bit closer.";
+    case "language-not-supported":
+      return "That language isn't available for voice — try switching the app to English.";
+    case "aborted":
+      return "";
+    default:
+      return code ? `Voice error: ${code}. Try Google Chrome and allow the mic.` : "";
+  }
+}
 
 type Msg = {
   id: string;
@@ -156,15 +177,27 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
     r.lang = SPEECH_LANG[app.lang] || "en-US";
     r.continuous = false;
     r.interimResults = true;
+    let gotResult = false;
+    let hadError = false;
+    r.onstart = () => {
+      setListening(true);
+      setMicHint("");
+    };
     r.onresult = (e) => {
+      gotResult = true;
       let t = "";
       for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
       setInput(t);
     };
-    r.onend = () => setListening(false);
-    r.onerror = () => {
+    r.onerror = (e) => {
+      hadError = true;
       setListening(false);
-      setMicHint("Couldn't hear you — allow the microphone (tap the 🔒 in the address bar → Microphone → Allow), then try again.");
+      const msg = micError((e as { error?: string })?.error);
+      if (msg) setMicHint(msg);
+    };
+    r.onend = () => {
+      setListening(false);
+      if (!gotResult && !hadError) setMicHint("I didn't catch anything — tap the mic and speak, or use Google Chrome.");
     };
     recogRef.current = r;
     try {
