@@ -28,6 +28,7 @@ export type ModuleKey =
   | "offers"
   | "purchase_requests"
   | "purchase_orders"
+  | "approvals"
   | "contracts"
   | "projects"
   | "site_logs"
@@ -53,7 +54,7 @@ export interface Perm {
 
 export const ALL_MODULES: ModuleKey[] = [
   "dashboard", "suppliers", "materials", "inventory", "services", "offers", "purchase_requests",
-  "purchase_orders", "contracts", "projects", "site_logs", "inspections", "attendance",
+  "purchase_orders", "approvals", "contracts", "projects", "site_logs", "inspections", "attendance",
   "timesheets", "analytics", "notifications", "settings", "users",
 ];
 
@@ -81,6 +82,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   offers: "Offers",
   purchase_requests: "Purchase Requests",
   purchase_orders: "Purchase Orders",
+  approvals: "Approvals",
   contracts: "Contracts",
   projects: "Projects",
   site_logs: "Site Log",
@@ -117,12 +119,12 @@ function p(code: string): Perm {
 const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
     suppliers: "full", materials: "full", inventory: "full", services: "full", offers: "full", purchase_requests: "full+appr",
-    purchase_orders: "full+appr", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
+    purchase_orders: "full+appr", approvals: "view", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
     attendance: "full", timesheets: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
     suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
-    purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
+    purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
     projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   // Country Manager: senior oversight across the whole country. Sees every
@@ -131,12 +133,12 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   // stays with Super Admin.
   country_manager: {
     suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
-    purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
+    purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
     projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   procurement_manager: {
     suppliers: "full", materials: "full", inventory: "view", services: "full", offers: "full",
-    purchase_requests: "full+appr", purchase_orders: "full+appr", contracts: "full",
+    purchase_requests: "full+appr", purchase_orders: "full+appr", approvals: "view", contracts: "full",
     projects: "view", inspections: "view", attendance: "view", analytics: "view",
   },
   buyer: {
@@ -146,7 +148,7 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   },
   finance: {
     suppliers: "view", materials: "view", services: "view", offers: "view",
-    purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
+    purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
     projects: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   hr: {
@@ -233,6 +235,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   offers: "/dashboard/offers",
   purchase_requests: "/dashboard/purchase-requests",
   purchase_orders: "/dashboard/purchase-orders",
+  approvals: "/dashboard/approvals",
   contracts: "/dashboard/contracts",
   projects: "/dashboard/projects",
   site_logs: "/dashboard/site-logs",
