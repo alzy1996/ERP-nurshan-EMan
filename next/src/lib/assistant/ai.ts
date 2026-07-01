@@ -9,10 +9,12 @@
 import type { AssistantConfig } from "./config";
 import { isAnthropic } from "./config";
 import { runTool, toolSchemas, anthropicToolSchemas, type ToolCtx } from "./tools";
+import type { PendingAction } from "./actions";
 
 export class AssistantError extends Error {}
 
 export type ChatMsg = { role: "user" | "assistant"; content: string };
+export type AskOut = { text: string; usedTools: string[]; action?: PendingAction };
 
 type ApiMsg = {
   role: "system" | "user" | "assistant" | "tool";
@@ -146,12 +148,13 @@ async function anthropicAsk(
   question: string,
   cfg: AssistantConfig,
   ctx: ToolCtx
-): Promise<{ text: string; usedTools: string[] }> {
+): Promise<AskOut> {
   const messages: AntMsg[] = [
     ...history.slice(-8).map((h) => ({ role: h.role, content: h.content } as AntMsg)),
     { role: "user", content: question },
   ];
   const used: string[] = [];
+  let action: PendingAction | undefined;
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const { content, stop_reason } = await callAnthropic(cfg, system, messages);
     const toolUses = content.filter((b) => b.type === "tool_use") as {
@@ -161,13 +164,14 @@ async function anthropicAsk(
       input: Record<string, unknown>;
     }[];
     if (stop_reason !== "tool_use" || !toolUses.length) {
-      return { text: antText(content) || "…", usedTools: used };
+      return { text: antText(content) || "…", usedTools: used, action };
     }
     messages.push({ role: "assistant", content });
     const results: AntBlock[] = [];
     for (const tu of toolUses) {
       used.push(tu.name);
       const r = await runTool(tu.name, tu.input || {}, ctx);
+      if (r.action) action = r.action;
       results.push({
         type: "tool_result",
         tool_use_id: tu.id,
@@ -180,7 +184,7 @@ async function anthropicAsk(
     ...messages,
     { role: "user", content: "Please give me your best final answer now, in plain words." },
   ]);
-  return { text: antText(final.content) || "…", usedTools: used };
+  return { text: antText(final.content) || "…", usedTools: used, action };
 }
 
 /** One-shot connectivity check for Settings → Assistant. Throws AssistantError. */
@@ -256,7 +260,7 @@ export async function aiAsk(
   question: string,
   cfg: AssistantConfig,
   ctx: ToolCtx
-): Promise<{ text: string; usedTools: string[] }> {
+): Promise<AskOut> {
   if (isAnthropic(cfg)) return anthropicAsk(system, history, question, cfg, ctx);
 
   const messages: ApiMsg[] = [
@@ -265,12 +269,13 @@ export async function aiAsk(
     { role: "user", content: question },
   ];
   const used: string[] = [];
+  let action: PendingAction | undefined;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const msg = await callModel(cfg, messages);
     const calls = msg.tool_calls || [];
     if (!calls.length) {
-      return { text: (msg.content || "").trim() || "…", usedTools: used };
+      return { text: (msg.content || "").trim() || "…", usedTools: used, action };
     }
     // Record the assistant's tool-call turn, then answer each call.
     messages.push({ role: "assistant", content: msg.content ?? "", tool_calls: calls });
@@ -283,6 +288,7 @@ export async function aiAsk(
       }
       used.push(c.function.name);
       const result = await runTool(c.function.name, args, ctx);
+      if (result.action) action = result.action;
       messages.push({
         role: "tool",
         tool_call_id: c.id,
@@ -296,5 +302,5 @@ export async function aiAsk(
     ...messages,
     { role: "user", content: "Please give me your best final answer now, in plain words." },
   ]);
-  return { text: (finalMsg.content || "").trim() || "…", usedTools: used };
+  return { text: (finalMsg.content || "").trim() || "…", usedTools: used, action };
 }

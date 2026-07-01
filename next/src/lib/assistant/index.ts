@@ -6,7 +6,8 @@
 // brain fails, it falls back to the free brain so the assistant never dies.
 // ============================================================================
 import type { Session } from "@/lib/data";
-import type { ModuleKey, Role } from "@/lib/roles";
+import type { Capability, ModuleKey, Role } from "@/lib/roles";
+import type { PendingAction } from "./actions";
 import { buildSystemPrompt } from "./knowledge";
 import { makeLoader, type ToolCtx } from "./tools";
 import { getConfig, isAIReady, sourceLabel } from "./config";
@@ -28,6 +29,7 @@ export type AskInput = {
   sites: string[];
   visibleModules: ModuleKey[];
   canSee: (m: ModuleKey) => boolean;
+  can: (m: ModuleKey, cap: Capability) => boolean;
   navigate?: (route: string) => void;
   lang?: string;
 };
@@ -38,6 +40,7 @@ export type AskResult = {
   usedTools: string[];
   fellBack?: boolean; // AI was configured but failed → used free brain
   note?: string;
+  action?: PendingAction; // a write the user must confirm
 };
 
 export async function askNexus(input: AskInput): Promise<AskResult> {
@@ -48,6 +51,7 @@ export async function askNexus(input: AskInput): Promise<AskResult> {
     isAdmin: input.isAdmin,
     sites: input.sites,
     canSee: input.canSee,
+    can: input.can,
     navigate: input.navigate,
     load: makeLoader(input.session),
   };
@@ -65,7 +69,7 @@ export async function askNexus(input: AskInput): Promise<AskResult> {
         lang: input.lang,
       });
       const r = await aiAsk(system, input.history, input.question, cfg, ctx);
-      return { text: r.text, source: sourceLabel(cfg), usedTools: r.usedTools };
+      return { text: r.text, source: sourceLabel(cfg), usedTools: r.usedTools, action: r.action };
     } catch (e) {
       // AI failed — answer with the free brain and tell the user why.
       const r = await mockAsk(input.question, ctx);
@@ -76,10 +80,11 @@ export async function askNexus(input: AskInput): Promise<AskResult> {
         usedTools: r.usedTools,
         fellBack: true,
         note: why,
+        action: r.action,
       };
     }
   }
 
   const r = await mockAsk(input.question, ctx);
-  return { text: r.text, source: "Free mode", usedTools: r.usedTools };
+  return { text: r.text, source: "Free mode", usedTools: r.usedTools, action: r.action };
 }

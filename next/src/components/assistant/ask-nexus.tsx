@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { useApp } from "@/context/app-context";
 import { usePermissions } from "@/lib/usePermissions";
 import { askNexus, getConfig, sourceLabel, SUGGESTIONS, type ChatMsg } from "@/lib/assistant";
+import { commitAction, fieldLines, type PendingAction } from "@/lib/assistant/actions";
+import { MODULE_ROUTES } from "@/lib/roles";
 import {
   getSize,
   getTheme,
@@ -89,6 +91,23 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
   const [listening, setListening] = useState(false);
   const [micOK, setMicOK] = useState(false);
   const recogRef = useRef<SpeechRec | null>(null);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+
+  const addAssistant = (text: string) =>
+    setMessages((m) => [...m, { id: nextId(), role: "assistant", text }]);
+
+  async function confirmPending() {
+    if (!pending) return;
+    const p = pending;
+    setPending(null);
+    const out = await commitAction(p, app.asSession());
+    addAssistant(out.message);
+    if (out.ok) router.push(MODULE_ROUTES[p.module]);
+  }
+  function cancelPending() {
+    setPending(null);
+    addAssistant("Okay, cancelled — nothing was saved.");
+  }
 
   // Appearance (size + colour theme), live-updating.
   const [theme, setThemeState] = useState<ChatTheme>(() => getTheme());
@@ -200,10 +219,12 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
         sites: app.session?.sites || [],
         visibleModules: perms.nav,
         canSee: perms.canSee,
+        can: perms.can,
         navigate: (route) => router.push(route),
         lang: app.lang,
       });
       setSource(res.source);
+      if (res.action) setPending(res.action);
       setMessages((m) =>
         m.map((x) =>
           x.id === pendingMsg.id
@@ -362,6 +383,40 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
         )}
       </div>
 
+      {/* Confirm-before-save card (agent action) */}
+      {pending ? (
+        <div className="border-t border-white/10 px-4 py-3">
+          <div className="glass-subtle rounded-2xl p-3" style={{ border: `1px solid ${chipBorder}` }}>
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <span style={{ color: accent }}>●</span>
+              {pending.summary}?
+            </div>
+            <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
+              {fieldLines(pending).map((f) => (
+                <div key={f.k}>
+                  <span className="capitalize">{f.k}</span>: <span className="text-foreground">{f.v}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={confirmPending}
+                className="flex-1 rounded-xl py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-px"
+                style={{ background: userBg }}
+              >
+                Confirm &amp; save
+              </button>
+              <button
+                onClick={cancelPending}
+                className="glass-subtle rounded-xl px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Composer */}
       <div className="border-t border-white/10 p-3">
         <div
@@ -410,7 +465,7 @@ export function AskNexus({ onClose, pos }: { onClose: () => void; pos?: { left: 
           </button>
         </div>
         <p className="mt-1.5 px-1 text-center text-[10px] text-muted-foreground">
-          Ask Nexus reads your data &amp; opens screens — it won&apos;t change your records.
+          Ask Nexus reads your data, opens screens, and always asks before it saves.
         </p>
       </div>
     </div>
