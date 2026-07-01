@@ -28,6 +28,7 @@ const SHORT_TO_MODULE: Record<string, ModuleKey> = {
   suppliers: "suppliers",
   materials: "materials",
   inventory: "inventory",
+  material_usage: "material_usage",
   offers: "offers",
   prs: "purchase_requests",
   pos: "purchase_orders",
