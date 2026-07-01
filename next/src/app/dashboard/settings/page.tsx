@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { LanguageSwitcher } from "@/components/shell/language-switcher";
 import { DensityControl } from "@/components/shell/density-control";
+import { AssistantSettings } from "@/components/assistant/assistant-settings";
 
 type Site = { id: string; name?: string };
 
@@ -32,6 +33,9 @@ export default function SettingsPage() {
           <TabsTrigger value="general" className="rounded-full">
             General
           </TabsTrigger>
+          <TabsTrigger value="assistant" className="rounded-full">
+            Assistant
+          </TabsTrigger>
           <TabsTrigger value="sites" className="rounded-full">
             Sites
           </TabsTrigger>
@@ -39,6 +43,9 @@ export default function SettingsPage() {
 
         <TabsContent value="general">
           <GeneralTab />
+        </TabsContent>
+        <TabsContent value="assistant">
+          <AssistantSettings />
         </TabsContent>
         <TabsContent value="sites">
           <SitesTab />
