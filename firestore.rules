@@ -119,6 +119,7 @@ service cloud.firestore {
 
     match /nexus_sites/{doc}            { allow read, write: if isPasswordAuth(); }
     match /nexus_site_logs/{doc}        { allow read, write: if isPasswordAuth(); }
+    match /nexus_inventory/{doc}        { allow read, write: if isPasswordAuth(); }
     match /nexus_notifications/{doc}    { allow read, write: if isPasswordAuth(); }
     match /nexus_activity/{doc}         { allow read, write: if isPasswordAuth(); }
     match /nexus_settings/{doc}         { allow read, write: if isPasswordAuth(); }

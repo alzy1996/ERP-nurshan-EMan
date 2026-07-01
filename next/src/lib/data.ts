@@ -27,6 +27,7 @@ export type Session = {
 const SHORT_TO_MODULE: Record<string, ModuleKey> = {
   suppliers: "suppliers",
   materials: "materials",
+  inventory: "inventory",
   offers: "offers",
   prs: "purchase_requests",
   pos: "purchase_orders",
