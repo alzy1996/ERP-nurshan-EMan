@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { LanguageSwitcher } from "@/components/shell/language-switcher";
+import { DensityControl } from "@/components/shell/density-control";
 
 type Site = { id: string; name?: string };
 
@@ -85,6 +86,13 @@ function GeneralTab() {
         <div className="mt-4 flex items-center justify-between">
           <span className="text-sm font-medium">Language</span>
           <LanguageSwitcher className="glass-subtle grid size-10 place-items-center rounded-xl text-foreground" />
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span className="text-sm font-medium">Interface size</span>
+            <p className="text-xs text-muted-foreground">Shrink or enlarge the whole app — text &amp; spacing.</p>
+          </div>
+          <DensityControl />
         </div>
       </div>
 
