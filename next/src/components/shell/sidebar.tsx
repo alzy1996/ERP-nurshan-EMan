@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bell,
+  Boxes,
   CalendarClock,
   Check,
   ClipboardList,
@@ -57,6 +58,7 @@ const ICONS: Partial<Record<ModuleKey, LucideIcon>> = {
   site_logs: NotebookPen,
   suppliers: Users,
   materials: Package,
+  inventory: Boxes,
   services: Wrench,
   offers: Tag,
   purchase_requests: ClipboardList,
@@ -78,6 +80,7 @@ const GROUPS: { label: string; modules: ModuleKey[] }[] = [
       "site_logs",
       "suppliers",
       "materials",
+      "inventory",
       "services",
       "offers",
       "purchase_requests",

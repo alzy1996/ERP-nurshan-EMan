@@ -23,6 +23,7 @@ export type ModuleKey =
   | "dashboard"
   | "suppliers"
   | "materials"
+  | "inventory"
   | "services"
   | "offers"
   | "purchase_requests"
@@ -51,7 +52,7 @@ export interface Perm {
 }
 
 export const ALL_MODULES: ModuleKey[] = [
-  "dashboard", "suppliers", "materials", "services", "offers", "purchase_requests",
+  "dashboard", "suppliers", "materials", "inventory", "services", "offers", "purchase_requests",
   "purchase_orders", "contracts", "projects", "site_logs", "inspections", "attendance",
   "timesheets", "analytics", "notifications", "settings", "users",
 ];
@@ -75,6 +76,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
   suppliers: "Suppliers",
   materials: "Materials",
+  inventory: "Inventory",
   services: "Services",
   offers: "Offers",
   purchase_requests: "Purchase Requests",
@@ -114,12 +116,12 @@ function p(code: string): Perm {
 // dashboard + notifications are injected as a "view" baseline for everyone.
 const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
-    suppliers: "full", materials: "full", services: "full", offers: "full", purchase_requests: "full+appr",
+    suppliers: "full", materials: "full", inventory: "full", services: "full", offers: "full", purchase_requests: "full+appr",
     purchase_orders: "full+appr", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
     attendance: "full", timesheets: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
-    suppliers: "view", materials: "view", services: "view", offers: "view",
+    suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
     projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
@@ -128,17 +130,17 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   // day-to-day data entry stays with the operational roles, and user management
   // stays with Super Admin.
   country_manager: {
-    suppliers: "view", materials: "view", services: "view", offers: "view",
+    suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", contracts: "view+appr",
     projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", analytics: "view",
   },
   procurement_manager: {
-    suppliers: "full", materials: "full", services: "full", offers: "full",
+    suppliers: "full", materials: "full", inventory: "view", services: "full", offers: "full",
     purchase_requests: "full+appr", purchase_orders: "full+appr", contracts: "full",
     projects: "view", inspections: "view", attendance: "view", analytics: "view",
   },
   buyer: {
-    suppliers: "edit", materials: "view", services: "edit", offers: "edit",
+    suppliers: "edit", materials: "view", inventory: "view", services: "edit", offers: "edit",
     purchase_requests: "edit", purchase_orders: "edit", contracts: "view",
     projects: "view", attendance: "edit:own", timesheets: "edit:own",
   },
@@ -151,12 +153,12 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
     attendance: "full", timesheets: "full", projects: "view", analytics: "view",
   },
   site_engineer: {
-    suppliers: "view", materials: "view", services: "view",
+    suppliers: "view", materials: "view", inventory: "view", services: "view",
     purchase_requests: "edit:project", purchase_orders: "view", contracts: "view",
     projects: "edit:project", site_logs: "edit:project", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view:own",
   },
   warehouse: {
-    suppliers: "view", materials: "full", services: "view",
+    suppliers: "view", materials: "full", inventory: "full", services: "view",
     purchase_requests: "view", purchase_orders: "view",
     projects: "view", site_logs: "view", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
@@ -226,6 +228,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   dashboard: "/dashboard",
   suppliers: "/dashboard/suppliers",
   materials: "/dashboard/materials",
+  inventory: "/dashboard/inventory",
   services: "/dashboard/services",
   offers: "/dashboard/offers",
   purchase_requests: "/dashboard/purchase-requests",
