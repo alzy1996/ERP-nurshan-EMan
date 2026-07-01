@@ -36,6 +36,7 @@ export type ModuleKey =
   | "attendance"
   | "timesheets"
   | "workforce"
+  | "equipment"
   | "analytics"
   | "notifications"
   | "settings"
@@ -56,7 +57,7 @@ export interface Perm {
 export const ALL_MODULES: ModuleKey[] = [
   "dashboard", "suppliers", "materials", "inventory", "services", "offers", "purchase_requests",
   "purchase_orders", "approvals", "contracts", "projects", "site_logs", "inspections", "attendance",
-  "timesheets", "workforce", "analytics", "notifications", "settings", "users",
+  "timesheets", "workforce", "equipment", "analytics", "notifications", "settings", "users",
 ];
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -91,6 +92,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   attendance: "Attendance",
   timesheets: "Timesheets",
   workforce: "Workforce",
+  equipment: "Equipment",
   analytics: "Analytics",
   notifications: "Notifications",
   settings: "Settings",
@@ -122,12 +124,12 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   admin: {
     suppliers: "full", materials: "full", inventory: "full", services: "full", offers: "full", purchase_requests: "full+appr",
     purchase_orders: "full+appr", approvals: "view", contracts: "full+appr", projects: "full", site_logs: "full", inspections: "full",
-    attendance: "full", timesheets: "full", workforce: "full", analytics: "full", settings: "full", users: "full",
+    attendance: "full", timesheets: "full", workforce: "full", equipment: "full", analytics: "full", settings: "full", users: "full",
   },
   management: {
     suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
-    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", analytics: "view",
+    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", equipment: "view", analytics: "view",
   },
   // Country Manager: senior oversight across the whole country. Sees every
   // operational module and signs off (approves) the procurement chain — but
@@ -136,7 +138,7 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   country_manager: {
     suppliers: "view", materials: "view", inventory: "view", services: "view", offers: "view",
     purchase_requests: "view+appr", purchase_orders: "view+appr", approvals: "view", contracts: "view+appr",
-    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", analytics: "view",
+    projects: "view", site_logs: "view", inspections: "view", attendance: "view", timesheets: "view", workforce: "view", equipment: "view", analytics: "view",
   },
   procurement_manager: {
     suppliers: "full", materials: "full", inventory: "view", services: "full", offers: "full",
@@ -159,10 +161,10 @@ const RAW: Record<Role, Partial<Record<ModuleKey, string>>> = {
   site_engineer: {
     suppliers: "view", materials: "view", inventory: "view", services: "view",
     purchase_requests: "edit:project", purchase_orders: "view", contracts: "view",
-    projects: "edit:project", site_logs: "edit:project", inspections: "view", attendance: "edit:own", timesheets: "edit:own", workforce: "edit:project", analytics: "view:own",
+    projects: "edit:project", site_logs: "edit:project", inspections: "view", attendance: "edit:own", timesheets: "edit:own", workforce: "edit:project", equipment: "edit:project", analytics: "view:own",
   },
   warehouse: {
-    suppliers: "view", materials: "full", inventory: "full", services: "view",
+    suppliers: "view", materials: "full", inventory: "full", equipment: "full", services: "view",
     purchase_requests: "view", purchase_orders: "view",
     projects: "view", site_logs: "view", inspections: "view", attendance: "edit:own", timesheets: "edit:own", analytics: "view",
   },
@@ -245,6 +247,7 @@ export const MODULE_ROUTES: Record<ModuleKey, string> = {
   attendance: "/dashboard/attendance",
   timesheets: "/dashboard/timesheets",
   workforce: "/dashboard/workforce",
+  equipment: "/dashboard/equipment",
   analytics: "/dashboard/analytics",
   notifications: "/dashboard/notifications",
   settings: "/dashboard/settings",
