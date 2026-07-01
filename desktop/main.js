@@ -5,6 +5,18 @@ const path = require("path");
 // web and phone always run the exact same app and data — nothing to keep in
 // sync by hand. Point it elsewhere with the ERP_NEXUS_URL environment variable.
 const APP_URL = process.env.ERP_NEXUS_URL || "https://procurement-erp-6e271.web.app";
+const APP_ORIGIN = new URL(APP_URL).origin;
+
+// True only when a URL is on our OWN origin (exact scheme + host + port). A
+// plain startsWith(APP_URL) check would wrongly accept look-alike hosts such as
+// "procurement-erp-6e271.web.app.evil.com", so parse and compare the origin.
+function isInternal(target) {
+  try {
+    return new URL(target).origin === APP_ORIGIN;
+  } catch {
+    return false;
+  }
+}
 
 let win = null;
 
@@ -30,7 +42,7 @@ function createWindow() {
   // Links to other sites (mailto:, wa.me, maps, etc.) open in the real browser
   // instead of a bare window inside the app.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith(APP_URL)) {
+    if (!isInternal(url)) {
       shell.openExternal(url);
       return { action: "deny" };
     }
@@ -39,7 +51,7 @@ function createWindow() {
 
   // Keep in-app navigation on our own origin; send anything external out.
   win.webContents.on("will-navigate", (event, url) => {
-    if (!url.startsWith(APP_URL)) {
+    if (!isInternal(url)) {
       event.preventDefault();
       shell.openExternal(url);
     }
