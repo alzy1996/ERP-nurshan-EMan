@@ -1,0 +1,13 @@
+{
+  "appId": "com.emanworks.erpnexus",
+  "appName": "ERP Nexus",
+  "webDir": "www",
+  "server": {
+    "url": "https://procurement-erp-6e271.web.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

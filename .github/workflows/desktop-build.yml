@@ -1,0 +1,41 @@
+name: Build desktop app (EXE / DMG / AppImage)
+
+# Produces the installable ERP Nexus desktop app for Windows, macOS and Linux.
+# Run it from the Actions tab → "Build desktop app" → Run workflow, then
+# download the installer from the run's Artifacts.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Build installer
+        working-directory: desktop
+        # Unsigned build (fine for internal distribution). electron-builder
+        # picks the target for the runner OS from package.json "build".
+        run: npm run dist
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-nexus-desktop-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.AppImage
+          if-no-files-found: ignore
